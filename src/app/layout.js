@@ -1,5 +1,5 @@
 import "./globals.css";
-import PwaRegister from "@/components/PwaRegister";
+import PwaRegister from "../components/PwaRegister";
 
 export const metadata = {
   title: "AGMon - AI Agent Office & Activity Visualizer",

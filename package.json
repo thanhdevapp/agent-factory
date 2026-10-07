@@ -10,6 +10,7 @@
     "bin",
     "src",
     "public",
+    ".next",
     "jsconfig.json",
     "next.config.mjs",
     "postcss.config.mjs",
@@ -19,6 +20,7 @@
     "dev": "next dev --port 3030",
     "build": "next build",
     "start": "next start --port 3030",
+    "prepack": "next build && rm -rf .next/cache .next/dev .next/turbopack .next/diagnostics",
     "lint": "eslint ."
   },
   "dependencies": {

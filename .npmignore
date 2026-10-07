@@ -1,0 +1,6 @@
+.next/cache
+.next/dev
+.playwright-mcp
+verify-published.png
+test-snapshot.png
+*.log

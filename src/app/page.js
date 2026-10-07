@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import OfficeCanvas from "@/components/factory/office-canvas";
-import { useFactoryTraces } from "@/lib/useFactoryTraces";
-import { buildOffice } from "@/components/factory/scene/office-layout";
-import AgentPanel from "@/components/factory/AgentPanel";
-import UpdateNotification from "@/components/UpdateNotification";
+import OfficeCanvas from "../components/factory/office-canvas";
+import { useFactoryTraces } from "../lib/useFactoryTraces";
+import { buildOffice } from "../components/factory/scene/office-layout";
+import AgentPanel from "../components/factory/AgentPanel";
+import UpdateNotification from "../components/UpdateNotification";
 
 const PRESETS = [
   { id: "cases", label: "Edge Cases" },

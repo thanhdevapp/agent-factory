@@ -75,6 +75,11 @@ function getNextBin() {
   }
 }
 
+function getNextCommand() {
+  const isBuilt = fs.existsSync(path.join(PKG_ROOT, ".next", "BUILD_ID"));
+  return isBuilt ? "start" : "dev";
+}
+
 function runForeground(port, open = true, isService = false) {
   if (!isService) {
     const existingPid = getDaemonPid();
@@ -86,12 +91,13 @@ function runForeground(port, open = true, isService = false) {
     }
   }
 
-  console.log(`\n\x1b[32m🤖 Starting AGMon (Agent Monitor) on port ${port}...\x1b[0m`);
+  const cmd = getNextCommand();
+  console.log(`\n\x1b[32m🤖 Starting AGMon (Agent Monitor) on port ${port} [mode: ${cmd}]...\x1b[0m`);
   console.log(`📁 Project Root: ${PKG_ROOT}`);
   console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
 
   const nextBin = getNextBin();
-  const child = spawn(process.execPath, [nextBin, "dev", "--port", String(port)], {
+  const child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
     cwd: PKG_ROOT,
     stdio: "inherit",
     env: { ...process.env, PORT: String(port) },
@@ -116,12 +122,13 @@ function startDaemon(port) {
     return;
   }
 
-  console.log(`\x1b[32m🚀 Starting AGMon in Background Daemon Mode on port ${port}...\x1b[0m`);
+  const cmd = getNextCommand();
+  console.log(`\x1b[32m🚀 Starting AGMon in Background Daemon Mode on port ${port} [mode: ${cmd}]...\x1b[0m`);
 
   const out = fs.openSync(LOG_FILE, "a");
   const nextBin = getNextBin();
 
-  const child = spawn(process.execPath, [nextBin, "dev", "--port", String(port)], {
+  const child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
     cwd: PKG_ROOT,
     detached: true,
     stdio: ["ignore", out, out],

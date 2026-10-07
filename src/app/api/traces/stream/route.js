@@ -1,5 +1,5 @@
-import { getAllLiveTraces, getProvidersFromTraces } from "@/lib/watchers/watcherManager.js";
-import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "@/lib/mockTraces.js";
+import { getAllLiveTraces, getProvidersFromTraces } from "../../../../lib/watchers/watcherManager.js";
+import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "../../../../lib/mockTraces.js";
 
 export const dynamic = "force-dynamic";
 
