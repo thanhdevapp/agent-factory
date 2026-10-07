@@ -1,6 +1,6 @@
 {
-  "name": "Agent Factory",
-  "short_name": "AgentFactory",
+  "name": "AGMon (Agent Monitor)",
+  "short_name": "AGMon",
   "description": "Universal Live AI Agent Office & Activity Visualizer",
   "start_url": "/",
   "display": "standalone",

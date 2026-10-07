@@ -11,14 +11,14 @@ const __dirname = path.dirname(__filename);
 const PKG_ROOT = path.resolve(__dirname, "..");
 
 const HOME = os.homedir();
-const CONFIG_DIR = path.join(HOME, ".agent-factory");
-const PID_FILE = path.join(CONFIG_DIR, "agent-factory.pid");
-const LOG_FILE = path.join(CONFIG_DIR, "agent-factory.log");
-const PLIST_PATH = path.join(HOME, "Library", "LaunchAgents", "com.agentfactory.daemon.plist");
+const CONFIG_DIR = path.join(HOME, ".agmon");
+const PID_FILE = path.join(CONFIG_DIR, "agmon.pid");
+const LOG_FILE = path.join(CONFIG_DIR, "agmon.log");
+const PLIST_PATH = path.join(HOME, "Library", "LaunchAgents", "com.agmon.daemon.plist");
 const SYSTEMD_DIR = path.join(HOME, ".config", "systemd", "user");
-const SYSTEMD_PATH = path.join(SYSTEMD_DIR, "agent-factory.service");
+const SYSTEMD_PATH = path.join(SYSTEMD_DIR, "agmon.service");
 
-// Ensure ~/.agent-factory exists
+// Ensure ~/.agmon exists
 if (!fs.existsSync(CONFIG_DIR)) {
   fs.mkdirSync(CONFIG_DIR, { recursive: true });
 }
@@ -68,14 +68,14 @@ function runForeground(port, open = true, isService = false) {
   if (!isService) {
     const existingPid = getDaemonPid();
     if (existingPid) {
-      console.log(`\x1b[33m⚠️ Agent Factory is already running in background (PID: ${existingPid})\x1b[0m`);
+      console.log(`\x1b[33m⚠️ AGMon is already running in background (PID: ${existingPid})\x1b[0m`);
       console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
       if (open) openBrowser(`http://localhost:${port}`);
       return;
     }
   }
 
-  console.log(`\n\x1b[32m🤖 Starting Agent Factory (Foreground) on port ${port}...\x1b[0m`);
+  console.log(`\n\x1b[32m🤖 Starting AGMon (Agent Monitor) on port ${port}...\x1b[0m`);
   console.log(`📁 Project Root: ${PKG_ROOT}`);
   console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
 
@@ -100,12 +100,12 @@ function runForeground(port, open = true, isService = false) {
 function startDaemon(port) {
   const existingPid = getDaemonPid();
   if (existingPid) {
-    console.log(`\x1b[33m⚠️ Agent Factory daemon is ALREADY running (PID: ${existingPid})\x1b[0m`);
+    console.log(`\x1b[33m⚠️ AGMon daemon is ALREADY running (PID: ${existingPid})\x1b[0m`);
     console.log(`🌐 URL: \x1b[36mhttp://localhost:${port}\x1b[0m`);
     return;
   }
 
-  console.log(`\x1b[32m🚀 Starting Agent Factory in Background Daemon Mode on port ${port}...\x1b[0m`);
+  console.log(`\x1b[32m🚀 Starting AGMon in Background Daemon Mode on port ${port}...\x1b[0m`);
 
   const out = fs.openSync(LOG_FILE, "a");
   const nextBin = path.join(PKG_ROOT, "node_modules", ".bin", "next");
@@ -121,22 +121,22 @@ function startDaemon(port) {
 
   fs.writeFileSync(PID_FILE, String(child.pid), "utf-8");
 
-  console.log(`\x1b[32m✓ Daemon launched successfully!\x1b[0m`);
+  console.log(`\x1b[32m✓ AGMon Daemon launched successfully!\x1b[0m`);
   console.log(`  • PID: \x1b[33m${child.pid}\x1b[0m`);
   console.log(`  • Log: \x1b[34m${LOG_FILE}\x1b[0m`);
   console.log(`  • URL: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
-  console.log(`Type \x1b[35mnpx agent-factory stop\x1b[0m to stop the daemon.\n`);
+  console.log(`Type \x1b[35magmon stop\x1b[0m to stop the daemon.\n`);
 }
 
 function stopDaemon() {
   const pid = getDaemonPid();
   if (!pid) {
-    console.log(`\x1b[33mℹ️ No active Agent Factory daemon found.\x1b[0m`);
+    console.log(`\x1b[33mℹ️ No active AGMon daemon found.\x1b[0m`);
     if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE);
     return;
   }
 
-  console.log(`\x1b[33m🛑 Stopping Agent Factory daemon (PID: ${pid})...\x1b[0m`);
+  console.log(`\x1b[33m🛑 Stopping AGMon daemon (PID: ${pid})...\x1b[0m`);
   try {
     process.kill(pid, "SIGTERM");
     setTimeout(() => {
@@ -144,7 +144,7 @@ function stopDaemon() {
         try { process.kill(pid, "SIGKILL"); } catch {}
       }
       if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE);
-      console.log(`\x1b[32m✓ Agent Factory daemon stopped.\x1b[0m`);
+      console.log(`\x1b[32m✓ AGMon daemon stopped.\x1b[0m`);
     }, 500);
   } catch (err) {
     console.error(`Failed to kill process ${pid}:`, err.message);
@@ -154,7 +154,7 @@ function stopDaemon() {
 
 function showStatus(port) {
   const pid = getDaemonPid();
-  console.log(`\n\x1b[1m🤖 Agent Factory Status:\x1b[0m`);
+  console.log(`\n\x1b[1m🤖 AGMon (Agent Monitor) Status:\x1b[0m`);
   if (pid) {
     console.log(`  • Status:  \x1b[32m● RUNNING (Daemon)\x1b[0m`);
     console.log(`  • PID:     \x1b[33m${pid}\x1b[0m`);
@@ -193,7 +193,7 @@ function enableAutostart(port) {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.agentfactory.daemon</string>
+    <string>com.agmon.daemon</string>
     <key>ProgramArguments</key>
     <array>
         <string>${nodePath}</string>
@@ -206,6 +206,8 @@ function enableAutostart(port) {
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
     <key>StandardOutPath</key>
     <string>${LOG_FILE}</string>
     <key>StandardErrorPath</key>
@@ -220,7 +222,7 @@ function enableAutostart(port) {
       execSync(`launchctl load "${PLIST_PATH}"`);
       console.log(`\x1b[32m✓ macOS LaunchAgent auto-start enabled!\x1b[0m`);
       console.log(`  • Plist: ${PLIST_PATH}`);
-      console.log(`  • Agent Factory will now automatically launch on computer login.`);
+      console.log(`  • AGMon will now automatically launch on computer login.`);
     } catch (err) {
       console.error("Failed to load launchctl plist:", err.message);
     }
@@ -233,7 +235,7 @@ function enableAutostart(port) {
     }
 
     const service = `[Unit]
-Description=Agent Factory Daemon
+Description=AGMon (Agent Monitor) Daemon
 After=network.target
 
 [Service]
@@ -250,7 +252,7 @@ WantedBy=default.target
     fs.writeFileSync(SYSTEMD_PATH, service, "utf-8");
     try {
       execSync("systemctl --user daemon-reload");
-      execSync("systemctl --user enable --now agent-factory");
+      execSync("systemctl --user enable --now agmon");
       console.log(`\x1b[32m✓ Linux systemd auto-start enabled!\x1b[0m`);
       console.log(`  • Service: ${SYSTEMD_PATH}`);
     } catch (err) {
@@ -279,8 +281,8 @@ function disableAutostart() {
   if (process.platform === "linux") {
     if (fs.existsSync(SYSTEMD_PATH)) {
       try {
-        execSync("systemctl --user stop agent-factory 2>/dev/null || true");
-        execSync("systemctl --user disable agent-factory 2>/dev/null || true");
+        execSync("systemctl --user stop agmon 2>/dev/null || true");
+        execSync("systemctl --user disable agmon 2>/dev/null || true");
       } catch {}
       fs.unlinkSync(SYSTEMD_PATH);
       console.log(`\x1b[32m✓ Linux systemd auto-start disabled.\x1b[0m`);
@@ -293,11 +295,13 @@ function disableAutostart() {
 
 function showHelp() {
   console.log(`
-\x1b[1m🤖 Agent Factory CLI\x1b[0m
+\x1b[1m🤖 AGMon (Agent Monitor) CLI\x1b[0m
 Universal Live AI Agent Office & Activity Visualizer
 
 \x1b[1mUSAGE:\x1b[0m
-  npx agent-factory [command] [options]
+  npx agmon [command] [options]
+  # or when installed globally:
+  agmon [command] [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
   (default)           Start visualizer and open dashboard in browser
@@ -337,7 +341,6 @@ switch (command) {
     break;
 
   case "run":
-    // Internal command for launchd/systemd foreground execution
     runForeground(port, false, true);
     break;
 
@@ -347,7 +350,7 @@ switch (command) {
     } else if (args[1] === "disable") {
       disableAutostart();
     } else {
-      console.log(`Usage: npx agent-factory autostart [enable|disable]`);
+      console.log(`Usage: agmon autostart [enable|disable]`);
     }
     break;
 

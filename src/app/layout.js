@@ -2,7 +2,7 @@ import "./globals.css";
 import PwaRegister from "@/components/PwaRegister";
 
 export const metadata = {
-  title: "Agent Factory - AI Agent Office & Activity Visualizer",
+  title: "AGMon - AI Agent Office & Activity Visualizer",
   description: "Realtime activity and token flow visualizer for Antigravity, Claude Code & AI CLIs",
   manifest: "/manifest.json",
   icons: {
@@ -12,7 +12,7 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Agent Factory",
+    title: "AGMon",
   },
 };
 

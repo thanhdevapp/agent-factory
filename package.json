@@ -1,10 +1,10 @@
 {
-  "name": "agent-factory",
+  "name": "agmon",
   "version": "0.1.0",
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code & AI CLIs",
   "type": "module",
   "bin": {
-    "agent-factory": "./bin/cli.js"
+    "agmon": "./bin/cli.js"
   },
   "files": [
     "bin",
@@ -33,14 +33,20 @@
     "tailwindcss": "^4.1.18"
   },
   "keywords": [
-    "agent",
+    "agmon",
+    "agent-monitor",
     "antigravity",
     "claude-code",
+    "ai-agent",
     "visualizer",
+    "telemetry",
     "office",
-    "pixijs",
-    "ai",
-    "telemetry"
+    "pixijs"
   ],
-  "license": "MIT"
+  "author": "thanhdevapp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thanhdevapp/agent-factory.git"
+  }
 }

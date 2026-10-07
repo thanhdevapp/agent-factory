@@ -1,57 +1,58 @@
-# 🤖 Agent Factory
+# 🤖 AGMon (Agent Monitor)
 
-**Agent Factory** is a standalone, real-time AI Agent Office & Activity Visualizer. It watches local CLI coding agent logs (Antigravity CLI, Claude Code, Cursor, etc.) and visualizes active agent desks, tool badges, and token packet streams flowing to provider server pods in a rich 2.5D isometric view.
+**AGMon** is a standalone, real-time AI Agent Office & Activity Visualizer. It watches local CLI coding agent logs (Antigravity CLI, Claude Code, Cursor, etc.) and visualizes active agent desks, tool badges, and token packet streams flowing to provider server pods in a rich 2.5D isometric view.
 
 ---
 
 ## ⚡ Quick Start with `npx`
 
-You can run Agent Factory immediately from any directory:
+Run AGMon instantly from any terminal without installing:
 
 ```bash
-# Start visualizer & open dashboard in your default browser:
-npx agent-factory
+# Start visualizer & open dashboard:
+npx agmon
 
 # Or specify a custom port:
-npx agent-factory --port 4000
+npx agmon --port 4000
 ```
 
 ---
 
-## 🔄 Background Daemon & Auto-Start Mode
-
-Agent Factory can run silently in the background as a system daemon and automatically boot when you turn on your computer:
+## 💻 Global Installation & Background Daemon
 
 ```bash
+# Install globally:
+npm install -g agmon
+
 # Start background daemon:
-agent-factory start
+agmon start
 
 # Check status (PID, URL, autostart):
-agent-factory status
+agmon status
 
 # Stop background daemon:
-agent-factory stop
+agmon stop
 
 # Enable automatic start on system boot (macOS LaunchAgent / Linux systemd):
-agent-factory autostart enable
+agmon autostart enable
 
 # Disable auto-start on boot:
-agent-factory autostart disable
+agmon autostart disable
 ```
 
 ---
 
-## 📱 Progressive Web App (PWA) Support
+## 📱 Progressive Web App (PWA)
 
-Agent Factory is fully PWA-compliant with offline shell caching, standalone window frame, and custom high-resolution icons:
+AGMon is fully PWA-compliant with offline shell caching, standalone window frame, and custom high-resolution icons:
 
-- **macOS / Chrome / Edge**: Click the **Install** icon in the browser address bar to install Agent Factory as a native desktop application with its own window and dock icon.
+- **macOS / Chrome / Edge**: Click the **Install** icon in the browser address bar to install AGMon as a native desktop application.
 - **Safari on macOS**: Click **File** > **Add to Dock...** to run as a standalone desktop app.
 - **iPad / iPhone / Android**: Tap **Share** > **Add to Home Screen**.
 
 ---
 
-## ✨ Core Features
+## ✨ Features
 
 - **100% Non-invasive & Safe**: Zero network interception, zero MITM proxy, zero credential touches. Only inspects local read-only CLI session logs.
 - **Dual Live Watchers**:
