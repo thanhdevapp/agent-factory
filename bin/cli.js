@@ -5,6 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +67,14 @@ function getDaemonPid() {
 // Commands
 // -------------------------------------------------------------
 
+function getNextBin() {
+  try {
+    return require.resolve("next/dist/bin/next");
+  } catch {
+    return path.join(PKG_ROOT, "node_modules", ".bin", "next");
+  }
+}
+
 function runForeground(port, open = true, isService = false) {
   if (!isService) {
     const existingPid = getDaemonPid();
@@ -79,8 +90,8 @@ function runForeground(port, open = true, isService = false) {
   console.log(`📁 Project Root: ${PKG_ROOT}`);
   console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
 
-  const nextBin = path.join(PKG_ROOT, "node_modules", ".bin", "next");
-  const child = spawn(nextBin, ["dev", "--port", String(port)], {
+  const nextBin = getNextBin();
+  const child = spawn(process.execPath, [nextBin, "dev", "--port", String(port)], {
     cwd: PKG_ROOT,
     stdio: "inherit",
     env: { ...process.env, PORT: String(port) },
@@ -108,9 +119,9 @@ function startDaemon(port) {
   console.log(`\x1b[32m🚀 Starting AGMon in Background Daemon Mode on port ${port}...\x1b[0m`);
 
   const out = fs.openSync(LOG_FILE, "a");
-  const nextBin = path.join(PKG_ROOT, "node_modules", ".bin", "next");
+  const nextBin = getNextBin();
 
-  const child = spawn(nextBin, ["dev", "--port", String(port)], {
+  const child = spawn(process.execPath, [nextBin, "dev", "--port", String(port)], {
     cwd: PKG_ROOT,
     detached: true,
     stdio: ["ignore", out, out],

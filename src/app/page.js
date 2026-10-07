@@ -1,24 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
+import OfficeCanvas from "@/components/factory/office-canvas";
 import { useFactoryTraces } from "@/lib/useFactoryTraces";
 import { buildOffice } from "@/components/factory/scene/office-layout";
 import AgentPanel from "@/components/factory/AgentPanel";
 import UpdateNotification from "@/components/UpdateNotification";
-
-// Dynamic import of PixiJS Canvas to avoid WebGL execution during SSR
-const OfficeCanvas = dynamic(() => import("@/components/factory/office-canvas"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-[#080d14] text-slate-500">
-      <div className="flex flex-col items-center gap-2">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-        <span className="text-xs font-mono">Initializing Agent Factory Scene...</span>
-      </div>
-    </div>
-  ),
-});
 
 const PRESETS = [
   { id: "cases", label: "Edge Cases" },
@@ -58,7 +45,7 @@ export default function FactoryPage() {
                 AGMON
               </span>
               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                v0.1.0
+                v0.1.2
               </span>
             </div>
             <p className="text-[11px] text-slate-400">AI Agent Office & Activity Visualizer</p>

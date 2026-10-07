@@ -1,6 +1,6 @@
 {
   "name": "agmon",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code & AI CLIs",
   "type": "module",
   "bin": {
@@ -22,14 +22,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "next": "^16.1.6",
     "pixi.js": "^8.22.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
     "postcss": "^8.5.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "tailwindcss": "^4.1.18"
   },
   "keywords": [
