@@ -1,0 +1,519 @@
+import { Application, Container, FillGradient, Graphics, Text } from "pixi.js";
+import { buildOffice, OFFICE, STATE_COLORS } from "./scene/office-layout";
+import { createCharacter, createDesk, createBadge } from "./scene/characters";
+import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
+import { createTokenStreams } from "./scene/token-streams";
+
+const MAX_ZOOM = 1.6;
+const MIN_ZOOM = 0.2;
+
+// World rectangle the camera frames (floor).
+const FLOOR = { x: -60, y: 40, w: 2150, h: 980 };
+
+const DESK_W = 150;
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+const MODE_INTENSITY = { streaming: 0.8, pending: 0.3, happy: 0.2, sleeping: 0, error: 1 };
+
+/**
+ * Mount the office scene on `canvas`.
+ *
+ * Everything visible is a function of the trace records:
+ *  - robot pose        <- account state (typing / waving / happy / asleep / error)
+ *  - badge over head   <- queued, done, or the specific failure reason
+ *  - badge by monitor  <- tool type currently running
+ *  - desk face         <- latency bar, cost, cache share, request pile
+ *  - packets           <- input (round), output (diamond), cached (square)
+ *  - pods              <- load meter, siren when saturated, operator robot
+ *  - amber lanes       <- fallback: courier drone carries the request to another provider
+ */
+export async function mountOfficeScene(canvas, traces, options = {}) {
+  let selectedId = options.selectedId ?? null;
+  let onSelect = options.onSelect;
+
+  const app = new Application();
+  await app.init({
+    canvas,
+    preference: "webgl",
+    resizeTo: canvas.parentElement,
+    background: 0x0b0f16,
+    antialias: true,
+    resolution: Math.min(globalThis.devicePixelRatio || 1, 2),
+    autoDensity: true,
+  });
+
+  const world = new Container();
+  const floorLayer = new Container();
+  const laneLayer = new Container();
+  const deskLayer = new Container();
+  const actorLayer = new Container();
+  const toolLayer = new Container();
+  const hudLayer = new Container();
+  const streams = createTokenStreams();
+  world.addChild(floorLayer, laneLayer, streams.container, deskLayer, actorLayer, toolLayer, hudLayer);
+  app.stage.addChild(world);
+
+  // ---- floor -------------------------------------------------------------
+  const floor = new Graphics();
+  floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).fill(
+    new FillGradient({
+      type: "linear",
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: [{ offset: 0, color: 0x0b1018 }, { offset: 1, color: 0x161f2c }],
+      textureSpace: "local",
+    }),
+  );
+  for (let x = FLOOR.x + 100; x < FLOOR.x + FLOOR.w; x += 100) {
+    floor.moveTo(x, FLOOR.y + 14).lineTo(x, FLOOR.y + FLOOR.h - 14).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+  }
+  for (let y = FLOOR.y + 100; y < FLOOR.y + FLOOR.h; y += 100) {
+    floor.moveTo(FLOOR.x + 14, y).lineTo(FLOOR.x + FLOOR.w - 14, y).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+  }
+  floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: 0x263244, alpha: 0.9 });
+  // Zone panels: agents | router | providers
+  floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: 0xfde047, alpha: 0.035 });
+  floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: 0x22d3ee, alpha: 0.035 });
+  floor.eventMode = "static";
+  floor.on("pointertap", () => select(null));
+  floorLayer.addChild(floor);
+
+  // ---- central rack (9Router) with a dispatcher robot behind it -----------
+  const rack = new Container();
+  const dispatcher = createCharacter({ color: 0xfde047, trimColor: 0xf59e0b, seed: 3, scale: 0.95, mode: "sleeping" });
+  dispatcher.root.baseX = 0;
+  dispatcher.root.baseY = -156;
+  dispatcher.root.x = 0;
+  dispatcher.root.y = -156;
+  rack.addChild(dispatcher.root);
+
+  const rackBody = new Graphics();
+  rackBody.roundRect(-70, -170, 140, 230, 10).fill({ color: 0x1a222d });
+  rackBody.roundRect(-62, -162, 124, 60, 6).fill({ color: 0x223040 });
+  rackBody.roundRect(-58, 40, 116, 96, 6).fill({ color: 0x223040 });
+  rack.addChild(rackBody);
+
+  const rackGlow = new Graphics();
+  rackGlow.roundRect(-80, -180, 160, 250, 14).fill({ color: 0xfde047, alpha: 0.12 });
+  rack.addChildAt(rackGlow, 0);
+
+  const leds = new Graphics();
+  rack.addChild(leds);
+
+  const rackLabel = new Text({
+    text: "9ROUTER",
+    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 15, fill: 0xfde047, fontWeight: "800", letterSpacing: 2 },
+  });
+  rackLabel.anchor.set(0.5, 0);
+  rackLabel.y = -92;
+  rack.addChild(rackLabel);
+
+  const rackCount = createBadge("0", { color: 0xfde047, size: 13 });
+  rackCount.anchor.set(0.5, 0);
+  rackCount.y = 4;
+  rack.addChild(rackCount);
+  deskLayer.addChild(rack);
+
+  // ---- build / rebuild on data change ----------------------------------
+  // Everything created per data refresh is tracked here and destroyed together.
+  let dyn = [];
+  let deskEntries = [];
+  let podEntries = [];
+  let couriers = [];
+  let rackActive = false;
+
+  const track = (layer, obj) => {
+    layer.addChild(obj);
+    dyn.push(obj);
+    return obj;
+  };
+
+  function refreshSelection() {
+    for (const e of deskEntries) e.desk.setSelected(e.ws.connectionId === selectedId);
+  }
+
+  function select(id) {
+    selectedId = id;
+    refreshSelection();
+    onSelect?.(id);
+  }
+
+  function dashedLine(g, x, y1, y2, color) {
+    const dir = Math.sign(y2 - y1) || 1;
+    for (let y = y1; dir > 0 ? y < y2 - 8 : y > y2 + 8; y += dir * 14) {
+      g.moveTo(x, y).lineTo(x, y + dir * 8).stroke({ width: 2, color, alpha: 0.8 });
+    }
+  }
+
+  function rebuild(nextTraces) {
+    for (const o of dyn) o.destroy({ children: true });
+    dyn = [];
+    deskEntries = [];
+    podEntries = [];
+    couriers = [];
+
+    const office = buildOffice(nextTraces);
+    const podByProvider = new Map(office.pods.map((p) => [p.provider, p]));
+    const routes = [];
+
+    // Back-to-front so nearer desks overlap further ones.
+    const ordered = [...office.workstations].sort((a, b) => a.y - b.y || a.x - b.x);
+
+    for (const [i, ws] of ordered.entries()) {
+      const desk = createDesk({
+        color: ws.color,
+        label: ws.account,
+        meta: `${ws.model || ""} · ${ws.totalLabel}`,
+        elapsedMs: ws.elapsedMs,
+        cost: ws.cost,
+        cachedPct: ws.cachedPct,
+        queued: ws.queued,
+        depth: ws.depth,
+      });
+      desk.root.x = ws.x;
+      desk.root.y = ws.y;
+      desk.root.on("pointertap", (e) => {
+        e.stopPropagation();
+        select(ws.connectionId === selectedId ? null : ws.connectionId);
+      });
+
+      // Agent first: it sits behind the desk so the desk hides its torso.
+      const character = createCharacter({ color: ws.color, depth: ws.depth, seed: i, mode: ws.mode });
+      character.root.x = ws.x + 108;
+      character.root.baseX = ws.x + 108;
+      character.root.baseY = ws.y + 34;
+      character.root.y = character.root.baseY;
+      track(deskLayer, character.root);
+      track(deskLayer, desk.root);
+
+      // Tool-call badges cycle by the monitor, one glyph per tool type.
+      const toolBadges = [];
+      if (ws.busy > 0 || ws.tools.length > 0) {
+        for (const tool of ws.tools) {
+          const badge = createToolBadge(tool, { size: 1.05 });
+          badge.root.x = ws.x + 28;
+          badge.root.y = ws.y - 50;
+          badge.root.visible = false;
+          track(toolLayer, badge.root);
+          toolBadges.push(badge);
+        }
+      }
+
+      // Status badge over the head: queued / done / the exact failure reason.
+      let statusBadge = null;
+      const statusKey =
+        ws.mode === "pending" ? "pending"
+          : ws.mode === "happy" ? "done"
+            : ws.mode === "error" ? (STATUS_TYPES[ws.errorReason] ? ws.errorReason : "rate_limited")
+              : null;
+      if (statusKey) {
+        statusBadge = createToolBadge(statusKey, { size: 1.05 });
+        statusBadge.root.x = ws.x + DESK_W + 14;
+        statusBadge.root.y = ws.y - 34;
+        track(toolLayer, statusBadge.root);
+      }
+
+      // Fallback marker: this request already failed over from another provider.
+      if (ws.fallbackFrom) {
+        const fb = createToolBadge("fallback", { size: 0.85, label: `from ${ws.fallbackFrom}` });
+        fb.root.x = ws.x + DESK_W + 14;
+        fb.root.y = ws.y + 40;
+        track(toolLayer, fb.root);
+      }
+
+      // Cost: a coin pops off the desk of a finished account.
+      let coin = null;
+      if (ws.mode === "happy" && ws.cost > 0) {
+        coin = new Container();
+        const disc = new Graphics();
+        disc.circle(0, 0, 6).fill({ color: 0xfacc15 });
+        disc.circle(0, 0, 6).stroke({ width: 1.2, color: 0xa16207 });
+        const amount = new Text({
+          text: `+$${ws.cost.toFixed(2)}`,
+          style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0xfacc15, fontWeight: "800" },
+        });
+        amount.x = 10;
+        amount.anchor.set(0, 0.5);
+        coin.addChild(disc, amount);
+        coin.x = ws.x + 16;
+        coin.visible = false;
+        track(toolLayer, coin);
+      }
+
+      deskEntries.push({ desk, character, ws, toolBadges, statusBadge, coin });
+
+      const pod = podByProvider.get(ws.provider);
+      if (ws.busy > 0) {
+        const cap = (v) => Math.max(0.15, clamp01(v));
+        const wIn = cap(ws.tokens.input / 16000);
+        const wOut = cap(ws.tokens.output / 3200);
+        const wCache = ws.tokens.cached > 0 ? cap(ws.tokens.cached / 6500) : 0;
+        const deskPt = { x: ws.x + 75, y: ws.y - 10 };
+        const rackIn = { x: OFFICE.rackX, y: OFFICE.rackY - 90 };
+        // input: desk -> rack -> provider
+        routes.push({ from: deskPt, to: rackIn, color: ws.color, weight: wIn });
+        if (pod) {
+          routes.push({ from: { x: OFFICE.rackX, y: OFFICE.rackY - 40 }, to: { x: pod.x - 46, y: pod.y }, color: pod.color, weight: wIn });
+          // output: provider -> rack -> desk, arcing underneath
+          routes.push({ from: { x: pod.x - 46, y: pod.y + 14 }, to: { x: OFFICE.rackX + 20, y: OFFICE.rackY - 10 }, color: 0x86efac, weight: wOut, shape: "diamond", arc: -22 });
+        }
+        routes.push({ from: { x: OFFICE.rackX - 20, y: OFFICE.rackY + 10 }, to: { x: ws.x + 100, y: ws.y + 6 }, color: 0x86efac, weight: wOut, shape: "diamond", arc: -22 });
+        // cached: served at the rack, never reaches a provider
+        if (wCache) {
+          routes.push({ from: { x: ws.x + 90, y: ws.y - 20 }, to: { x: OFFICE.rackX - 30, y: OFFICE.rackY - 120 }, color: 0xcbd5e1, weight: wCache, shape: "square", arc: 44 });
+        }
+      }
+    }
+
+    // Provider pods: load meter, siren when saturated, operator robot behind.
+    for (const pod of office.pods) {
+      const operator = createCharacter({
+        color: pod.color,
+        trimColor: pod.color,
+        scale: 0.55,
+        seed: pod.provider.length,
+        mode: pod.overloaded ? "pending" : pod.busy > 0 ? "streaming" : "sleeping",
+      });
+      operator.root.x = pod.x + 2;
+      operator.root.baseX = pod.x + 2;
+      operator.root.baseY = pod.y + 10;
+      operator.root.y = pod.y + 10;
+      track(deskLayer, operator.root);
+
+      const g = new Graphics();
+      g.ellipse(0, 34, 52, 10).fill({ color: 0x000000, alpha: 0.35 });
+      g.roundRect(-46, -30, 92, 62, 12).fill({ color: 0x1c2531 });
+      g.roundRect(-46, -30, 92, 6, 5).fill({ color: 0xffffff, alpha: 0.06 });
+      // Load meter: three rows fill in turn as the provider saturates.
+      const meterColor = pod.overloaded ? STATE_COLORS.error : pod.load > 0.5 ? 0xfbbf24 : 0x34d399;
+      for (let r = 0; r < 3; r += 1) {
+        const fill = clamp01(pod.load * 3 - r);
+        g.roundRect(-38, -18 + r * 14, 76, 9, 3).fill({ color: 0x0f141c });
+        if (fill > 0) g.roundRect(-38, -18 + r * 14, 76 * fill, 9, 3).fill({ color: meterColor, alpha: 0.9 });
+      }
+      g.x = pod.x;
+      g.y = pod.y;
+      track(deskLayer, g);
+
+      const siren = new Graphics();
+      siren.x = pod.x + 34;
+      siren.y = pod.y - 35;
+      track(deskLayer, siren);
+
+      const label = new Text({
+        text: pod.provider.toUpperCase(),
+        style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 12, fill: 0xdce6f2, fontWeight: "800", letterSpacing: 1 },
+      });
+      label.anchor.set(0.5, 0);
+      label.x = pod.x;
+      label.y = pod.y + 38;
+      track(deskLayer, label);
+
+      const sub = createBadge(`${pod.busy} in flight${pod.overloaded ? " · FULL" : ""}`, {
+        color: pod.overloaded ? STATE_COLORS.error : pod.color,
+        size: 10,
+      });
+      sub.anchor.set(0.5, 0);
+      sub.x = pod.x;
+      sub.y = pod.y + 53;
+      track(deskLayer, sub);
+
+      podEntries.push({ pod, operator, siren });
+    }
+
+    // Fallback lanes + courier drones: from the failed provider to the one that served it.
+    office.fallbacks.forEach((lane, k) => {
+      const from = podByProvider.get(lane.from);
+      const to = podByProvider.get(lane.to);
+      if (!from || !to) return;
+      const laneX = OFFICE.podX - 82 - (k % 4) * 14;
+
+      const g = new Graphics();
+      g.moveTo(from.x - 46, from.y).lineTo(laneX, from.y).stroke({ width: 2, color: 0xfbbf24, alpha: 0.5 });
+      g.moveTo(to.x - 46, to.y).lineTo(laneX, to.y).stroke({ width: 2, color: 0xfbbf24, alpha: 0.5 });
+      dashedLine(g, laneX, from.y, to.y, 0xfbbf24);
+      const dir = Math.sign(to.y - from.y) || 1;
+      g.poly([laneX - 6, to.y - dir * 10, laneX + 6, to.y - dir * 10, laneX, to.y]).fill({ color: 0xfbbf24 });
+      track(laneLayer, g);
+
+      const tag = new Text({
+        text: `FALLBACK ×${lane.count}`,
+        style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 9, fill: 0xfbbf24, fontWeight: "800", letterSpacing: 1 },
+      });
+      tag.anchor.set(1, 0.5);
+      tag.x = laneX - 9;
+      tag.y = (from.y + to.y) / 2;
+      track(laneLayer, tag);
+
+      const drone = createCharacter({ color: 0xfbbf24, trimColor: 0xf59e0b, scale: 0.5, seed: k + 5, mode: "streaming" });
+      const parcel = new Graphics();
+      parcel.roundRect(-30, -22, 14, 12, 2).fill({ color: 0xd6a15c });
+      parcel.moveTo(-30, -16).lineTo(-16, -16).stroke({ width: 1.2, color: 0x7c4a1d });
+      const flame = new Graphics();
+      drone.root.addChild(parcel, flame);
+      track(actorLayer, drone.root);
+      couriers.push({ drone, flame, laneX, y1: from.y, y2: to.y, offset: k * 900 });
+    });
+
+    rack.x = OFFICE.rackX;
+    rack.y = OFFICE.rackY;
+    rackCount.text = String(office.rack.active);
+    rackActive = office.rack.active > 0;
+    dispatcher.setMode(rackActive ? "streaming" : "sleeping");
+    streams.setRoutes(routes);
+    refreshSelection();
+  }
+
+  // ---- camera -----------------------------------------------------------
+  function fit() {
+    if (app.screen.width <= 0 || app.screen.height <= 0) return;
+    const scale = Math.min(
+      app.screen.width / (FLOOR.w + 40),
+      app.screen.height / (FLOOR.h + 40),
+      MAX_ZOOM,
+    );
+    world.scale.set(Math.max(MIN_ZOOM, scale));
+    world.x = (app.screen.width - FLOOR.w * world.scale.x) / 2 - FLOOR.x * world.scale.x;
+    world.y = (app.screen.height - FLOOR.h * world.scale.y) / 2 - FLOOR.y * world.scale.y;
+  }
+
+  app.renderer.on("resize", fit);
+
+  // ---- animation --------------------------------------------------------
+  let t = 0;
+  app.ticker.add((ticker) => {
+    const dt = ticker.deltaMS;
+    t += dt;
+
+    streams.animate(dt);
+
+    for (const entry of deskEntries) {
+      const { ws } = entry;
+      const intensity = ws.mode === "streaming" ? Math.min(1, ws.busy / 2) : MODE_INTENSITY[ws.mode] ?? 0;
+      entry.desk.animate(t, intensity);
+      entry.character.animate(t, intensity);
+
+      // Tool badges: pop in, float, shrink out; one tool at a time.
+      const n = entry.toolBadges.length;
+      if (n > 0) {
+        const slot = 2200;
+        const cycle = Math.floor((t + ws.x * 3) / slot) % n;
+        const local = ((t + ws.x * 3) % slot) / slot;
+        entry.toolBadges.forEach((b, idx) => {
+          const active = idx === cycle;
+          b.root.visible = active;
+          if (!active) return;
+          const k = Math.min(Math.min(1, local * 6), Math.min(1, (1 - local) * 6));
+          b.root.scale.set(1.05 * (0.35 + 0.65 * k));
+          b.root.alpha = k;
+          b.root.y = ws.y - 50 + Math.sin(t * 0.005 + idx) * 2.5;
+          b.halo.scale.set(1 + Math.sin(t * 0.01) * 0.12);
+        });
+      }
+
+      if (entry.statusBadge) {
+        const err = ws.mode === "error";
+        entry.statusBadge.root.y = ws.y - 34 + Math.sin(t * (err ? 0.02 : 0.004) + ws.x) * (err ? 3 : 2);
+        entry.statusBadge.halo.scale.set(1 + Math.sin(t * (err ? 0.016 : 0.008)) * (err ? 0.3 : 0.12));
+      }
+
+      if (entry.coin) {
+        const p = ((t + ws.x * 5) % 3400) / 3400;
+        entry.coin.visible = p < 0.8;
+        entry.coin.y = ws.y - 24 - p * 30;
+        entry.coin.alpha = Math.sin(Math.min(1, p / 0.8) * Math.PI);
+      }
+    }
+
+    for (const { pod, operator, siren } of podEntries) {
+      operator.animate(t, pod.overloaded ? 1 : Math.min(1, pod.load));
+      siren.clear();
+      if (pod.overloaded) {
+        const on = Math.sin(t * 0.014) > 0;
+        siren.circle(0, 0, 5).fill({ color: 0xef4444, alpha: on ? 1 : 0.35 });
+        siren.circle(0, 0, 13).fill({ color: 0xef4444, alpha: on ? 0.28 : 0.05 });
+      } else {
+        siren.circle(0, 0, 3).fill({ color: pod.busy > 0 ? 0x34d399 : 0x475569, alpha: 0.9 });
+      }
+    }
+
+    for (const c of couriers) {
+      const p = ((t + c.offset) % 4500) / 4500;
+      const eased = p * p * (3 - 2 * p);
+      c.drone.root.baseX = c.laneX;
+      c.drone.root.baseY = c.y1 + (c.y2 - c.y1) * eased + 6;
+      c.drone.animate(t, 1);
+      c.flame.clear();
+      c.flame.ellipse(0, 16, 7 + Math.sin(t * 0.04) * 1.5, 10 + Math.sin(t * 0.05) * 3).fill({ color: 0xfbbf24, alpha: 0.55 });
+      c.flame.ellipse(0, 14, 4, 6).fill({ color: 0xfff1b8, alpha: 0.85 });
+      c.drone.root.alpha = Math.min(1, p * 8) * Math.min(1, (1 - p) * 8);
+    }
+
+    dispatcher.animate(t, rackActive ? 1 : 0);
+
+    // Rack activity LEDs
+    leds.clear();
+    for (let row = 0; row < 5; row += 1) {
+      for (let col = 0; col < 6; col += 1) {
+        const on = Math.sin(t * 0.006 + row * 1.7 + col * 0.9) > (rackActive ? -0.2 : 0.6);
+        if (!on) continue;
+        leds.circle(-40 + col * 16, 56 + row * 14, 2.4).fill({
+          color: row % 3 === 0 ? 0x34d399 : 0x22d3ee,
+          alpha: 0.9,
+        });
+      }
+    }
+    rackGlow.alpha = rackActive ? 0.5 + Math.sin(t * 0.005) * 0.3 : 0.15;
+  });
+
+  // ---- legend ------------------------------------------------------------
+  const legendTitle = (text, x) => {
+    const title = new Text({
+      text,
+      style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0x7d8aa0, fontWeight: "800", letterSpacing: 2 },
+    });
+    title.x = x;
+    title.y = FLOOR.y + FLOOR.h - 52;
+    hudLayer.addChild(title);
+  };
+  legendTitle("TOOL CALLS", 35);
+  TOOL_KEYS.forEach((tool, i) => {
+    const chip = createToolBadge(tool, { size: 0.72 });
+    chip.root.x = 160 + i * 65;
+    chip.root.y = FLOOR.y + FLOOR.h - 40;
+    hudLayer.addChild(chip.root);
+  });
+  legendTitle("STATUS", 965);
+  STATUS_KEYS.forEach((key, i) => {
+    const chip = createToolBadge(key, { size: 0.72 });
+    chip.root.x = 1050 + i * 68;
+    chip.root.y = FLOOR.y + FLOOR.h - 40;
+    hudLayer.addChild(chip.root);
+  });
+  const packetKey = new Text({
+    text: "●  input    ◆  output    ■  cached",
+    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0x7d8aa0, fontWeight: "700" },
+  });
+  packetKey.x = 1560;
+  packetKey.y = FLOOR.y + FLOOR.h - 50;
+  hudLayer.addChild(packetKey);
+
+  rebuild(traces);
+  fit();
+
+  return {
+    app,
+    rebuild,
+    fit,
+    setSelected(id) {
+      selectedId = id;
+      refreshSelection();
+    },
+    setOnSelect(fn) {
+      onSelect = fn;
+    },
+    destroy: () => app.destroy(true, { children: true }),
+  };
+}
+
+export { STATE_COLORS };
