@@ -4,7 +4,7 @@
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code & AI CLIs",
   "type": "module",
   "bin": {
-    "agmon": "./bin/cli.js"
+    "agmon": "bin/cli.js"
   },
   "files": [
     "bin",
@@ -47,6 +47,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thanhdevapp/agent-factory.git"
+    "url": "git+https://github.com/thanhdevapp/agent-factory.git"
   }
 }
