@@ -45,7 +45,7 @@ export default function FactoryPage() {
                 AGMON
               </span>
               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                v0.1.2
+                v0.1.3
               </span>
             </div>
             <p className="text-[11px] text-slate-400">AI Agent Office & Activity Visualizer</p>
