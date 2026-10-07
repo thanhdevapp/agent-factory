@@ -4,7 +4,54 @@
 
 ---
 
-## ✨ Features
+## ⚡ Quick Start with `npx`
+
+You can run Agent Factory immediately from any directory:
+
+```bash
+# Start visualizer & open dashboard in your default browser:
+npx agent-factory
+
+# Or specify a custom port:
+npx agent-factory --port 4000
+```
+
+---
+
+## 🔄 Background Daemon & Auto-Start Mode
+
+Agent Factory can run silently in the background as a system daemon and automatically boot when you turn on your computer:
+
+```bash
+# Start background daemon:
+agent-factory start
+
+# Check status (PID, URL, autostart):
+agent-factory status
+
+# Stop background daemon:
+agent-factory stop
+
+# Enable automatic start on system boot (macOS LaunchAgent / Linux systemd):
+agent-factory autostart enable
+
+# Disable auto-start on boot:
+agent-factory autostart disable
+```
+
+---
+
+## 📱 Progressive Web App (PWA) Support
+
+Agent Factory is fully PWA-compliant with offline shell caching, standalone window frame, and custom high-resolution icons:
+
+- **macOS / Chrome / Edge**: Click the **Install** icon in the browser address bar to install Agent Factory as a native desktop application with its own window and dock icon.
+- **Safari on macOS**: Click **File** > **Add to Dock...** to run as a standalone desktop app.
+- **iPad / iPhone / Android**: Tap **Share** > **Add to Home Screen**.
+
+---
+
+## ✨ Core Features
 
 - **100% Non-invasive & Safe**: Zero network interception, zero MITM proxy, zero credential touches. Only inspects local read-only CLI session logs.
 - **Dual Live Watchers**:
@@ -20,28 +67,13 @@
 
 ---
 
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Run Development Server
-```bash
-npm run dev
-```
-
-Open [http://localhost:3030](http://localhost:3030) in your browser.
-
----
-
 ## 🛠️ Tech Stack
 
 - **Framework**: Next.js 16 (App Router) + React 19
-- **Graphics Engine**: Pixi.js v8
+- **Graphics Engine**: Pixi.js v8 (WebGL / Canvas)
 - **Styling**: Tailwind CSS v4
 - **Streaming**: Server-Sent Events (SSE)
+- **PWA**: Web App Manifest + Service Worker + App Shell
 
 ---
 

@@ -2,8 +2,19 @@
   "name": "agent-factory",
   "version": "0.1.0",
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code & AI CLIs",
-  "private": true,
   "type": "module",
+  "bin": {
+    "agent-factory": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "public",
+    "jsconfig.json",
+    "next.config.mjs",
+    "postcss.config.mjs",
+    "README.md"
+  ],
   "scripts": {
     "dev": "next dev --port 3030",
     "build": "next build",
@@ -20,5 +31,16 @@
     "@tailwindcss/postcss": "^4.1.18",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
-  }
+  },
+  "keywords": [
+    "agent",
+    "antigravity",
+    "claude-code",
+    "visualizer",
+    "office",
+    "pixijs",
+    "ai",
+    "telemetry"
+  ],
+  "license": "MIT"
 }

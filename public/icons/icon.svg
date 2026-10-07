@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#070b12" />
+    </radialGradient>
+    <linearGradient id="helmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="visorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b1322" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#1e293b" stroke-width="8" />
+
+  <!-- Antenna -->
+  <rect x="246" y="70" width="20" height="50" rx="10" fill="#34d399" />
+  <circle cx="256" cy="65" r="22" fill="#38bdf8" />
+  <circle cx="256" cy="65" r="12" fill="#a7f3d0" />
+
+  <!-- Robot Head / Helmet -->
+  <rect x="116" y="110" width="280" height="230" rx="60" fill="url(#helmGrad)" />
+
+  <!-- Ear Phones -->
+  <rect x="86" y="175" width="30" height="100" rx="12" fill="#38bdf8" />
+  <rect x="396" y="175" width="30" height="100" rx="12" fill="#38bdf8" />
+
+  <!-- Screen Visor -->
+  <rect x="146" y="145" width="220" height="160" rx="36" fill="url(#visorGrad)" stroke="#38bdf8" stroke-width="4" />
+
+  <!-- Eyes (Glowing neon circles) -->
+  <circle cx="206" cy="225" r="26" fill="#34d399" />
+  <circle cx="206" cy="225" r="14" fill="#ecfdf5" />
+
+  <!-- Wink / Smile Right Eye -->
+  <circle cx="306" cy="225" r="26" fill="#38bdf8" />
+  <circle cx="306" cy="225" r="14" fill="#ecfdf5" />
+
+  <!-- Token Packets Flowing -->
+  <circle cx="160" cy="400" r="14" fill="#34d399" />
+  <polygon points="256,380 274,400 256,420 238,400" fill="#38bdf8" />
+  <rect x="340" y="386" width="26" height="26" rx="4" fill="#a855f7" />
+</svg>
