@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useFactoryTraces } from "@/lib/useFactoryTraces";
 import { buildOffice } from "@/components/factory/scene/office-layout";
 import AgentPanel from "@/components/factory/AgentPanel";
+import UpdateNotification from "@/components/UpdateNotification";
 
 // Dynamic import of PixiJS Canvas to avoid WebGL execution during SSR
 const OfficeCanvas = dynamic(() => import("@/components/factory/office-canvas"), {
@@ -32,7 +33,7 @@ export default function FactoryPage() {
   const [mockPreset, setMockPreset] = useState("cases");
   const [selectedId, setSelectedId] = useState(null);
 
-  const { traces, connected, live } = useFactoryTraces({ mode, preset: mockPreset });
+  const { traces, connected, live, isRefreshing, refresh } = useFactoryTraces({ mode, preset: mockPreset });
 
   const office = useMemo(() => buildOffice(traces), [traces]);
   const selected = useMemo(
@@ -42,6 +43,8 @@ export default function FactoryPage() {
 
   return (
     <main className="flex h-screen w-screen flex-col overflow-hidden bg-[#070b12] text-slate-100">
+      <UpdateNotification />
+
       {/* Top Header / Nav */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800/80 bg-slate-950/70 px-5 backdrop-blur-md">
         {/* Brand */}
@@ -79,7 +82,28 @@ export default function FactoryPage() {
         </div>
 
         {/* Mode & Preset Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Force Refresh Button */}
+          <button
+            onClick={refresh}
+            title="Làm mới kết nối & dữ liệu ngay lập tức"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 transition-all"
+          >
+            <svg
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+
           {/* Live Button */}
           <button
             onClick={() => {
