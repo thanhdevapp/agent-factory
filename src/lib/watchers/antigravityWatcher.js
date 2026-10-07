@@ -97,6 +97,7 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         let firstTime = null;
         let lastTime = null;
         let activeCommandDetail = null;
+        let detectedCwd = null;
 
         for (const line of lines) {
           if (!line) continue;
@@ -112,6 +113,11 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
             if (Array.isArray(entry.tool_calls) && entry.tool_calls.length > 0) {
               lastToolEntry = entry;
               for (const tc of entry.tool_calls) {
+                if (tc.args?.Cwd && !detectedCwd) detectedCwd = tc.args.Cwd;
+                if (!detectedCwd && (tc.args?.TargetFile || tc.args?.AbsolutePath)) {
+                  const p = tc.args.TargetFile || tc.args.AbsolutePath;
+                  if (p.includes("/Projects/")) detectedCwd = p.split("/").slice(0, 5).join("/");
+                }
                 const { type, detail } = normalizeToolCall(tc);
                 if (type) toolSet.add(type);
                 if (detail) activeCommandDetail = detail;
@@ -138,12 +144,13 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         }
 
         const elapsedMs = (lastTime && firstTime) ? Math.max(0, lastTime - firstTime) : (now - mtime);
+        const folderName = detectedCwd ? path.basename(detectedCwd) : `agy-${convId.slice(0, 6)}`;
 
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
           cli: "antigravity",
-          connectionId: `Antigravity (${convId.slice(0, 8)})`,
-          account: "Antigravity Workspace",
+          connectionId: `Antigravity (${convId.slice(0, 6)})`,
+          account: folderName,
           model: "gemini-2.5-pro",
           provider: "gemini",
           state,
