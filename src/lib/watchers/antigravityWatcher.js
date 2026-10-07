@@ -144,7 +144,8 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         }
 
         const elapsedMs = (lastTime && firstTime) ? Math.max(0, lastTime - firstTime) : (now - mtime);
-        const folderName = detectedCwd ? path.basename(detectedCwd) : `agy-${convId.slice(0, 6)}`;
+        const rawFolder = detectedCwd ? path.basename(detectedCwd) : `agy-${convId.slice(0, 6)}`;
+        const folderName = rawFolder.replace(/["'\\]/g, "").trim();
 
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
