@@ -1,5 +1,5 @@
 const CACHE_NAME = "agent-factory-v1";
-const STATIC_ASSETS = ["/", "/manifest.json", "/favicon.svg", "/icons/icon.svg"];
+const STATIC_ASSETS = ["/manifest.json", "/favicon.svg", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,21 +22,21 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Let SSE streams and API routes pass straight through to network
-  if (event.request.url.includes("/api/")) {
+  const url = event.request.url;
+
+  // NEVER intercept Next.js chunks, HMR, or API SSE streams!
+  if (
+    url.includes("/_next/") ||
+    url.includes("/api/") ||
+    event.request.method !== "GET"
+  ) {
     return;
   }
 
+  // Network-first for HTML pages so user always sees the latest UI
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        if (event.request.mode === "navigate") {
-          return caches.match("/");
-        }
-      });
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });

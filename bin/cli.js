@@ -64,13 +64,15 @@ function getDaemonPid() {
 // Commands
 // -------------------------------------------------------------
 
-function runForeground(port, open = true) {
-  const existingPid = getDaemonPid();
-  if (existingPid) {
-    console.log(`\x1b[33m⚠️ Agent Factory is already running in background (PID: ${existingPid})\x1b[0m`);
-    console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
-    if (open) openBrowser(`http://localhost:${port}`);
-    return;
+function runForeground(port, open = true, isService = false) {
+  if (!isService) {
+    const existingPid = getDaemonPid();
+    if (existingPid) {
+      console.log(`\x1b[33m⚠️ Agent Factory is already running in background (PID: ${existingPid})\x1b[0m`);
+      console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
+      if (open) openBrowser(`http://localhost:${port}`);
+      return;
+    }
   }
 
   console.log(`\n\x1b[32m🤖 Starting Agent Factory (Foreground) on port ${port}...\x1b[0m`);
@@ -336,7 +338,7 @@ switch (command) {
 
   case "run":
     // Internal command for launchd/systemd foreground execution
-    runForeground(port, false);
+    runForeground(port, false, true);
     break;
 
   case "autostart":
