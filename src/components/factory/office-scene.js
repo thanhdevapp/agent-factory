@@ -78,7 +78,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   floor.on("pointertap", () => select(null));
   floorLayer.addChild(floor);
 
-  // ---- central rack (9Router) with a dispatcher robot behind it -----------
+  // ---- central rack (Core Hub) with a dispatcher robot behind it -----------
   const rack = new Container();
   const dispatcher = createCharacter({ color: 0xfde047, trimColor: 0xf59e0b, seed: 3, scale: 0.95, mode: "sleeping" });
   dispatcher.root.baseX = 0;
@@ -101,8 +101,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   rack.addChild(leds);
 
   const rackLabel = new Text({
-    text: "9ROUTER",
-    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 15, fill: 0xfde047, fontWeight: "800", letterSpacing: 2 },
+    text: "CORE HUB",
+    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 14, fill: 0x38bdf8, fontWeight: "800", letterSpacing: 2 },
   });
   rackLabel.anchor.set(0.5, 0);
   rackLabel.y = -92;
