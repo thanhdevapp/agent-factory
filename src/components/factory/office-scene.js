@@ -160,6 +160,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     const ordered = [...office.workstations].sort((a, b) => a.y - b.y || a.x - b.x);
 
     for (const [i, ws] of ordered.entries()) {
+      const isLooping = Boolean(ws.isLooping);
       const desk = createDesk({
         color: ws.color,
         label: ws.account,
@@ -169,6 +170,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         cachedPct: ws.cachedPct,
         queued: ws.queued,
         depth: ws.depth,
+        isLooping,
       });
       desk.root.x = ws.x;
       desk.root.y = ws.y;
@@ -199,13 +201,14 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         }
       }
 
-      // Status badge over the head: queued / done / the exact failure reason.
+      // Status badge over the head: queued / done / looping / the exact failure reason.
       let statusBadge = null;
       const statusKey =
-        ws.mode === "pending" ? "pending"
-          : ws.mode === "happy" ? "done"
-            : ws.mode === "error" ? (STATUS_TYPES[ws.errorReason] ? ws.errorReason : "rate_limited")
-              : null;
+        ws.isLooping ? "looping"
+          : ws.mode === "pending" ? "pending"
+            : ws.mode === "happy" ? "done"
+              : ws.mode === "error" ? (STATUS_TYPES[ws.errorReason] ? ws.errorReason : "rate_limited")
+                : null;
       if (statusKey) {
         statusBadge = createToolBadge(statusKey, { size: 1.05 });
         statusBadge.root.x = ws.x + DESK_W + 14;

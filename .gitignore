@@ -16,3 +16,7 @@ yarn-debug.log*
 # local env
 .env*.local
 .env
+
+# tarballs & test artifacts
+*.tgz
+verify-*.png

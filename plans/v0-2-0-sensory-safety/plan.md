@@ -1,14 +1,23 @@
 ---
-title: "AGMon v0.2.0 - Sensory & Safety Update"
-description: "Implementation plan for Milestone 1: 8-bit procedural sound FX, Runaway Loop detection, Live Terminal peek, and native desktop notifications."
-status: pending
+title: AGMon v0.2.0 - Sensory & Safety Update
+description: >-
+  Implementation plan for Milestone 1: 8-bit procedural sound FX, Runaway Loop
+  detection, Live Terminal peek, and native desktop notifications.
+status: completed
 priority: P1
-branch: "main"
-tags: [sound, audio, safety, loop-detector, terminal-peek, notifications, v0.2.0]
+branch: main
+tags:
+  - sound
+  - audio
+  - safety
+  - loop-detector
+  - terminal-peek
+  - notifications
+  - v0.2.0
 blockedBy: []
 blocks: []
-created: "2026-10-07T10:07:40.286Z"
-createdBy: "ck:plan"
+created: '2026-10-07T10:07:40.286Z'
+createdBy: 'ck:plan'
 source: skill
 ---
 
@@ -27,10 +36,10 @@ Milestone 1 transforms AGMon from a passive visual observer into an active senso
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Web Audio Synthesizer](./phase-01-web-audio-synthesizer.md) | Pending |
-| 2 | [Runaway Loop Detector](./phase-02-runaway-loop-detector.md) | Pending |
-| 3 | [Live Terminal Log Peek](./phase-03-live-terminal-log-peek.md) | Pending |
-| 4 | [Desktop Notifications & Polish](./phase-04-desktop-notifications-polish.md) | Pending |
+| 1 | [Web Audio Synthesizer](./phase-01-web-audio-synthesizer.md) | Completed |
+| 2 | [Runaway Loop Detector](./phase-02-runaway-loop-detector.md) | Completed |
+| 3 | [Live Terminal Log Peek](./phase-03-live-terminal-log-peek.md) | Completed |
+| 4 | [Desktop Notifications & Polish](./phase-04-desktop-notifications-polish.md) | Completed |
 
 ## Verification Criteria
 - Sounds play smoothly without audio clipping or latency when enabled.

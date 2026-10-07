@@ -1,8 +1,8 @@
 ---
 phase: 1
-title: "Web Audio Synthesizer"
-status: pending
-effort: "medium"
+title: Web Audio Synthesizer
+status: completed
+effort: medium
 ---
 
 # Phase 1: Web Audio Synthesizer

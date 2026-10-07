@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Live Terminal Log Peek"
-status: pending
+status: completed
 effort: "medium"
 ---
 

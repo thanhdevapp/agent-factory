@@ -108,6 +108,9 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
         const toolSet = new Set();
         let lastTimestamp = lastActive;
 
+        const toolInvocations = [];
+        const recentLogs = [];
+
         if (transcriptPath) {
           try {
             const content = await fs.readFile(transcriptPath, "utf-8");
@@ -116,7 +119,8 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
               if (!line) continue;
               try {
                 const entry = JSON.parse(line);
-                if (entry.timestamp) lastTimestamp = new Date(entry.timestamp).getTime();
+                const entryTime = entry.timestamp ? new Date(entry.timestamp).getTime() : Date.now();
+                if (entry.timestamp) lastTimestamp = entryTime;
 
                 const msg = entry.message;
                 if (msg) {
@@ -128,6 +132,15 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
                     if (u.cache_read_input_tokens) totalCached += u.cache_read_input_tokens;
                   }
 
+                  if (msg.role === "user" && typeof msg.content === "string") {
+                    recentLogs.push({
+                      timestamp: entry.timestamp || new Date().toISOString(),
+                      type: "prompt",
+                      summary: "User Prompt",
+                      detail: msg.content.trim().slice(0, 100),
+                    });
+                  }
+
                   if (Array.isArray(msg.content)) {
                     for (const block of msg.content) {
                       if (block.type === "tool_use") {
@@ -135,6 +148,26 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
                         toolSet.add(type);
                         activeTool = type;
                         if (detail) activeCommand = detail;
+
+                        toolInvocations.push({
+                          name: block.name,
+                          time: entryTime,
+                          detail: detail || block.name,
+                        });
+
+                        recentLogs.push({
+                          timestamp: entry.timestamp || new Date().toISOString(),
+                          type: type || "tool",
+                          summary: block.name,
+                          detail: detail || block.name,
+                        });
+                      } else if (block.type === "tool_result" && block.is_error) {
+                        recentLogs.push({
+                          timestamp: entry.timestamp || new Date().toISOString(),
+                          type: "error",
+                          summary: "Tool Error",
+                          detail: String(block.content || "Error").slice(0, 100),
+                        });
                       }
                     }
                   }
@@ -145,6 +178,22 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
             }
           } catch {
             // unreadable transcript
+          }
+        }
+
+        // Loop detection: 5 consecutive identical tool calls within 60s
+        let isLooping = false;
+        if (toolInvocations.length >= 5) {
+          const lastN = toolInvocations.slice(-10);
+          for (let s = 0; s <= lastN.length - 5; s++) {
+            const window = lastN.slice(s, s + 5);
+            const targetName = window[0].name;
+            const sameName = window.every((w) => w.name === targetName);
+            const timeSpan = (window[window.length - 1].time || 0) - (window[0].time || 0);
+            if (sameName && (timeSpan <= 60000 || timeSpan === 0)) {
+              isLooping = true;
+              break;
+            }
           }
         }
 
@@ -173,10 +222,12 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
             cached: totalCached,
           },
           cost: 0,
-          status: "200",
+          status: isLooping ? "error" : "200",
           tools: Array.from(toolSet),
           activeTool,
           currentCommand: activeCommand,
+          isLooping,
+          logs: recentLogs.slice(-25),
         }));
       } catch {
         // ignore single session error

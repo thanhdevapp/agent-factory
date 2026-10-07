@@ -26,6 +26,8 @@ export function normalizeTrace(raw) {
     activeTool: raw.activeTool || null,
     currentCommand: raw.currentCommand || null,
     error: raw.error ? String(raw.error) : null,
+    isLooping: Boolean(raw.isLooping || false),
+    logs: Array.isArray(raw.logs) ? raw.logs : [],
   };
 }
 

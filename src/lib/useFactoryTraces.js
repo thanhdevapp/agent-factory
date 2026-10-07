@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "./mockTraces";
+import { playTick, playComplete, playAlarm, playNeedInput } from "./soundFx";
+import { notifyAgentDone, notifyAgentAlert } from "./notifications";
 
 export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
   const [traces, setTraces] = useState([]);
@@ -12,6 +14,49 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
 
   const eventSourceRef = useRef(null);
   const watchdogTimerRef = useRef(null);
+  const prevStatusesRef = useRef(new Map());
+
+  const triggerSoundEffects = useCallback((nextTraces) => {
+    if (!Array.isArray(nextTraces) || nextTraces.length === 0) return;
+    const prevMap = prevStatusesRef.current;
+    let hasStreaming = false;
+
+    for (const t of nextTraces) {
+      const id = t.connectionId || t.id;
+      const prevStatus = prevMap.get(id);
+      const currStatus = t.status;
+
+      if (currStatus === "streaming") {
+        hasStreaming = true;
+      }
+
+      if (t.isLooping && !prevMap.get(`${id}_looping`)) {
+        playAlarm();
+        notifyAgentAlert(t.account || id, "Runaway loop detected! Repeated tool calls.");
+        prevMap.set(`${id}_looping`, true);
+      } else if (!t.isLooping) {
+        prevMap.delete(`${id}_looping`);
+      }
+
+      if (prevStatus && prevStatus !== currStatus) {
+        if (currStatus === "done") {
+          playComplete();
+          notifyAgentDone(t.account || id, "All tasks finished successfully.");
+        } else if (currStatus === "error" || currStatus === "rate_limit" || currStatus === "quota") {
+          playAlarm();
+          notifyAgentAlert(t.account || id, `Execution failed (${t.error || currStatus})`);
+        } else if (currStatus === "waiting_input") {
+          playNeedInput();
+        }
+      }
+
+      prevMap.set(id, currStatus);
+    }
+
+    if (hasStreaming) {
+      playTick();
+    }
+  }, []);
 
   // Reconnection trigger
   const [connectionEpoch, setConnectionEpoch] = useState(0);
@@ -34,6 +79,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     const updateMock = () => {
       const next = generateMockTraces({ count: cfg.agents, cases: !!cfg.cases, errorRatio: cfg.errorRatio });
       setTraces(next);
+      triggerSoundEffects(next);
       setProviders(mockProviderDescriptors(next));
       setConnected(true);
       setLastUpdated(Date.now());
@@ -78,6 +124,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
           const payload = JSON.parse(event.data);
           if (Array.isArray(payload.traces)) {
             setTraces(payload.traces);
+            triggerSoundEffects(payload.traces);
           }
           if (Array.isArray(payload.providers)) {
             setProviders(payload.providers);

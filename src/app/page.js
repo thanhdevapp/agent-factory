@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import OfficeCanvas from "../components/factory/office-canvas";
 import { useFactoryTraces } from "../lib/useFactoryTraces";
 import { buildOffice } from "../components/factory/scene/office-layout";
 import AgentPanel from "../components/factory/AgentPanel";
 import UpdateNotification from "../components/UpdateNotification";
+import { isAudioMuted, toggleAudio } from "../lib/soundFx";
+import { isNotificationsEnabled, toggleNotifications } from "../lib/notifications";
 
 const PRESETS = [
   { id: "cases", label: "Edge Cases" },
@@ -19,6 +21,13 @@ export default function FactoryPage() {
   const [mode, setMode] = useState("live");
   const [mockPreset, setMockPreset] = useState("cases");
   const [selectedId, setSelectedId] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+
+  useEffect(() => {
+    setSoundEnabled(!isAudioMuted());
+    setNotifEnabled(isNotificationsEnabled());
+  }, []);
 
   const { traces, connected, live, isRefreshing, refresh } = useFactoryTraces({ mode, preset: mockPreset });
 
@@ -45,7 +54,7 @@ export default function FactoryPage() {
                 AGMON
               </span>
               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                v0.1.3
+                v0.2.0
               </span>
             </div>
             <p className="text-[11px] text-slate-400">AI Agent Office & Activity Visualizer</p>
@@ -89,6 +98,38 @@ export default function FactoryPage() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
+          </button>
+
+          {/* Sound FX Toggle Button */}
+          <button
+            onClick={() => {
+              const next = toggleAudio();
+              setSoundEnabled(next);
+            }}
+            title={soundEnabled ? "Âm thanh 8-bit đang BẬT (Click để tắt tiếng)" : "Âm thanh 8-bit đang TẮT (Click để bật tiếng)"}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
+              soundEnabled
+                ? "border-emerald-500/80 bg-emerald-500/15 text-emerald-300 shadow-sm shadow-emerald-500/20"
+                : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+            }`}
+          >
+            <span className="text-xs">{soundEnabled ? "🔊" : "🔇"}</span>
+          </button>
+
+          {/* Desktop Notifications Toggle Button */}
+          <button
+            onClick={async () => {
+              const next = await toggleNotifications();
+              setNotifEnabled(next);
+            }}
+            title={notifEnabled ? "Thông báo màn hình (Desktop) đang BẬT (Click để tắt)" : "Thông báo màn hình (Desktop) đang TẮT (Click để bật)"}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
+              notifEnabled
+                ? "border-sky-500/80 bg-sky-500/15 text-sky-300 shadow-sm shadow-sky-500/20"
+                : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+            }`}
+          >
+            <span className="text-xs">{notifEnabled ? "🔔" : "🔕"}</span>
           </button>
 
           {/* Live Button */}

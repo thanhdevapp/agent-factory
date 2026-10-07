@@ -98,17 +98,30 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         let lastTime = null;
         let activeCommandDetail = null;
         let detectedCwd = null;
+        const toolInvocations = [];
+        const recentLogs = [];
 
         for (const line of lines) {
           if (!line) continue;
           try {
             const entry = JSON.parse(line);
-            if (!firstTime && entry.created_at) firstTime = new Date(entry.created_at).getTime();
-            if (entry.created_at) lastTime = new Date(entry.created_at).getTime();
+            const entryTime = entry.created_at ? new Date(entry.created_at).getTime() : Date.now();
+            if (!firstTime && entry.created_at) firstTime = entryTime;
+            if (entry.created_at) lastTime = entryTime;
 
             if (entry.input_tokens) totalIn += entry.input_tokens;
             if (entry.output_tokens) totalOut += entry.output_tokens;
             if (entry.cache_read_tokens) totalCached += entry.cache_read_tokens;
+
+            if (entry.type === "USER_INPUT" && entry.content) {
+              const cleanPrompt = String(entry.content).replace(/<USER_REQUEST>|<\/USER_REQUEST>/g, "").trim();
+              recentLogs.push({
+                timestamp: entry.created_at || new Date().toISOString(),
+                type: "prompt",
+                summary: "User Prompt",
+                detail: cleanPrompt.slice(0, 100),
+              });
+            }
 
             if (Array.isArray(entry.tool_calls) && entry.tool_calls.length > 0) {
               lastToolEntry = entry;
@@ -121,8 +134,31 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
                 const { type, detail } = normalizeToolCall(tc);
                 if (type) toolSet.add(type);
                 if (detail) activeCommandDetail = detail;
+
+                toolInvocations.push({
+                  name: tc.name,
+                  time: entryTime,
+                  detail: detail || tc.name,
+                });
+
+                recentLogs.push({
+                  timestamp: entry.created_at || new Date().toISOString(),
+                  type: type || "tool",
+                  summary: tc.name,
+                  detail: detail || tc.name,
+                });
               }
             }
+
+            if (entry.status === "ERROR" || (entry.type === "GENERIC" && entry.content && entry.content.includes("error"))) {
+              recentLogs.push({
+                timestamp: entry.created_at || new Date().toISOString(),
+                type: "error",
+                summary: "Error",
+                detail: String(entry.content || "Command failed").slice(0, 100),
+              });
+            }
+
             lastStep = entry;
           } catch {
             // ignore malformed line
@@ -135,6 +171,22 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
           if (lastStep && lastStep.type === "USER_INPUT") state = "pending";
           else if (lastToolEntry && lastToolEntry.status === "RUNNING") state = "streaming";
           else state = "streaming";
+        }
+
+        // Loop detection: 5 consecutive identical tool calls within 60s
+        let isLooping = false;
+        if (toolInvocations.length >= 5) {
+          const lastN = toolInvocations.slice(-10);
+          for (let s = 0; s <= lastN.length - 5; s++) {
+            const window = lastN.slice(s, s + 5);
+            const targetName = window[0].name;
+            const sameName = window.every((w) => w.name === targetName);
+            const timeSpan = (window[window.length - 1].time || 0) - (window[0].time || 0);
+            if (sameName && (timeSpan <= 60000 || timeSpan === 0)) {
+              isLooping = true;
+              break;
+            }
+          }
         }
 
         let activeTool = null;
@@ -163,10 +215,12 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
             cached: totalCached,
           },
           cost: 0,
-          status: "200",
+          status: isLooping ? "error" : "200",
           tools: Array.from(toolSet),
           activeTool,
           currentCommand: activeCommandDetail,
+          isLooping,
+          logs: recentLogs.slice(-25),
         }));
       } catch {
         // file missing or unreadable

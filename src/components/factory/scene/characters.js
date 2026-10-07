@@ -93,6 +93,10 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
     } else if (kind === "x") {
       face.moveTo(cx - 4, cy - 4).lineTo(cx + 4, cy + 4).stroke(stroke(2.6, faceColor, a));
       face.moveTo(cx + 4, cy - 4).lineTo(cx - 4, cy + 4).stroke(stroke(2.6, faceColor, a));
+    } else if (kind === "looping") {
+      face.circle(cx, cy, 4.2).stroke(stroke(1.8, faceColor, a));
+      face.circle(cx, cy, 2.0).stroke(stroke(1.4, faceColor, a));
+      face.circle(cx, cy, 0.6).fill({ color: faceColor, alpha: a });
     } else {
       face.ellipse(cx, cy, w, h).fill({ color: faceColor, alpha: 0.9 * a });
       for (let y = cy - h + 1; y < cy + h; y += 2.4) {
@@ -123,6 +127,11 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
         tilt = 0.12 + Math.sin(t * 0.0016 + bx) * 0.02;
       }
       if (m === "error") shake = Math.sin(t * 0.09) * 1.8;
+      if (m === "looping") {
+        shake = Math.sin(t * 0.08) * 2.2;
+        bob = Math.sin(t * 0.015) * 1.6;
+        tilt = Math.sin(t * 0.02) * 0.16;
+      }
       root.x = bx + shake;
       root.y = (root.baseY || 0) + bob;
       root.rotation = tilt;
@@ -142,6 +151,9 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
       } else if (m === "error") {
         armL.rotation = 2.7 + Math.sin(t * 0.08) * 0.1; // hands on head
         armR.rotation = -2.7 - Math.sin(t * 0.08) * 0.1;
+      } else if (m === "looping") {
+        armL.rotation = 2.4 + Math.sin(t * 0.02) * 0.4;
+        armR.rotation = -2.4 - Math.sin(t * 0.02 + 1) * 0.4;
       } else if (m === "sleeping") {
         armL.rotation = 0.05;
         armR.rotation = -0.05;
@@ -151,7 +163,7 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
       const blinking = Math.sin(t * 0.0013 + seed * 2.1) > 0.985;
       const flicker = 0.85 + Math.sin(t * 0.01 + seed) * 0.15;
       face.clear();
-      const kind = m === "happy" ? "happy" : m === "sleeping" ? "sleep" : m === "error" ? "x" : "scan";
+      const kind = m === "happy" ? "happy" : m === "sleeping" ? "sleep" : m === "error" ? "x" : m === "looping" ? "looping" : "scan";
       eye(-8, -57, 4.8, blinking ? 0.8 : 4.4, flicker, kind);
       eye(8, -57, 4.8, blinking ? 0.8 : 4.4, flicker, kind);
       if (m === "happy") {
@@ -161,12 +173,14 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
       } else if (m === "error") {
         face.moveTo(-7, -45).lineTo(-3.5, -48).lineTo(0, -45).lineTo(3.5, -48).lineTo(7, -45)
           .stroke(stroke(2, faceColor, flicker));
+      } else if (m === "looping") {
+        face.circle(0, -46, 3.2).stroke(stroke(2, faceColor, flicker));
       } else {
         const mw = 5 + intensity * 3;
         face.ellipse(0, -46, mw, 2.4 + intensity * 1.2).fill({ color: faceColor, alpha: 0.75 * flicker });
       }
 
-      // Effects: drifting z's while asleep, smoke while failing.
+      // Effects: drifting z's while asleep, smoke while failing or looping.
       fx.clear();
       if (m === "sleeping") {
         for (let k = 0; k < 3; k += 1) {
@@ -177,11 +191,13 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
           fx.moveTo(zx, zy).lineTo(zx + s, zy).lineTo(zx, zy + s).lineTo(zx + s, zy + s)
             .stroke(stroke(1.6, 0xa5b4cc, 1 - p));
         }
-      } else if (m === "error") {
-        for (let k = 0; k < 4; k += 1) {
-          const p = ((t * 0.0007 + k / 4 + seed * 0.1) % 1);
-          fx.circle(Math.sin(p * 9 + k) * 6 + (k - 1.5) * 4, -80 - p * 34, 3 + p * 6)
-            .fill({ color: 0x6b7280, alpha: 0.55 * (1 - p) });
+      } else if (m === "error" || m === "looping") {
+        for (let k = 0; k < 5; k += 1) {
+          const p = ((t * 0.0008 + k / 5 + seed * 0.12) % 1);
+          const sx = Math.sin(p * 8 + k * 1.3) * 7 + (k - 2) * 3.5;
+          const sy = -76 - p * 38;
+          const r = 2.5 + p * 7;
+          fx.circle(sx, sy, r).fill({ color: 0x4b5563, alpha: 0.65 * (1 - p) });
         }
       }
 
@@ -206,6 +222,7 @@ export function createDesk({
   cachedPct = 0,
   queued = 1,
   depth = 1,
+  isLooping = false,
 }) {
   const root = new Container();
   const W = 150;
@@ -304,6 +321,13 @@ export function createDesk({
   ring.visible = false;
   root.addChildAt(ring, 0);
 
+  // Hazard border for runaway looping workstations
+  const hazard = new Graphics();
+  hazard.roundRect(-10, 18, W + 20, H - 8, 10).stroke({ width: 3, color: 0xf43f5e, alpha: 0.95 });
+  hazard.roundRect(-10, 18, W + 20, H - 8, 10).fill({ color: 0xf43f5e, alpha: 0.08 });
+  hazard.visible = Boolean(isLooping);
+  root.addChildAt(hazard, 0);
+
   root.eventMode = "static";
   root.cursor = "pointer";
   root.hitArea = new Rectangle(-12, -76, W + 24, H + 84);
@@ -316,10 +340,16 @@ export function createDesk({
     setSelected(on) {
       ring.visible = !!on;
     },
+    setHazard(on) {
+      hazard.visible = !!on;
+    },
     /** Flicker on the monitor while work is in flight. */
     animate(t, intensity = 0) {
       screen.alpha = 0.7 + Math.sin(t * 0.008 + root.x) * 0.12 * (0.4 + intensity);
       glow.alpha = 0.3 + intensity * 0.5 + Math.sin(t * 0.004 + root.x) * 0.08;
+      if (hazard.visible) {
+        hazard.alpha = 0.45 + Math.sin(t * 0.008) * 0.45;
+      }
     },
   };
 }

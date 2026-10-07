@@ -75,10 +75,15 @@ export function buildOffice(traces = []) {
         elapsedMs: 0,
         cost: 0,
         pendingCount: 0,
+        isLooping: false,
+        logs: [],
       };
       byAccount.set(trace.connectionId, entry);
     }
     entry.traces.push(trace);
+    if (trace.isLooping) entry.isLooping = true;
+    if (Array.isArray(trace.logs) && trace.logs.length > 0) entry.logs = trace.logs;
+    if (trace.currentCommand && !entry.currentCommand) entry.currentCommand = trace.currentCommand;
     for (const call of trace.toolCalls || []) {
       const toolName = call.tool || call.type;
       if (toolName && !entry.tools.includes(toolName)) entry.tools.push(toolName);
@@ -106,17 +111,20 @@ export function buildOffice(traces = []) {
     // real office rather than a fully packed grid.
     // Every account has an agent at its desk; what they are doing is `mode`.
     const occupied = true;
+    const isLooping = Boolean(entry.isLooping);
     const state = entry.errorCount > 0 ? "error" : entry.activeCount > 0 ? "streaming" : "done";
     const mode =
-      state === "error"
-        ? "error"
-        : state === "streaming"
-          ? entry.pendingCount === entry.activeCount
-            ? "pending"
-            : "streaming"
-          : entry.elapsedMs >= SLEEP_AFTER_MS
-            ? "sleeping"
-            : "happy";
+      isLooping
+        ? "looping"
+        : state === "error"
+          ? "error"
+          : state === "streaming"
+            ? entry.pendingCount === entry.activeCount
+              ? "pending"
+              : "streaming"
+            : entry.elapsedMs >= SLEEP_AFTER_MS
+              ? "sleeping"
+              : "happy";
     const totalTokens = entry.tokens.input + entry.tokens.output + entry.tokens.cached;
     const cachedPct = totalTokens ? Math.round((entry.tokens.cached / totalTokens) * 100) : 0;
     return {
@@ -124,9 +132,11 @@ export function buildOffice(traces = []) {
       occupied,
       state,
       mode,
+      isLooping,
+      logs: entry.logs,
       cachedPct,
       cost: Math.round(entry.cost * 100) / 100,
-      color: STATE_COLORS[state],
+      color: isLooping ? 0xf43f5e : STATE_COLORS[state],
       totalTokens: entry.tokens.input + entry.tokens.output + entry.tokens.cached,
       totalLabel: humanSize(entry.tokens.input + entry.tokens.output + entry.tokens.cached),
       count: entry.traces.length,

@@ -58,8 +58,19 @@ AGMon is fully PWA-compliant with offline shell caching, standalone window frame
 - **Dual Live Watchers**:
   - **Antigravity CLI (`agy`)**: Reads `~/.gemini/antigravity-cli/brain/*/transcript.jsonl` with deep tool recognition (GitNexus, Playwright Browser, Git, Docker, Read, Edit, Search, Agent).
   - **Claude Code CLI (`claude`)**: Reads `~/.claude/sessions/*.json` and `~/.claude/projects/*/*.jsonl` with real token usage and active tool calls.
+- **🔊 8-Bit Web Audio Synthesizer (0-Byte Asset Footprint)**:
+  - Procedural sound generation directly via Web Audio API (sine, square, triangle oscillators).
+  - Subtle typing ticks during streaming, upbeat retro chime on task complete, warning sirens on loops/errors, and gentle pings when agent awaits user input.
+- **🛡️ Runaway Loop Detection & Safety Radar**:
+  - Automatically flags runaway agent loops (5+ consecutive repeated identical tool invocations within 60s).
+  - Visualized in Pixi.js with rising animated smoke puffs, dizzy spiral eyes (`@_@`), and a pulsating red hazard desk outline.
+- **💻 Live Terminal Drawer**:
+  - Monospace telemetry console in the Inspector panel showing the last 25 real-time actions.
+  - Color-coded badges (`[BASH]`, `[EDIT]`, `[READ]`, `[SEARCH]`, `[PROMPT]`, `[ERROR]`, `[MCP]`) with auto-scroll lock.
+- **🔔 Native Desktop Push Notifications**:
+  - Opt-in OS push notifications (Web Notification API) when agents complete tasks or trigger runaway alerts.
 - **2.5D Isometric Pixi.js Canvas**:
-  - Desks with cute robots (specular helmet reflections, rim shading, extruded 3D perspective).
+  - Desks with cute chibi robots (specular helmet reflections, rim shading, extruded 3D perspective).
   - Dynamic tool badges cycling over agents in real time.
   - Token streams running from agent desks into provider pods (Gemini, Claude, OpenAI, Minimax, DeepSeek).
   - Fallback courier drones re-routing requests between providers.

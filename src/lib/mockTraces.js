@@ -50,6 +50,7 @@ const CASE_DECK = [
   { name: "fallback-2", state: "streaming", ageMs: 14000, tools: ["browser", "mcp"], fallbackShift: 2 },
   { name: "slow", state: "streaming", ageMs: 36000, tools: ["docker"] },
   { name: "queue+cached", state: "streaming", ageMs: 10000, tools: ["read", "search"], concurrent: 5, cachedBoost: true },
+  { name: "looping", state: "streaming", ageMs: 18000, tools: ["bash"], isLooping: true },
   { name: "expensive", state: "done", ageMs: 20000, cost: 7.35 },
 ];
 
@@ -96,10 +97,12 @@ export function generateMockTraces({ count = 8, errorRatio = 0, seed = 42, now =
     const ageMs = deck ? deck.ageMs : randAge;
     const startedAt = now - ageMs;
     const isError = deck ? deck.state === "error" : randErr;
+    const isLooping = Boolean(deck?.isLooping || (errorRatio > 0.4 && i === 0));
 
     const ageRatio = ageMs / 40000;
     let state;
-    if (deck) state = deck.state;
+    if (isLooping) state = "streaming";
+    else if (deck) state = deck.state;
     else if (isError) state = "error";
     else if (ageRatio < 0.25) state = "pending";
     else if (ageRatio < 0.6) state = "streaming";
@@ -112,7 +115,7 @@ export function generateMockTraces({ count = 8, errorRatio = 0, seed = 42, now =
     for (let k = 0; k < toolCount; k += 1) {
       toolPick.push(MOCK_TOOL_TYPES[Math.floor(toolRand() * MOCK_TOOL_TYPES.length)]);
     }
-    const toolNames = deck?.tools ?? (state === "error" ? [] : toolPick);
+    const toolNames = isLooping ? ["bash"] : (deck?.tools ?? (state === "error" ? [] : toolPick));
     const toolCalls = [];
     for (const tool of toolNames) {
       if (!toolCalls.some((c) => c.tool === tool)) {
@@ -130,6 +133,50 @@ export function generateMockTraces({ count = 8, errorRatio = 0, seed = 42, now =
     const concurrent = deck?.concurrent ?? (state === "done" || state === "error" ? 1 : 1 + Math.floor(toolRand() * 3));
     if (deck?.cachedBoost) tokens.cached = 14000;
 
+    // Realistic mock logs
+    const logs = [];
+    const baseTime = startedAt || (now - 20000);
+    logs.push({
+      timestamp: new Date(baseTime).toLocaleTimeString(),
+      type: "prompt",
+      summary: "User Prompt",
+      detail: `Execute pipeline for ${account} (${target.model})`,
+    });
+
+    if (isLooping) {
+      for (let j = 0; j < 6; j++) {
+        logs.push({
+          timestamp: new Date(baseTime + 2000 + j * 2000).toLocaleTimeString(),
+          type: "bash",
+          summary: "run_command",
+          detail: "npm test -- --bail (failed exit 1)",
+        });
+      }
+      logs.push({
+        timestamp: new Date(now).toLocaleTimeString(),
+        type: "error",
+        summary: "Loop Warning",
+        detail: "Runaway loop detected: 6 consecutive identical tool failures",
+      });
+    } else {
+      toolNames.forEach((tName, idx) => {
+        logs.push({
+          timestamp: new Date(baseTime + 1500 + idx * 2500).toLocaleTimeString(),
+          type: tName,
+          summary: tName,
+          detail: `${tName} operation completed`,
+        });
+      });
+      if (isError) {
+        logs.push({
+          timestamp: new Date(now).toLocaleTimeString(),
+          type: "error",
+          summary: "Error",
+          detail: deck?.error || "Upstream rate limit or timeout",
+        });
+      }
+    }
+
     traces.push({
       traceId: `mock-${i}-${Math.floor(rand() * 1e6).toString(36)}`,
       cli: "mock",
@@ -142,15 +189,17 @@ export function generateMockTraces({ count = 8, errorRatio = 0, seed = 42, now =
       elapsedMs: ageMs,
       tokens,
       cost: deck?.cost ?? Math.round((tokens.input * 0.000015 + tokens.output * 0.00006) * 100) / 100,
-      status: isError ? "error" : "200",
-      error: isError ? deck?.error ?? pick(rand, ERROR_REASONS) : null,
+      status: isLooping || isError ? "error" : "200",
+      error: isError ? deck?.error ?? pick(rand, ERROR_REASONS) : (isLooping ? "runaway_loop" : null),
       clientIcon: client.icon,
       toolCalls,
       tools: toolNames,
       activeTool: toolNames[0] || null,
-      currentCommand: toolNames[0] ? `${toolNames[0]} task running...` : null,
+      currentCommand: isLooping ? "npm test -- --bail (looping)" : (toolNames[0] ? `${toolNames[0]} task running...` : null),
       fallback,
       concurrent,
+      isLooping,
+      logs,
     });
   }
 

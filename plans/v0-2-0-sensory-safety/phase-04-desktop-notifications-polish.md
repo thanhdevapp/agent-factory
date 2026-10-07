@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Desktop Notifications & Polish"
-status: pending
+status: completed
 effort: "medium"
 ---
 

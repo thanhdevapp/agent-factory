@@ -195,10 +195,18 @@ export const STATUS_TYPES = {
       g.moveTo(-3, 1).lineTo(-8, 5).lineTo(-3, 9).stroke({ width: 2.2, color: c, ...S });
     },
   },
+  looping: {
+    label: "Looping",
+    color: 0xf43f5e,
+    draw(g, c) {
+      g.arc(0, 0, 6.5, -Math.PI * 0.2, Math.PI * 1.3).stroke({ width: 2.2, color: c, ...S });
+      g.moveTo(4, -6.5).lineTo(7, -3.5).lineTo(1, -3.5).closePath().fill({ color: c });
+    },
+  },
 };
 
 export const TOOL_KEYS = Object.keys(TOOL_TYPES);
-export const STATUS_KEYS = ["pending", "done", "rate_limited", "upstream_timeout", "quota_exhausted", "auth_refresh_failed", "fallback"];
+export const STATUS_KEYS = ["pending", "done", "rate_limited", "upstream_timeout", "quota_exhausted", "auth_refresh_failed", "fallback", "looping"];
 
 /** A round badge: dark disc, coloured ring, the tool's glyph, optional name. */
 export function createToolBadge(tool, { size = 1, showLabel = true, label: labelOverride } = {}) {
