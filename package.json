@@ -1,6 +1,6 @@
 {
   "name": "agmon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code & AI CLIs",
   "type": "module",
   "bin": {
