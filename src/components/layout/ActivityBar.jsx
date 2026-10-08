@@ -1,0 +1,97 @@
+"use client";
+
+import React from "react";
+import {
+  FolderTree,
+  Bot,
+  Activity,
+  Terminal,
+  Settings,
+  SlidersHorizontal,
+} from "lucide-react";
+
+export default function ActivityBar({
+  activeView = "explorer",
+  onViewChange,
+  agentCount = 0,
+  isBottomPanelVisible = false,
+  onToggleBottomPanel,
+  onOpenSettings,
+}) {
+  const topViews = [
+    {
+      id: "explorer",
+      title: "Explorer: Agents & Sessions (Ctrl+Shift+E)",
+      icon: FolderTree,
+      badge: agentCount > 0 ? agentCount : undefined,
+    },
+    {
+      id: "office",
+      title: "Virtual 2D Office View (Canvas)",
+      icon: Bot,
+    },
+    {
+      id: "telemetry",
+      title: "Live Telemetry & Traces",
+      icon: Activity,
+    },
+  ];
+
+  return (
+    <aside
+      data-testid="activity-bar"
+      className="w-12 h-full bg-[#181818] flex flex-col justify-between items-center border-r border-[#2b2b2b] py-2 shrink-0 z-30 select-none"
+    >
+      {/* Top View Icons */}
+      <div className="flex flex-col gap-1 w-full items-center">
+        {topViews.map((item) => {
+          const isActive = activeView === item.id;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onViewChange?.(item.id)}
+              title={item.title}
+              className={`w-full py-2.5 flex justify-center items-center relative transition-colors ${
+                isActive
+                  ? "text-white border-l-2 border-[#007acc] bg-[#252526]/50"
+                  : "text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              {item.badge !== undefined && (
+                <span className="absolute top-1.5 right-1.5 bg-[#007acc] text-white text-[9px] font-bold px-1 rounded-full leading-none min-w-3 text-center">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* Quick toggle bottom terminal from ActivityBar */}
+        <button
+          onClick={onToggleBottomPanel}
+          title={isBottomPanelVisible ? "Ẩn Terminal & Logs (Cmd+J)" : "Hiện Terminal & Logs (Cmd+J)"}
+          className={`w-full py-2.5 flex justify-center items-center relative transition-colors ${
+            isBottomPanelVisible
+              ? "text-cyan-400 border-l-2 border-cyan-500/50"
+              : "text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent"
+          }`}
+        >
+          <Terminal className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Bottom Settings Icon */}
+      <div className="flex flex-col gap-1 w-full items-center">
+        <button
+          onClick={onOpenSettings}
+          title="Cài đặt hệ thống & Watchers"
+          className="w-full py-2.5 flex justify-center items-center text-[#858585] hover:text-[#cccccc] transition-colors border-l-2 border-transparent"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
+      </div>
+    </aside>
+  );
+}
