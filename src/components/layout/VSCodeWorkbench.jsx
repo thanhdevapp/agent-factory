@@ -166,7 +166,7 @@ export default function VSCodeWorkbench({
       if (prev.find((t) => t.id === "reports")) return prev;
       return [
         ...prev,
-        { id: "reports", title: "Báo Cáo Token", type: "reports", closable: true },
+        { id: "reports", title: "Token Analytics", type: "reports", closable: true },
       ];
     });
     setActiveTabId("reports");
@@ -449,7 +449,7 @@ export default function VSCodeWorkbench({
                                   onClick={() => handleStartReplay(activeTab.agentData?.connectionId)}
                                   className="px-3 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-300 rounded text-xs font-semibold cursor-pointer"
                                 >
-                                  Tua Lại Phiên
+                                  Replay Session
                                 </button>
                                 <button
                                   onClick={() => {
@@ -463,7 +463,7 @@ export default function VSCodeWorkbench({
                                   className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                                 >
                                   <MessageSquare className="w-3.5 h-3.5" />
-                                  <span>Xem Live Chat (Sidebar)</span>
+                                  <span>View Live Chat</span>
                                 </button>
                                 <button
                                   onClick={() => {
@@ -471,7 +471,7 @@ export default function VSCodeWorkbench({
                                     setIsChatModalOpen(true);
                                   }}
                                   className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-300 hover:text-white rounded text-xs cursor-pointer"
-                                  title="Mở dạng Popup riêng"
+                                  title="Open in Popup Window"
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                 </button>
