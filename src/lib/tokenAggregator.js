@@ -5,7 +5,7 @@ import os from "os";
 import readline from "readline";
 
 // Standard AI Token Pricing (per 1,000,000 tokens)
-const MODEL_PRICING = {
+export const MODEL_PRICING = {
   // Gemini 1.5 & 2.5 & 3.8 Flash
   "gemini-3.8-flash": { input: 0.075, output: 0.30, cached: 0.01875 },
   "gemini-2.5-flash": { input: 0.075, output: 0.30, cached: 0.01875 },
@@ -13,38 +13,53 @@ const MODEL_PRICING = {
   // Gemini Pro
   "gemini-2.5-pro": { input: 1.25, output: 5.00, cached: 0.3125 },
   "gemini-1.5-pro": { input: 1.25, output: 5.00, cached: 0.3125 },
-  // Claude 3.5 Sonnet
-  "claude-3-5-sonnet": { input: 3.00, output: 15.00, cached: 0.30 },
+  // Claude 3.5 Sonnet & Claude 3.7 Sonnet
   "claude-3-7-sonnet": { input: 3.00, output: 15.00, cached: 0.30 },
+  "claude-3-5-sonnet": { input: 3.00, output: 15.00, cached: 0.30 },
   "claude-3-haiku": { input: 0.25, output: 1.25, cached: 0.025 },
+  "claude-3-opus": { input: 15.00, output: 75.00, cached: 1.50 },
+  // OpenAI
+  "gpt-4o": { input: 2.50, output: 10.00, cached: 1.25 },
+  "gpt-4o-mini": { input: 0.15, output: 0.60, cached: 0.075 },
+  // MiniMax
+  "minimax": { input: 0.20, output: 0.80, cached: 0.05 },
   // Default fallback
   default: { input: 0.10, output: 0.40, cached: 0.02 },
 };
 
-function calculateCost(model, input = 0, output = 0, cached = 0) {
-  const normModel = (model || "").toLowerCase();
-  let pricing = MODEL_PRICING.default;
+export function getPricingForModel(model) {
+  const norm = (model || "").toLowerCase();
   for (const [key, p] of Object.entries(MODEL_PRICING)) {
-    if (normModel.includes(key)) {
-      pricing = p;
-      break;
-    }
+    if (norm.includes(key)) return p;
   }
+  return MODEL_PRICING.default;
+}
+
+export function calculateCost(model, input = 0, output = 0, cached = 0) {
+  const p = getPricingForModel(model);
   const cost =
-    (input / 1_000_000) * pricing.input +
-    (output / 1_000_000) * pricing.output +
-    (cached / 1_000_000) * pricing.cached;
+    (input / 1_000_000) * p.input +
+    (output / 1_000_000) * p.output +
+    (cached / 1_000_000) * p.cached;
   return Math.round(cost * 10000) / 10000;
 }
 
+export function calculateCacheSavings(model, cached = 0) {
+  const p = getPricingForModel(model);
+  // How much was saved compared to reading these cached tokens as raw input
+  const diff = Math.max(0, p.input - p.cached);
+  const savings = (cached / 1_000_000) * diff;
+  return Math.round(savings * 10000) / 10000;
+}
+
 // In-memory cache for parsed transcripts to avoid reading large files repeatedly
-const transcriptCache = new Map(); // path -> { mtime, data }
+const transcriptCache = new Map(); // path -> { mtime, size, data }
 
 async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-flash") {
   try {
     const stat = await fs.stat(transcriptPath);
     const cached = transcriptCache.get(transcriptPath);
-    if (cached && cached.mtime === stat.mtimeMs) {
+    if (cached && cached.mtime === stat.mtimeMs && cached.size === stat.size) {
       return cached.data;
     }
 
@@ -57,7 +72,10 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
     let firstDate = null;
     let lastDate = null;
     let detectedModel = null;
+    let detectedProject = null;
     let requestCount = 0;
+    const toolSet = new Set();
+    let hasError = false;
 
     for await (const line of rl) {
       if (!line) continue;
@@ -66,12 +84,35 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
         if (obj.input_tokens) inTok += obj.input_tokens;
         if (obj.output_tokens) outTok += obj.output_tokens;
         if (obj.cache_read_tokens) cachedTok += obj.cache_read_tokens;
-        if (obj.type === "USER_INPUT" || obj.tool_calls) requestCount++;
+        if (obj.type === "USER_INPUT") requestCount++;
+
+        // Tool calls
+        if (obj.tool_calls && Array.isArray(obj.tool_calls)) {
+          requestCount++;
+          obj.tool_calls.forEach((tc) => {
+            if (tc.name) toolSet.add(tc.name);
+          });
+        }
+
+        if (obj.status === "ERROR" || obj.error) {
+          hasError = true;
+        }
 
         // Model detection
         if (obj.content && typeof obj.content === "string") {
           const m = obj.content.match(/model["']?\s*:\s*["']([^"']+)["']/i);
           if (m) detectedModel = m[1];
+
+          // Project / workspace detection
+          if (!detectedProject) {
+            const wsMatch = obj.content.match(/(?:workspace|directory|Cwd|working directory)["':\s]+([^\s\r\n,"']+)/i);
+            if (wsMatch) {
+              const basename = path.basename(wsMatch[1]);
+              if (basename && basename.length > 2 && !basename.startsWith(".")) {
+                detectedProject = basename;
+              }
+            }
+          }
         }
 
         if (obj.created_at) {
@@ -79,7 +120,7 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
           lastDate = obj.created_at;
         }
       } catch {
-        // ignore JSON parse error on partial lines
+        // ignore parse error on partial lines
       }
     }
 
@@ -91,11 +132,15 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
       firstDate: firstDate || new Date(stat.birthtimeMs).toISOString(),
       lastDate: lastDate || new Date(stat.mtimeMs).toISOString(),
       model: detectedModel || defaultModel,
+      project: detectedProject || null,
+      tools: Array.from(toolSet),
+      hasError,
       requestCount: requestCount || 1,
       mtime: stat.mtimeMs,
+      size: stat.size,
     };
 
-    transcriptCache.set(transcriptPath, { mtime: stat.mtimeMs, data });
+    transcriptCache.set(transcriptPath, { mtime: stat.mtimeMs, size: stat.size, data });
     return data;
   } catch (err) {
     return null;
@@ -103,30 +148,117 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
 }
 
 /**
- * Scan all session tokens across Antigravity App, CLI, and Claude
+ * Calculate Date Milestones & Boundaries
+ */
+export function getTimeBounds(timeRange = "all", customStart = null, customEnd = null) {
+  const now = new Date();
+  let startTime = 0;
+  let endTime = Date.now() + 86400000; // tomorrow
+  let defaultGranularity = "daily";
+
+  if (customStart || customEnd) {
+    if (customStart) startTime = new Date(customStart).getTime();
+    if (customEnd) {
+      const endD = new Date(customEnd);
+      endD.setHours(23, 59, 59, 999);
+      endTime = endD.getTime();
+    }
+    const diffDays = (endTime - startTime) / (1000 * 60 * 60 * 24);
+    defaultGranularity = diffDays <= 2 ? "hourly" : diffDays <= 60 ? "daily" : diffDays <= 180 ? "weekly" : "monthly";
+    return { startTime, endTime, granularity: defaultGranularity };
+  }
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (timeRange) {
+    case "today": {
+      startTime = startOfToday.getTime();
+      defaultGranularity = "hourly";
+      break;
+    }
+    case "yesterday": {
+      const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
+      startTime = startOfYesterday.getTime();
+      endTime = startOfToday.getTime() - 1;
+      defaultGranularity = "hourly";
+      break;
+    }
+    case "week":
+    case "this_week": {
+      // Last 7 days or current week
+      startTime = now.getTime() - 7 * 86400000;
+      defaultGranularity = "daily";
+      break;
+    }
+    case "last_week": {
+      startTime = now.getTime() - 14 * 86400000;
+      endTime = now.getTime() - 7 * 86400000;
+      defaultGranularity = "daily";
+      break;
+    }
+    case "month":
+    case "this_month": {
+      // Current month or last 30 days
+      startTime = now.getTime() - 30 * 86400000;
+      defaultGranularity = "daily";
+      break;
+    }
+    case "last_month": {
+      startTime = now.getTime() - 60 * 86400000;
+      endTime = now.getTime() - 30 * 86400000;
+      defaultGranularity = "weekly";
+      break;
+    }
+    case "this_quarter": {
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      startTime = new Date(now.getFullYear(), currentQuarter * 3, 1).getTime();
+      defaultGranularity = "weekly";
+      break;
+    }
+    case "year":
+    case "this_year": {
+      startTime = new Date(now.getFullYear(), 0, 1).getTime();
+      defaultGranularity = "monthly";
+      break;
+    }
+    case "last_year": {
+      startTime = new Date(now.getFullYear() - 1, 0, 1).getTime();
+      endTime = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59).getTime();
+      defaultGranularity = "monthly";
+      break;
+    }
+    case "all":
+    default: {
+      startTime = 0;
+      defaultGranularity = "monthly";
+      break;
+    }
+  }
+
+  return { startTime, endTime, granularity: defaultGranularity };
+}
+
+/**
+ * Scan all sessions and generate comprehensive multi-criteria report
  */
 export async function getAggregatedTokenReport(options = {}) {
   const {
-    timeRange = "all", // 'today' | 'week' | 'month' | 'year' | 'all'
+    timeRange = "week",
+    startDate = null,
+    endDate = null,
+    granularity: requestedGranularity = null,
     providerFilter = null,
+    clientTypeFilter = null,
     modelFilter = null,
     projectFilter = null,
+    toolFilter = null,
+    hasErrorFilter = null,
+    minTokens = null,
+    searchQuery = null,
   } = options;
 
-  const now = new Date();
-  let minTimestamp = 0;
-
-  if (timeRange === "today") {
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    minTimestamp = startOfToday.getTime();
-  } else if (timeRange === "week") {
-    minTimestamp = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-  } else if (timeRange === "month") {
-    minTimestamp = now.getTime() - 30 * 24 * 60 * 60 * 1000;
-  } else if (timeRange === "year") {
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    minTimestamp = startOfYear.getTime();
-  }
+  const { startTime, endTime, granularity: autoGranularity } = getTimeBounds(timeRange, startDate, endDate);
+  const granularity = requestedGranularity || autoGranularity;
 
   const homedir = os.homedir();
   const brainDirs = [
@@ -177,16 +309,20 @@ export async function getAggregatedTokenReport(options = {}) {
       if (!tokenData || tokenData.total === 0) continue;
 
       const sessionDate = new Date(tokenData.lastDate || tokenData.firstDate);
-      if (sessionDate.getTime() < minTimestamp) continue;
+      const sessionTimestamp = sessionDate.getTime();
 
-      const project = metaData.account || metaData.workspace || "Agent Factory";
+      // Time range boundary check
+      if (sessionTimestamp < startTime || sessionTimestamp > endTime) continue;
+
+      const project = metaData.account || metaData.workspace || tokenData.project || "Agent Factory";
       const model = tokenData.model || b.defaultModel;
       const cost = calculateCost(model, tokenData.input, tokenData.output, tokenData.cached);
+      const savings = calculateCacheSavings(model, tokenData.cached);
 
       sessions.push({
         id: convId,
         date: sessionDate.toISOString(),
-        timestamp: sessionDate.getTime(),
+        timestamp: sessionTimestamp,
         provider: b.provider,
         clientType: b.clientType,
         project,
@@ -198,7 +334,10 @@ export async function getAggregatedTokenReport(options = {}) {
           total: tokenData.total,
         },
         cost,
-        requests: tokenData.requestCount,
+        savings,
+        tools: tokenData.tools || [],
+        hasError: tokenData.hasError || false,
+        requests: tokenData.requestCount || 1,
       });
     }
   }
@@ -224,16 +363,20 @@ export async function getAggregatedTokenReport(options = {}) {
         if (!tokenData || tokenData.total === 0) continue;
 
         const sessionDate = new Date(tokenData.lastDate || tokenData.firstDate);
-        if (sessionDate.getTime() < minTimestamp) continue;
+        const sessionTimestamp = sessionDate.getTime();
 
-        const projectName = proj.name.replace(/^-Volumes-[^-]+-/, "").replace(/^-Users-[^-]+-/, "").slice(0, 30) || "Claude Workspace";
+        if (sessionTimestamp < startTime || sessionTimestamp > endTime) continue;
+
+        const projectName =
+          proj.name.replace(/^-Volumes-[^-]+-/, "").replace(/^-Users-[^-]+-/, "").slice(0, 30) || "Claude Workspace";
         const model = tokenData.model || "claude-3-5-sonnet";
         const cost = calculateCost(model, tokenData.input, tokenData.output, tokenData.cached);
+        const savings = calculateCacheSavings(model, tokenData.cached);
 
         sessions.push({
           id: f.name.replace(".jsonl", ""),
           date: sessionDate.toISOString(),
-          timestamp: sessionDate.getTime(),
+          timestamp: sessionTimestamp,
           provider: "claude",
           clientType: "cli",
           project: projectName,
@@ -245,22 +388,57 @@ export async function getAggregatedTokenReport(options = {}) {
             total: tokenData.total,
           },
           cost,
-          requests: tokenData.requestCount,
+          savings,
+          tools: tokenData.tools || [],
+          hasError: tokenData.hasError || false,
+          requests: tokenData.requestCount || 1,
         });
       }
     }
   } catch {}
 
-  // Apply filters
+  // Apply Multi-Criteria Filters
   let filtered = sessions;
+
   if (providerFilter && providerFilter !== "all") {
     filtered = filtered.filter((s) => s.provider.toLowerCase().includes(providerFilter.toLowerCase()));
   }
+
+  if (clientTypeFilter && clientTypeFilter !== "all") {
+    filtered = filtered.filter((s) => s.clientType === clientTypeFilter);
+  }
+
   if (modelFilter && modelFilter !== "all") {
     filtered = filtered.filter((s) => s.model.toLowerCase().includes(modelFilter.toLowerCase()));
   }
+
   if (projectFilter && projectFilter !== "all") {
     filtered = filtered.filter((s) => s.project.toLowerCase().includes(projectFilter.toLowerCase()));
+  }
+
+  if (toolFilter && toolFilter !== "all") {
+    filtered = filtered.filter((s) => s.tools && s.tools.some((t) => t.toLowerCase().includes(toolFilter.toLowerCase())));
+  }
+
+  if (hasErrorFilter !== null && hasErrorFilter !== undefined && hasErrorFilter !== "all") {
+    const errorBool = hasErrorFilter === "true" || hasErrorFilter === true;
+    filtered = filtered.filter((s) => s.hasError === errorBool);
+  }
+
+  if (minTokens && Number(minTokens) > 0) {
+    filtered = filtered.filter((s) => s.tokens.total >= Number(minTokens));
+  }
+
+  if (searchQuery && searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    filtered = filtered.filter(
+      (s) =>
+        s.id.toLowerCase().includes(q) ||
+        s.project.toLowerCase().includes(q) ||
+        s.model.toLowerCase().includes(q) ||
+        s.provider.toLowerCase().includes(q) ||
+        (s.tools && s.tools.some((t) => t.toLowerCase().includes(q)))
+    );
   }
 
   // Sort by date descending
@@ -272,11 +450,24 @@ export async function getAggregatedTokenReport(options = {}) {
   let totalCached = 0;
   let totalTokens = 0;
   let totalCost = 0;
+  let totalSavings = 0;
   let totalRequests = 0;
 
   const byModel = {};
   const byProvider = {};
   const byProject = {};
+  const byTool = {};
+  const byDayOfWeek = {
+    Sun: { day: "Chủ nhật", tokens: 0, cost: 0, sessions: 0 },
+    Mon: { day: "Thứ 2", tokens: 0, cost: 0, sessions: 0 },
+    Tue: { day: "Thứ 3", tokens: 0, cost: 0, sessions: 0 },
+    Wed: { day: "Thứ 4", tokens: 0, cost: 0, sessions: 0 },
+    Thu: { day: "Thứ 5", tokens: 0, cost: 0, sessions: 0 },
+    Fri: { day: "Thứ 6", tokens: 0, cost: 0, sessions: 0 },
+    Sat: { day: "Thứ 7", tokens: 0, cost: 0, sessions: 0 },
+  };
+  const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
   const timeseriesMap = {};
 
   filtered.forEach((s) => {
@@ -285,24 +476,53 @@ export async function getAggregatedTokenReport(options = {}) {
     totalCached += s.tokens.cached;
     totalTokens += s.tokens.total;
     totalCost += s.cost;
+    totalSavings += s.savings;
     totalRequests += s.requests;
+
+    // Day of week
+    const d = new Date(s.timestamp);
+    const dayKey = DAY_KEYS[d.getDay()];
+    if (byDayOfWeek[dayKey]) {
+      byDayOfWeek[dayKey].tokens += s.tokens.total;
+      byDayOfWeek[dayKey].cost += s.cost;
+      byDayOfWeek[dayKey].sessions++;
+    }
 
     // By Model
     const m = s.model || "unknown";
     if (!byModel[m]) {
-      byModel[m] = { model: m, input: 0, output: 0, cached: 0, total: 0, cost: 0, sessions: 0 };
+      byModel[m] = {
+        model: m,
+        input: 0,
+        output: 0,
+        cached: 0,
+        total: 0,
+        cost: 0,
+        savings: 0,
+        sessions: 0,
+      };
     }
     byModel[m].input += s.tokens.input;
     byModel[m].output += s.tokens.output;
     byModel[m].cached += s.tokens.cached;
     byModel[m].total += s.tokens.total;
     byModel[m].cost += s.cost;
+    byModel[m].savings += s.savings;
     byModel[m].sessions++;
 
     // By Provider
     const p = s.provider || "other";
     if (!byProvider[p]) {
-      byProvider[p] = { provider: p, input: 0, output: 0, cached: 0, total: 0, cost: 0, sessions: 0 };
+      byProvider[p] = {
+        provider: p,
+        clientType: s.clientType,
+        input: 0,
+        output: 0,
+        cached: 0,
+        total: 0,
+        cost: 0,
+        sessions: 0,
+      };
     }
     byProvider[p].input += s.tokens.input;
     byProvider[p].output += s.tokens.output;
@@ -314,7 +534,15 @@ export async function getAggregatedTokenReport(options = {}) {
     // By Project
     const proj = s.project || "other";
     if (!byProject[proj]) {
-      byProject[proj] = { project: proj, input: 0, output: 0, cached: 0, total: 0, cost: 0, sessions: 0 };
+      byProject[proj] = {
+        project: proj,
+        input: 0,
+        output: 0,
+        cached: 0,
+        total: 0,
+        cost: 0,
+        sessions: 0,
+      };
     }
     byProject[proj].input += s.tokens.input;
     byProject[proj].output += s.tokens.output;
@@ -323,32 +551,84 @@ export async function getAggregatedTokenReport(options = {}) {
     byProject[proj].cost += s.cost;
     byProject[proj].sessions++;
 
-    // Timeseries key
-    const d = new Date(s.timestamp);
+    // By Tools
+    if (s.tools && Array.isArray(s.tools)) {
+      s.tools.forEach((t) => {
+        if (!byTool[t]) {
+          byTool[t] = { tool: t, count: 0, tokens: 0 };
+        }
+        byTool[t].count++;
+        byTool[t].tokens += s.tokens.total;
+      });
+    }
+
+    // Dynamic Timeseries key based on chosen granularity
     let timeKey;
-    if (timeRange === "today") {
-      timeKey = `${String(d.getHours()).padStart(2, "0")}:00`;
-    } else if (timeRange === "year") {
+    if (granularity === "hourly") {
+      timeKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:00`;
+    } else if (granularity === "weekly") {
+      // Group by Week Monday
+      const day = d.getDay();
+      const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diffToMonday));
+      timeKey = `W${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+    } else if (granularity === "monthly") {
       timeKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     } else {
+      // Daily
       timeKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
 
     if (!timeseriesMap[timeKey]) {
-      timeseriesMap[timeKey] = { date: timeKey, total: 0, input: 0, output: 0, cached: 0, cost: 0 };
+      timeseriesMap[timeKey] = {
+        date: timeKey,
+        total: 0,
+        input: 0,
+        output: 0,
+        cached: 0,
+        cost: 0,
+        sessions: 0,
+      };
     }
     timeseriesMap[timeKey].total += s.tokens.total;
     timeseriesMap[timeKey].input += s.tokens.input;
     timeseriesMap[timeKey].output += s.tokens.output;
     timeseriesMap[timeKey].cached += s.tokens.cached;
     timeseriesMap[timeKey].cost += s.cost;
+    timeseriesMap[timeKey].sessions++;
   });
 
   const timeseries = Object.values(timeseriesMap).sort((a, b) => a.date.localeCompare(b.date));
 
   const cacheRate = totalTokens > 0 ? Math.round((totalCached / totalTokens) * 1000) / 10 : 0;
+  const avgCostPerSession = filtered.length > 0 ? Math.round((totalCost / filtered.length) * 1000) / 1000 : 0;
+  const avgTokensPerSession = filtered.length > 0 ? Math.round(totalTokens / filtered.length) : 0;
+
+  // Monthly Run-rate projection
+  let projectedMonthlyCost = totalCost;
+  let projectedMonthlyTokens = totalTokens;
+  const spanMs = Math.max(1, (endTime === Infinity ? Date.now() : endTime) - startTime);
+  const spanDays = Math.max(1, spanMs / (1000 * 60 * 60 * 24));
+  if (spanDays >= 1 && spanDays < 30) {
+    projectedMonthlyCost = Math.round((totalCost / spanDays) * 30 * 100) / 100;
+    projectedMonthlyTokens = Math.round((totalTokens / spanDays) * 30);
+  }
+
+  // Top lists for filter dropdowns
+  const availableProjects = Object.keys(byProject).sort();
+  const availableModels = Object.keys(byModel).sort();
+  const availableTools = Object.keys(byTool).sort();
 
   return {
+    meta: {
+      timeRange,
+      granularity,
+      startTime,
+      endTime,
+      availableProjects,
+      availableModels,
+      availableTools,
+    },
     summary: {
       totalTokens,
       totalInput,
@@ -357,13 +637,21 @@ export async function getAggregatedTokenReport(options = {}) {
       cacheRate,
       totalCost: Math.round(totalCost * 100) / 100,
       totalCostVnd: Math.round(totalCost * 25400),
+      totalSavings: Math.round(totalSavings * 100) / 100,
+      totalSavingsVnd: Math.round(totalSavings * 25400),
       sessionCount: filtered.length,
       totalRequests,
+      avgCostPerSession,
+      avgTokensPerSession,
+      projectedMonthlyCost,
+      projectedMonthlyTokens,
     },
     timeseries,
     byModel: Object.values(byModel).sort((a, b) => b.total - a.total),
     byProvider: Object.values(byProvider).sort((a, b) => b.total - a.total),
     byProject: Object.values(byProject).sort((a, b) => b.total - a.total),
-    sessions: filtered.slice(0, 100), // Top 100 most recent sessions
+    byTool: Object.values(byTool).sort((a, b) => b.count - a.count),
+    byDayOfWeek: Object.values(byDayOfWeek),
+    sessions: filtered.slice(0, 200), // Top 200 sessions
   };
 }
