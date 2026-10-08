@@ -7,6 +7,7 @@ import {
   Activity,
   Terminal,
   Settings,
+  BarChart3,
   SlidersHorizontal,
 } from "lucide-react";
 
@@ -29,6 +30,11 @@ export default function ActivityBar({
       id: "office",
       title: "Virtual 2D Office View (Canvas)",
       icon: Bot,
+    },
+    {
+      id: "reports",
+      title: "Báo Cáo Token & Chi Phí AI (Analytics)",
+      icon: BarChart3,
     },
     {
       id: "telemetry",

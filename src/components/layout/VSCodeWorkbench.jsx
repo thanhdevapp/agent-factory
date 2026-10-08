@@ -12,6 +12,7 @@ import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
 import OfficeCanvas from "../factory/office-canvas";
 import SessionChatModal from "../chat/SessionChatModal";
+import TokenReportView from "../reports/TokenReportView";
 import { loadWorkbenchLayout, saveWorkbenchLayout } from "./layoutStore";
 
 export default function VSCodeWorkbench({
@@ -89,6 +90,17 @@ export default function VSCodeWorkbench({
     setActiveTabId((current) => (current === id ? "canvas" : current));
   }, []);
 
+  const handleOpenReports = useCallback(() => {
+    setTabs((prev) => {
+      if (prev.find((t) => t.id === "reports")) return prev;
+      return [
+        ...prev,
+        { id: "reports", title: "Báo Cáo Token", type: "reports", closable: true },
+      ];
+    });
+    setActiveTabId("reports");
+  }, []);
+
   // Keyboard shortcuts (Cmd+B, Cmd+J, Cmd+Alt+B, Cmd+Shift+P)
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -156,6 +168,7 @@ export default function VSCodeWorkbench({
         notifEnabled={notifEnabled}
         onToggleNotif={onToggleNotif}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenReports={handleOpenReports}
         layout={layout}
         onToggleLeftSidebar={() =>
           setLayout((p) => ({ ...p, isLeftSidebarVisible: !p.isLeftSidebarVisible }))
@@ -176,6 +189,8 @@ export default function VSCodeWorkbench({
           onViewChange={(view) => {
             if (view === "office") {
               setActiveTabId("canvas");
+            } else if (view === "reports") {
+              handleOpenReports();
             } else if (view === "telemetry") {
               // Open telemetry tab
               setTabs((prev) => {
@@ -303,6 +318,13 @@ export default function VSCodeWorkbench({
                       </div>
                     </div>
                   )}
+
+                  {/* Tab 4: Token Reports & Analytics */}
+                  {activeTabId === "reports" && (
+                    <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
+                      <TokenReportView onClose={() => handleCloseTab("reports")} />
+                    </div>
+                  )}
                 </div>
               </Panel>
 
@@ -393,6 +415,7 @@ export default function VSCodeWorkbench({
         onRefresh={onRefresh}
         onSetMode={onModeChange}
         onSelectPreset={onPresetChange}
+        onOpenReports={handleOpenReports}
       />
 
       {/* Session Chat Transcript Modal */}

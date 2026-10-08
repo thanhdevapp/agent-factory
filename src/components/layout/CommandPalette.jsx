@@ -13,6 +13,7 @@ import {
   Layers,
   X,
   Command,
+  BarChart3,
 } from "lucide-react";
 
 export default function CommandPalette({
@@ -26,6 +27,7 @@ export default function CommandPalette({
   onRefresh,
   onSetMode,
   onSelectPreset,
+  onOpenReports,
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -77,6 +79,15 @@ export default function CommandPalette({
       icon: PanelRight,
       action: () => {
         onToggleRightSidebar();
+        onClose();
+      },
+    },
+    {
+      id: "open-reports",
+      title: "Reports: Open Token Usage & Analytics Report (Báo Cáo Token)",
+      icon: BarChart3,
+      action: () => {
+        onOpenReports?.();
         onClose();
       },
     },

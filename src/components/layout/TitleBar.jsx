@@ -11,6 +11,7 @@ import {
   BellOff,
   Radio,
   Cpu,
+  BarChart3,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
 
@@ -35,6 +36,7 @@ export default function TitleBar({
   notifEnabled = false,
   onToggleNotif,
   onOpenCommandPalette,
+  onOpenReports,
   layout,
   onToggleLeftSidebar,
   onToggleBottomPanel,
@@ -81,7 +83,11 @@ export default function TitleBar({
       {/* Right: Stats, Mode, Controls & Layout Toggles */}
       <div className="flex items-center gap-2 min-w-[240px] justify-end">
         {/* Quick Counters */}
-        <div className="hidden xl:flex items-center gap-1.5 bg-[#252526] border border-[#333333] px-2 py-0.5 rounded text-[11px]">
+        <div
+          onClick={onOpenReports}
+          title="Bấm để xem Báo Cáo Phân Tích Token & Chi Phí chi tiết"
+          className="hidden xl:flex items-center gap-1.5 bg-[#252526] hover:bg-[#2d2d2e] border border-[#333333] hover:border-[#007acc] px-2 py-0.5 rounded text-[11px] cursor-pointer transition-colors"
+        >
           <span className="text-slate-400">Desks:</span>
           <span className="font-bold text-slate-200">{stats?.agents ?? 0}</span>
           <span className="text-slate-600">|</span>
@@ -91,6 +97,16 @@ export default function TitleBar({
           <span className="text-slate-400">Tokens:</span>
           <span className="font-bold text-emerald-400">{stats?.tokensLabel ?? "0k"}</span>
         </div>
+
+        {/* Quick Reports Button */}
+        <button
+          onClick={onOpenReports}
+          title="Mở Báo Cáo Token & Chi Phí AI"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#252526] hover:bg-[#2e2e30] border border-[#333333] hover:border-[#007acc] text-slate-300 hover:text-white text-[11px] transition-colors"
+        >
+          <BarChart3 className="w-3 h-3 text-amber-400" />
+          <span className="hidden md:inline font-medium">Báo Cáo</span>
+        </button>
 
         {/* Live / Mock Mode Selector */}
         <div className="flex items-center rounded bg-[#252526] border border-[#333333] p-0.5 text-[11px]">

@@ -5,6 +5,7 @@ import {
   Bot,
   Cpu,
   Activity,
+  BarChart3,
   X,
   Plus,
   ChevronLeft,
@@ -29,6 +30,7 @@ export default function EditorTabs({
   const getTabIcon = (tab) => {
     if (tab.type === "canvas") return <Bot className="w-3.5 h-3.5 text-emerald-400" />;
     if (tab.type === "telemetry") return <Activity className="w-3.5 h-3.5 text-cyan-400" />;
+    if (tab.type === "reports") return <BarChart3 className="w-3.5 h-3.5 text-amber-400" />;
     return <Cpu className="w-3.5 h-3.5 text-purple-400" />;
   };
 
