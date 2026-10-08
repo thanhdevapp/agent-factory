@@ -378,6 +378,18 @@ switch (command) {
     showHelp();
     break;
 
+  case "version":
+  case "--version":
+  case "-v": {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, "package.json"), "utf-8"));
+      console.log(`agmon v${pkg.version}`);
+    } catch {
+      console.log("agmon (version unknown)");
+    }
+    break;
+  }
+
   default:
     runForeground(port, !noOpen);
     break;
