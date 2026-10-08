@@ -32,6 +32,7 @@ import ChatMessageItem from "./ChatMessageItem.js";
 import ImageLightboxModal from "./ImageLightboxModal.js";
 import SessionSearch from "./SessionSearch.js";
 import ContextGauge from "./ContextGauge.js";
+import SessionExportModal from "./SessionExportModal.jsx";
 
 const MODE_LABELS = {
   streaming: "Working",
@@ -98,6 +99,7 @@ export default function SessionChatView({
   const [showInfoDrawer, setShowInfoDrawer] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const chatBottomRef = useRef(null);
   const telemetryEndRef = useRef(null);
 
@@ -282,9 +284,9 @@ export default function SessionChatView({
 
             {/* Export */}
             <button
-              onClick={exportMarkdown}
+              onClick={() => setIsExportModalOpen(true)}
               className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
-              title="Export transcript as Markdown"
+              title="Export session report (HTML, PDF, Markdown)"
             >
               <Download className="w-3.5 h-3.5" />
             </button>
@@ -437,9 +439,9 @@ export default function SessionChatView({
 
             {/* Export */}
             <button
-              onClick={exportMarkdown}
+              onClick={() => setIsExportModalOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-              title="Export transcript as Markdown"
+              title="Export session report (HTML, PDF, Markdown)"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Export</span>
@@ -744,6 +746,14 @@ export default function SessionChatView({
           onClose={() => setPreviewImage(null)}
         />
       )}
+
+      {/* 9. Session Export Report Hub Modal */}
+      <SessionExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        session={session}
+        turns={turns}
+      />
     </div>
   );
 }
