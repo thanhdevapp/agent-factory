@@ -153,7 +153,7 @@ export function unlockWithCode(code) {
     saveAndNotify(nextState);
     return {
       success: true,
-      message: "Congratulations! You have unlocked all 1,000 items and VIP Supporter status.",
+      message: "Congratulations! You have unlocked all items and VIP Supporter status.",
       state: nextState,
     };
   }
@@ -246,6 +246,22 @@ export function setAmbientSound(soundId, volume = null) {
     ...current,
     ambientSound: soundId,
     ambientVolume: volume !== null ? volume : current.ambientVolume,
+  };
+  saveAndNotify(next);
+  return next;
+}
+
+// Equip a full custom loadout (Skin, Pet, Props, Aura, Office Theme) at once
+export function equipCustomLoadout(loadout = {}) {
+  const current = getSupporterState();
+  const next = {
+    ...current,
+    ...(loadout.equippedSkin ? { equippedSkin: loadout.equippedSkin } : {}),
+    ...(loadout.equippedPet ? { equippedPet: loadout.equippedPet } : {}),
+    ...(Array.isArray(loadout.equippedProps) ? { equippedProps: loadout.equippedProps } : {}),
+    ...(loadout.equippedAura ? { equippedAura: loadout.equippedAura } : {}),
+    ...(loadout.equippedOfficeTheme ? { equippedOfficeTheme: loadout.equippedOfficeTheme } : {}),
+    ...(loadout.equippedTrophy ? { equippedTrophy: loadout.equippedTrophy } : {}),
   };
   saveAndNotify(next);
   return next;

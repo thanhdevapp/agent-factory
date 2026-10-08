@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button } from "@/components/ui";
 import { ShieldCheck } from "lucide-react";
 import { getSupporterState, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
+import { TOTAL_CATALOG_COUNT } from "@/lib/catalog/index.js";
 import SupporterStoreView from "./SupporterStoreView";
 
 export default function SupporterStoreModal({ isOpen, onClose }) {
@@ -21,7 +22,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Supporter Store & Vault (1,000 Tech Items & 3D Effects)"
+      title={`Supporter Store & Vault (${TOTAL_CATALOG_COUNT} Tech Items & 3D Effects)`}
       description="Support the developer to maintain the project and unlock custom AGMon virtual office decorations"
       size="full"
       footer={
@@ -30,7 +31,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
             {storeState.isSupporter ? (
               <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span>Status: VIP Supporter Activated (All 1,000 items unlocked)</span>
+                <span>Status: VIP Supporter Activated (All {TOTAL_CATALOG_COUNT} items unlocked)</span>
               </span>
             ) : (
               <span>100% of AGMon core engineering features remain completely free</span>

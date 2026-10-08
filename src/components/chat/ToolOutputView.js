@@ -64,25 +64,26 @@ export default function ToolOutputView({ output = "", onImageClick }) {
   };
 
   return (
-    <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950/80 overflow-hidden text-xs font-mono">
+  return (
+    <div className="mt-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-chat-code)] overflow-hidden text-xs font-mono">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/80 border-b border-slate-800 text-[11px] text-slate-400">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-card-inner)] border-b border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)]">
         <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-medium text-slate-300">Tool Output</span>
-          <span className="text-[10px] text-slate-500 font-mono">({totalLines} lines)</span>
+          <span className="font-medium text-[var(--text-bright)]">Tool Output</span>
+          <span className="text-[10px] text-[var(--text-muted)] font-mono">({totalLines} lines)</span>
         </div>
 
         <div className="flex items-center gap-1.5 font-sans">
           {/* JSON Tree vs Raw Text Switcher */}
           {parsedJson && (
-            <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 mr-1">
+            <div className="flex items-center bg-[var(--bg-card)] rounded-lg p-0.5 border border-[var(--border-card)] mr-1">
               <button
                 onClick={() => setViewMode("raw")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors cursor-pointer ${
                   viewMode === "raw" 
-                    ? "bg-slate-800 text-slate-200" 
-                    : "text-slate-400 hover:text-slate-300"
+                    ? "bg-[var(--bg-selection)] text-[var(--text-bright)] font-semibold" 
+                    : "text-[var(--text-muted)] hover:text-[var(--text-bright)]"
                 }`}
               >
                 <AlignLeft className="w-3 h-3" />
@@ -90,10 +91,10 @@ export default function ToolOutputView({ output = "", onImageClick }) {
               </button>
               <button
                 onClick={() => setViewMode("json")}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors cursor-pointer ${
                   viewMode === "json" 
                     ? "bg-indigo-600/30 text-indigo-300 border border-indigo-500/40" 
-                    : "text-slate-400 hover:text-slate-300"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-bright)]"
                 }`}
               >
                 <Braces className="w-3 h-3 text-indigo-400" />
@@ -105,7 +106,7 @@ export default function ToolOutputView({ output = "", onImageClick }) {
           {/* Copy Button */}
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors border border-slate-800/80"
+            className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-bright)] transition-colors border border-[var(--border-subtle)] cursor-pointer"
             title="Copy output"
           >
             {copied ? (
@@ -115,7 +116,7 @@ export default function ToolOutputView({ output = "", onImageClick }) {
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3" />
+                <Copy className="w-3.5 h-3.5" />
                 <span className="text-[10px]">Copy</span>
               </>
             )}
@@ -125,8 +126,8 @@ export default function ToolOutputView({ output = "", onImageClick }) {
 
       {/* Detected Image Thumbnails / Chips */}
       {imageMatches.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-slate-900/40 border-b border-slate-800/80 text-[11px]">
-          <span className="text-slate-400 flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-card-inner)] border-b border-[var(--border-subtle)] text-[11px]">
+          <span className="text-[var(--text-muted)] flex items-center gap-1">
             <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
             <span>Image output:</span>
           </span>
@@ -137,7 +138,7 @@ export default function ToolOutputView({ output = "", onImageClick }) {
                 src: `/api/media?path=${encodeURIComponent(imgP)}`,
                 alt: imgP.split("/").pop()
               })}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 font-mono transition-colors text-[10px]"
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-chat-user)] hover:brightness-110 border border-[var(--border-chat-user)] text-[var(--accent-secondary)] font-mono transition-colors text-[10px] cursor-pointer"
               title="Click to view full image popup"
             >
               <span>{imgP.split("/").pop()}</span>
@@ -148,22 +149,22 @@ export default function ToolOutputView({ output = "", onImageClick }) {
 
       {/* JSON Inspector View */}
       {parsedJson && viewMode === "json" ? (
-        <div className="p-2 bg-black/60">
+        <div className="p-2 bg-[var(--bg-chat-tool)]">
           <JsonInspector data={parsedJson} title="JSON Output View" />
         </div>
       ) : (
         /* Raw Output text */
-        <pre className="p-3 text-[11px] text-slate-300 leading-relaxed overflow-x-auto max-h-80 overflow-y-auto whitespace-pre font-mono">
+        <pre className="p-3 text-[11px] text-[var(--text-chat-code)] leading-relaxed overflow-x-auto max-h-80 overflow-y-auto whitespace-pre font-mono">
           {displayedText}
         </pre>
       )}
 
       {/* Expand/Collapse Footer for Raw View */}
       {viewMode === "raw" && hasManyLines && (
-        <div className="px-3 py-1.5 bg-slate-900/60 border-t border-slate-800 text-center">
+        <div className="px-3 py-1.5 bg-[var(--bg-card-inner)] border-t border-[var(--border-subtle)] text-center">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-[11px] text-cyan-400 hover:text-cyan-300 underline transition-colors"
+            className="text-[11px] text-[var(--accent-secondary)] hover:underline transition-colors cursor-pointer"
           >
             {expanded ? "Show less (first 50 lines)" : `Show all ${totalLines} lines`}
           </button>

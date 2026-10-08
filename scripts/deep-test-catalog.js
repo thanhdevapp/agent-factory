@@ -25,20 +25,34 @@ function assert(condition, message) {
 }
 
 console.log("=== STEP 1: CATALOG DATA INTEGRITY & QUANTITY ===");
-assert(skins.length === 250, `Skins count expected 250, got ${skins.length}`);
-assert(props.length === 350, `Props count expected 350, got ${props.length}`);
-assert(pets.length === 200, `Pets count expected 200, got ${pets.length}`);
-assert(auras.length === 100, `Auras count expected 100, got ${auras.length}`);
-assert(trophies.length === 100, `Trophies count expected 100, got ${trophies.length}`);
+assert(skins.length === 50, `Skins count expected 50, got ${skins.length}`);
+assert(props.length === 35, `Props count expected 35, got ${props.length}`);
+assert(pets.length === 21, `Pets count expected 21, got ${pets.length}`);
+assert(auras.length === 16, `Auras count expected 16, got ${auras.length}`);
+assert(trophies.length === 16, `Trophies count expected 16, got ${trophies.length}`);
 assert(officeThemes.length === 10, `Themes count expected 10, got ${officeThemes.length}`);
-assert(TOTAL_CATALOG_COUNT === 1010, `Total items count expected 1010, got ${TOTAL_CATALOG_COUNT}`);
+assert(TOTAL_CATALOG_COUNT === 148, `Total items count expected 148, got ${TOTAL_CATALOG_COUNT}`);
 
-console.log("=== STEP 2: ARCHETYPE COVERAGE VERIFICATION ===");
+console.log("=== STEP 2: ARCHETYPE & VARIANT DIVERSITY VERIFICATION ===");
 const skinArchetypes = new Set(skins.map(s => s.archetype));
 const expectedSkinArchetypes = ['cyber_suit', 'mecha_pilot', 'stealth_ninja', 'matrix_hacker', 'celestial_astro'];
 expectedSkinArchetypes.forEach(arch => {
-  assert(skinArchetypes.has(arch), `Missing skin archetype: ${arch}`);
+  const countInArch = skins.filter(s => s.archetype === arch).length;
+  assert(countInArch === 10, `Archetype ${arch} expected 10 curated skins, got ${countInArch}`);
 });
+
+// Check that every skin has a unique name and variant
+const uniqueSkinNames = new Set(skins.map(s => s.name));
+assert(uniqueSkinNames.size === 50, `Expected 50 unique skin names, got ${uniqueSkinNames.size}`);
+
+const uniqueVariants = new Set(skins.map(s => s.variant));
+assert(uniqueVariants.size === 50, `Expected 50 unique skin variants, got ${uniqueVariants.size}`);
+
+// Verify legacy ID fallbacks in getItemById
+const legacySkin50 = getItemById("skin_50");
+assert(legacySkin50 !== null && legacySkin50.archetype === "mecha_pilot", `Legacy skin_50 fallback should resolve to mecha_pilot`);
+const legacySkin100 = getItemById("skin_100");
+assert(legacySkin100 !== null && legacySkin100.archetype === "stealth_ninja", `Legacy skin_100 fallback should resolve to stealth_ninja`);
 
 const propArchetypes = new Set(props.map(p => p.archetype));
 const expectedPropArchetypes = ['supercomputer', 'dual_monitor', 'espresso_station', 'hologram_emitter', 'arcade_cabinet', 'terrarium_bonsai', 'lab_oscilloscope'];

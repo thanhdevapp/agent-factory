@@ -241,16 +241,28 @@ Các vật phẩm trong Supporter Store và Virtual Office sử dụng đồ ho�
 
 ---
 
-## 7. Kiến trúc Supporter Store & Catalog (1,010 Tech Items)
+## 7. Kiến trúc Supporter Store & Catalog (148 Curated Tech Items & Distinct Staff Silhouettes)
 
-Supporter Store cung cấp hệ thống 1,010 vật phẩm công nghệ cao chia thành 6 danh mục:
+Supporter Store cung cấp hệ thống 148 vật phẩm công nghệ cao tinh tuyển (curated), loại bỏ hoàn toàn việc nhân bản số lượng chỉ đổi màu mảng vòng lặp for, đảm bảo mỗi dòng item đều sở hữu hình dạng hình học (silhouette / mesh chassis) và tính năng độc bản:
 
 1. **Office Themes & Wallpapers (10 Floor Styles)**: Giao diện nền và lưới ánh sáng cho phòng làm việc 2D.
-2. **Agent Skins 3D (250 Items)**: Ngoại trang cyborg, giáp cơ khí và hình thái avatar đặc nhiệm.
-3. **Tech Desk Props (350 Items)**: Màn hình cong, máy chủ rack, cốc cà phê giữ nhiệt, bàn phím cơ và thiết bị lập trình.
-4. **Pets & Companions (200 Items)**: Drone bay mini lơ lửng, robot đồng hành, thú cưng cyber.
-5. **Auras & Effects (100 Items)**: Vòng năng lượng phát quang chân bàn, hạt hào quang, hiệu ứng dữ liệu.
-6. **Trophies & Milestones (100 Items)**: Kỷ niệm chương đạt mốc 10M tokens, huy hiệu tốc độ xử lý.
+2. **Agent Skins 3D (50 Curated Items / 5 Distinct Staff Uniform Silhouettes)**:
+   - `cyber_suit` (10 items): Bộ vest điều hành cao cấp với ve áo blazer, cổ áo sơ mi, và thẻ nhân viên an ninh (Security ID Lanyard) đung đưa.
+   - `mecha_pilot` (10 items): Khung xương trợ lực công nghiệp hạng nặng với giáp vai (pauldrons) nhọn và vạch sơn cảnh báo nguy hiểm (hazard chevrons).
+   - `stealth_ninja` (10 items): Võ phục shinobi gi với dải khăn chéo ngực (diagonal sash) và đai lưng obi truyền thống.
+   - `matrix_hacker` (10 items): Áo hoodie phong cách streetwear rộng thùng thình với dây mũ thả dài (cowl drawstrings) và túi bụng kangaroo.
+   - `celestial_astro` (10 items): Bộ đồ phi hành gia vũ trụ có cầu vai vàng (gold epaulets) và đồng hồ đo áp suất đôi (dual pressure dials).
+3. **Tech Desk Props (35 Curated Items / 7 Distinct 3D Hardware Archetypes)**:
+   - `supercomputer`: Tháp máy chủ rack / mainframe tính toán hạng nặng với ống dẫn làm mát bằng chất lỏng.
+   - `dual_monitor`: Màn hình kép công thái học (1 ngang + 1 dọc code) hoặc màn cong siêu rộng.
+   - `espresso_station`: Máy pha cà phê espresso 2 vòi hơi với đồng hồ đo áp suất hoặc tháp cold drip xoắn ốc.
+   - `hologram_emitter`: Khối phát chùm sáng hologram 3D xoay với nón chiếu sáng neon.
+   - `arcade_cabinet`: Tủ máy chơi game arcade retro thu nhỏ với cần gạt joystick và nút bấm neon.
+   - `terrarium_bonsai`: Cây bonsai cyberpunk trong chậu sinh thái kính phát quang sinh học.
+   - `lab_oscilloscope`: Máy hiện sóng phân tích tín hiệu phòng thí nghiệm với màn hình hiển thị sóng xanh lục.
+4. **Pets & Companions (21 Curated Items / 4 Distinct Companions)**: Cyber drone bay lơ lửng, cú cơ khí thấu kính, mèo robot có tai và đuôi vẫy, chó bảo vệ shiba đeo kính che mặt.
+5. **Auras & VFX (16 Curated Items / 4 Distinct Energy Fields)**: Mưa mã nguồn Matrix rain, sương mù lượng tử orbit, hào quang glitch quang sai RGB, và vành nhật hoa plasma.
+6. **Trophies & Milestones (16 Curated Items / 4 Distinct Badges)**: Cúp ngọn lửa vô địch, huy hiệu lục giác chứng nhận, tinh thể lượng tử xoay, và huân chương dev danh dự.
 
 ### 7.1. Bố cục Store View
 * **Left Navigation Sidebar**:
@@ -265,7 +277,28 @@ Supporter Store cung cấp hệ thống 1,010 vật phẩm công nghệ cao chia
   - Khung xem trước 3D Isometric Slate sắc nét.
   - Tên vật phẩm và mô tả ngắn gọn.
   - Huy hiệu phân loại (`FREE`, `COFFEE`, `VIP`).
-  - Nút tương tác rõ ràng: `Apply Floor` / `Equip` / `Equipped` (đổi màu xanh cyan khi đã trang bị).
+  - Nút tương tác rõ ràng: `Apply Floor` / `Equip` / `Equipped` (đổi màu xanh cyan khi đã trang bị) kèm nút `Sparkles` "Test in 3D Fitting Room".
+
+### 7.2. Phòng Thử Đồ Tương Tác Trực Tiếp (Live Fitting Room & Sandbox)
+Nhằm mang lại trải nghiệm tùy biến chân thực, Store tích hợp một phòng thử đồ ảo 3D thời gian thực (`LiveFittingRoom.jsx`) sử dụng nhân động cơ React SVG thuần (`LiveReactAgent.jsx`):
+* **Động cơ React SVG Thuần (`LiveReactAgent.jsx`)**:
+  - Render 100% bằng declarative SVG trong React DOM, không phụ thuộc imperative HTML5 Canvas.
+  - Sử dụng hardware-accelerated direct SVG transform manipulation tại `requestAnimationFrame` đạt chuẩn 60 FPS mà không kích hoạt chu kỳ re-render nặng của React.
+  - Phân tầng 6 Z-Layers hoàn chỉnh: Floor Theme Platform -> Aura Energy Rings -> Agent Torso & Reactor Core -> Shoulder Pivot Arms -> Agent Head & Custom Archetype Accessories -> Desk & Dynamic Props -> Companion Pets.
+  - Tích hợp linh hoạt ở mọi nơi: Sân khấu chính của Fitting Room lẫn Card "Current Avatar" thu nhỏ trong sidebar Store.
+* **Động cơ Hiệu Ứng Sống Động 60 FPS (Live VFX & Particle Engine)**:
+  - **Hệ thống Aura & VFX năng lượng**:
+    - `matrix_rain`: Thác dữ liệu số Matrix với 8 cột mã tự động tuôn chảy (`0`, `1`, `λ`, `§`, `#`, `*`) kèm vệt đuôi mờ và hạt dẫn sáng.
+    - `quantum_mist`: Mô hình quỹ đạo lượng tử 3D với 2 vành đai elip quay nghịch hướng cùng 6 hạt electron phát sáng xoay tròn theo chiều sâu Z-axis.
+    - `glitch_halo`: Vành hào quang cyberpunk với hiệu ứng tách màu quang sai RGB (Cyan/Magenta), giật khung hình ngẫu nhiên và các vạch scanline sọc ngang.
+    - `plasma_ring`: Các vòng nhật hoa plasma xoay tròn tỏa nhiệt kèm 8 nút plasma flare rực rỡ.
+  - **Hiệu ứng Thao Tác Bàn Làm Việc (Workstation Particles)**:
+    - **Tia lửa gõ phím & Ký tự code bay (Keystroke Sparks)**: Khi gõ phím (`Streaming`/`Pending`), các tia sáng cùng token cú pháp (`✦`, `01`, `</>`, `{ }`, `++`, `=>`, `•`, `λ`) bay vút từ bàn phím lên màn hình theo cường độ `intensity`.
+    - **Tia quét màn hình CRT (Scanline Beam)**: Vệt sáng laser quét dọc liên tục từ trên xuống dưới trên màn hình terminal của agent.
+    - **Nón chiếu Hologram 3D**: Chùm sáng neon dạng chóp hình học chiếu từ mặt bàn lên khối lập phương Hologram đang xoay.
+    - **Làn khói cà phê bốc hơi**: Các làn hơi nước uốn lượn hình sin bay lên từ cốc cà phê.
+    - **Pháo hoa ăn mừng (Celebration Stars)**: Các ngôi sao đa sắc (`✦`, `★`, `✧`) nổ tung theo quỹ đạo vòng cung khi chuyển sang chế độ `Happy`.
+    - **Chữ Z ngủ & Khói bốc chập điện**: Chữ Z bay bồng bềnh khi `Sleeping`, khói đen cuồn cuộn kèm tia sét hồ quang điện khi `Error`.
 
 ---
 

@@ -516,21 +516,21 @@ export const SHOWCASE_ALL_DECK = [
  * 3. Skins Showcase: 15 agents comparing 5 archetypes in 3 colorways each.
  */
 export const SHOWCASE_SKINS_DECK = [
-  { name: "CyberSuit · Cyan", skin: "skin_0", state: "streaming", ageMs: 12000, tools: ["bash"], props: ["prop_50"] },
-  { name: "CyberSuit · Violet", skin: "skin_1", state: "streaming", ageMs: 14000, tools: ["read"], props: ["prop_100"] },
-  { name: "CyberSuit · Crimson", skin: "skin_2", state: "happy", ageMs: 9000, tools: ["edit"], props: ["prop_200"] },
-  { name: "MechaPilot · Heavy", skin: "skin_50", state: "streaming", ageMs: 16000, tools: ["docker"], props: ["prop_0"] },
-  { name: "MechaPilot · Valkyrie", skin: "skin_51", state: "streaming", ageMs: 18000, tools: ["agent"], props: ["prop_150"] },
-  { name: "MechaPilot · Titan", skin: "skin_52", state: "pending", ageMs: 2500, tools: ["todo"], props: ["prop_300"] },
-  { name: "StealthNinja · Shadow", skin: "skin_100", state: "streaming", ageMs: 13000, tools: ["gitnexus"], props: ["prop_250"] },
-  { name: "StealthNinja · Void", skin: "skin_101", state: "streaming", ageMs: 15000, tools: ["search"], props: ["prop_51"] },
-  { name: "StealthNinja · Phantom", skin: "skin_102", state: "done", ageMs: 38000, props: ["prop_101"] },
-  { name: "MatrixHacker · ZeroDay", skin: "skin_150", state: "streaming", ageMs: 17000, tools: ["web"], props: ["prop_0"] },
-  { name: "MatrixHacker · Glitch", skin: "skin_151", state: "streaming", ageMs: 19000, tools: ["bash"], isLooping: true, props: ["prop_301"] },
-  { name: "MatrixHacker · Cypher", skin: "skin_152", state: "streaming", ageMs: 11000, tools: ["mcp"], props: ["prop_151"] },
-  { name: "CelestialAstro · Solar", skin: "skin_200", state: "happy", ageMs: 8000, tools: ["git"], props: ["prop_201"] },
-  { name: "CelestialAstro · Cosmic", skin: "skin_201", state: "streaming", ageMs: 21000, tools: ["edit"], props: ["prop_251"] },
-  { name: "CelestialAstro · Nebula", skin: "skin_202", state: "error", ageMs: 6000, error: "rate_limited", props: ["prop_52"] },
+  { name: "Neon Enforcer (Visor)", skin: "skin_0", state: "streaming", ageMs: 12000, tools: ["bash"], props: ["prop_50"] },
+  { name: "Crimson Striker (Monocle)", skin: "skin_1", state: "streaming", ageMs: 14000, tools: ["read"], props: ["prop_100"] },
+  { name: "Electric Specter (Horns)", skin: "skin_3", state: "happy", ageMs: 9000, tools: ["edit"], props: ["prop_200"] },
+  { name: "Obsidian Ronin (Kabuto)", skin: "skin_7", state: "pending", ageMs: 2500, tools: ["todo"], props: ["prop_250"] },
+  { name: "Apex Frame (V-Fin)", skin: "skin_10", state: "streaming", ageMs: 16000, tools: ["docker"], props: ["prop_0"] },
+  { name: "Heavy Colossus (Blast)", skin: "skin_11", state: "streaming", ageMs: 18000, tools: ["agent"], props: ["prop_150"] },
+  { name: "Berserk EVA (Horn)", skin: "skin_12", state: "streaming", ageMs: 15000, tools: ["search"], props: ["prop_300"] },
+  { name: "Shadow Shinobi (Headband)", skin: "skin_20", state: "streaming", ageMs: 13000, tools: ["gitnexus"], props: ["prop_250"] },
+  { name: "Kage Oni (Demon Mask)", skin: "skin_22", state: "streaming", ageMs: 15000, tools: ["search"], props: ["prop_51"] },
+  { name: "Cyber Kasa (Conical Hat)", skin: "skin_24", state: "done", ageMs: 38000, props: ["prop_101"] },
+  { name: "Root Netrunner (Hoodie)", skin: "skin_30", state: "streaming", ageMs: 17000, tools: ["web"], props: ["prop_0"] },
+  { name: "Binary Coder (VR Goggles)", skin: "skin_31", state: "streaming", ageMs: 19000, tools: ["bash"], isLooping: true, props: ["prop_301"] },
+  { name: "Cablehead (Dreadlocks)", skin: "skin_37", state: "streaming", ageMs: 11000, tools: ["mcp"], props: ["prop_151"] },
+  { name: "Solar Voyager (Bubble Dome)", skin: "skin_40", state: "happy", ageMs: 8000, tools: ["git"], props: ["prop_201"] },
+  { name: "Nebula Drifter (Saturn Ring)", skin: "skin_43", state: "error", ageMs: 6000, error: "rate_limited", props: ["prop_52"] },
 ];
 
 /**

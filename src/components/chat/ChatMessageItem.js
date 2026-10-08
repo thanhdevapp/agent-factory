@@ -36,18 +36,18 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
         id={`chat-turn-${turn.id}`}
         className="flex gap-3 justify-end my-4 animate-in fade-in slide-in-from-bottom-1 scroll-mt-20"
       >
-        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-cyan-900/60 to-slate-800/80 border border-cyan-500/30 p-3.5 shadow-lg">
-          <div className="flex items-center justify-between gap-2 mb-1.5 text-[11px] text-cyan-300/80">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-[var(--bg-chat-user)] border border-[var(--border-chat-user)] p-3.5 shadow-lg">
+          <div className="flex items-center justify-between gap-2 mb-1.5 text-[11px] text-[var(--text-chat-user)]">
             <span className="font-semibold uppercase tracking-wider">User Request</span>
-            <span className="font-mono text-[10px] text-slate-400">{formatTime(turn.timestamp)}</span>
+            <span className="font-mono text-[10px] opacity-75">{formatTime(turn.timestamp)}</span>
           </div>
-          <div className="text-slate-100 text-sm whitespace-pre-wrap leading-relaxed">
+          <div className="text-[var(--text-chat-user-body)] text-sm whitespace-pre-wrap leading-relaxed">
             {turn.content}
           </div>
 
           {/* User Attached Media / Images */}
           {Array.isArray(turn.media) && turn.media.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-cyan-500/20">
+            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-[var(--border-chat-user)]">
               {turn.media.map((med, mIdx) => {
                 const src = med.uri
                   ? `/api/media?path=${encodeURIComponent(med.uri)}`
@@ -56,7 +56,7 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
                   <div
                     key={mIdx}
                     onClick={() => onImageClick?.({ src, alt: `User Attachment ${mIdx + 1}` })}
-                    className="group relative cursor-pointer overflow-hidden rounded-lg border border-cyan-500/40 bg-black/60 shadow hover:border-cyan-300 transition-colors"
+                    className="group relative cursor-pointer overflow-hidden rounded-lg border border-[var(--border-chat-user)] bg-black/40 shadow hover:border-[var(--accent-secondary)] transition-colors"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -74,8 +74,8 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
             </div>
           )}
         </div>
-        <div className="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center shrink-0 shadow-md">
-          <User className="w-4 h-4 text-cyan-300" />
+        <div className="w-8 h-8 rounded-full bg-[var(--bg-chat-user)] border border-[var(--border-chat-user)] flex items-center justify-center shrink-0 shadow-md text-[var(--text-chat-user)]">
+          <User className="w-4 h-4" />
         </div>
       </div>
     );
@@ -98,17 +98,17 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
         <Bot className="w-4 h-4" style={{ color: hexColor }} />
       </div>
 
-      <div className="flex-1 min-w-0 max-w-[92%] rounded-2xl rounded-tl-sm bg-slate-900/90 border border-slate-800 p-4 shadow-xl">
+      <div className="flex-1 min-w-0 max-w-[92%] rounded-2xl rounded-tl-sm bg-[var(--bg-chat-agent)] border border-[var(--border-chat-agent)] p-4 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-800/60 text-[11px]">
-          <div className="flex items-center gap-1.5 font-semibold text-slate-300">
+        <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[var(--border-subtle)] text-[11px]">
+          <div className="flex items-center gap-1.5 font-semibold text-[var(--text-bright)]">
             <span
               className="inline-block w-2 h-2 rounded-full"
               style={{ backgroundColor: hexColor }}
             />
             <span>Agent Assistant</span>
           </div>
-          <span className="font-mono text-[10px] text-slate-400">{formatTime(turn.timestamp)}</span>
+          <span className="font-mono text-[10px] text-[var(--text-muted)]">{formatTime(turn.timestamp)}</span>
         </div>
 
         {/* 1. Thinking / Chain of Thought */}

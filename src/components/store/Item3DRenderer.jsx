@@ -144,56 +144,569 @@ function RenderChibiAgent3D({ x = 12, y = 20, scale = 0.85, accentColor = "#00f0
 }
 
 // ----------------------------------------------------------------------------
-// 1. 3D AGENT SKINS (250 SKINS)
+// 3D DISTINCT STAFF TORSO SILHOUETTES & UNIFORMS (5 ARCHETYPES)
+// ----------------------------------------------------------------------------
+function Render3DStaffTorso({ archetype, color, secondaryColor = "#111827", accentColor = "#ffffff", gradId }) {
+  if (archetype === "mecha_pilot") {
+    return (
+      <g id="staff-3d-mecha-pilot">
+        {/* Heavy Armored Exoskeleton Vest */}
+        <polygon points="26,54 74,54 67,76 33,76" fill="#18181b" stroke={color} strokeWidth="1.6" />
+        {/* Armored Shoulder Pauldrons */}
+        <polygon points="22,54 30,52 28,62 20,62" fill="#27272a" stroke={color} strokeWidth="1" />
+        <polygon points="78,54 70,52 72,62 80,62" fill="#27272a" stroke={color} strokeWidth="1" />
+        {/* Industrial Hazard Chevrons */}
+        <polygon points="36,57 41,57 37,62 32,62" fill="#eab308" />
+        <polygon points="43,57 48,57 44,62 39,62" fill="#18181b" />
+        <polygon points="52,57 57,57 53,62 48,62" fill="#eab308" />
+        <polygon points="59,57 64,57 60,62 55,62" fill="#18181b" />
+        {/* Heavy Duty Harness Straps */}
+        <line x1="38" y1="54" x2="39" y2="76" stroke={color} strokeWidth="1.6" />
+        <line x1="62" y1="54" x2="61" y2="76" stroke={color} strokeWidth="1.6" />
+        {/* Central Fusion Core with Protective Cage */}
+        <circle cx="50" cy="67" r="4.5" fill="#09090b" stroke={color} strokeWidth="1.2" />
+        <circle cx="50" cy="67" r="2.5" fill={color} />
+        <line x1="46" y1="67" x2="54" y2="67" stroke="#ffffff" strokeWidth="0.8" />
+        <line x1="50" y1="63" x2="50" y2="71" stroke="#ffffff" strokeWidth="0.8" />
+      </g>
+    );
+  }
+
+  if (archetype === "stealth_ninja") {
+    return (
+      <g id="staff-3d-stealth-ninja">
+        {/* Form-Fitting Shinobi Gi */}
+        <polygon points="31,54 69,54 63,74 37,74" fill="#090d16" stroke={color} strokeWidth="1.4" />
+        {/* Crossed Kimono Collar */}
+        <line x1="32" y1="54" x2="55" y2="66" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="68" y1="54" x2="48" y2="66" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.6" />
+        {/* Diagonal Tactical Sash */}
+        <polygon points="32,55 36,54 62,72 58,74" fill={color} opacity="0.9" />
+        {/* Stealth Kunai Sheath */}
+        <rect x="44" y="60" width="10" height="3" rx="1" fill="#1e293b" stroke="#ffffff" strokeWidth="0.6" transform="rotate(-30 49 61.5)" />
+        {/* Tied Fabric Obi Waist Sash with Hanging Tails */}
+        <rect x="36" y="69" width="28" height="5" rx="1.5" fill="#1e1b4b" stroke={color} strokeWidth="1" />
+        <path d="M 52 73 Q 54 78 53 82 Q 50 78 52 73" fill={color} />
+      </g>
+    );
+  }
+
+  if (archetype === "matrix_hacker") {
+    return (
+      <g id="staff-3d-matrix-hacker">
+        {/* Baggy Slouchy Hoodie Body */}
+        <rect x="26" y="54" width="48" height="21" rx="6" fill="#121217" stroke={color} strokeWidth="1.5" />
+        {/* Draped Neck Cowl */}
+        <path d="M 30 53 Q 50 58 70 53 Q 62 61 50 61 Q 38 61 30 53 Z" fill="#1f1f28" stroke={color} strokeWidth="1" />
+        {/* Hanging Drawstrings with Metal Aglets */}
+        <path d="M 44 59 Q 42 66 45 71" stroke="#ffffff" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        <rect x="43.5" y="70" width="2.5" height="3.5" rx="0.5" fill={color} />
+        <path d="M 56 59 Q 58 66 55 71" stroke="#ffffff" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        <rect x="54" y="70" width="2.5" height="3.5" rx="0.5" fill={color} />
+        {/* Kangaroo Front Pouch Pocket */}
+        <path d="M 35 66 L 65 66 L 62 73 L 38 73 Z" fill="#09090d" stroke="#27272a" strokeWidth="0.8" />
+        <line x1="36" y1="66" x2="38" y2="70" stroke={color} strokeWidth="1" />
+        <line x1="64" y1="66" x2="62" y2="70" stroke={color} strokeWidth="1" />
+        {/* Glitch Barcode Patch */}
+        <g transform="translate(56, 60)">
+          <rect x="0" y="0" width="8" height="4" fill="#000000" stroke={accentColor} strokeWidth="0.6" />
+          <line x1="2" y1="1" x2="2" y2="3" stroke={color} strokeWidth="0.6" />
+          <line x1="4" y1="1" x2="4" y2="3" stroke={color} strokeWidth="1" />
+          <line x1="6" y1="1" x2="6" y2="3" stroke={color} strokeWidth="0.6" />
+        </g>
+      </g>
+    );
+  }
+
+  if (archetype === "celestial_astro") {
+    return (
+      <g id="staff-3d-celestial-astro">
+        {/* Streamlined Flight Suit Body */}
+        <polygon points="28,54 72,54 66,74 34,74" fill="#f1f5f9" stroke={color} strokeWidth="1.4" />
+        {/* Hermetic Neck Ring */}
+        <rect x="36" y="52" width="28" height="4" rx="1.5" fill="#334155" stroke={color} strokeWidth="1" />
+        {/* Gold Command Rank Epaulets */}
+        <rect x="24" y="53" width="7" height="4" rx="0.8" fill="#f59e0b" stroke="#78350f" strokeWidth="0.6" />
+        <rect x="69" y="53" width="7" height="4" rx="0.8" fill="#f59e0b" stroke="#78350f" strokeWidth="0.6" />
+        {/* Dual Pressure Dials with Conduit */}
+        <circle cx="44" cy="65" r="3" fill="#0f172a" stroke={color} strokeWidth="1" />
+        <circle cx="44" cy="65" r="1.2" fill="#22c55e" />
+        <circle cx="56" cy="65" r="3" fill="#0f172a" stroke={color} strokeWidth="1" />
+        <circle cx="56" cy="65" r="1.2" fill="#38bdf8" />
+        <path d="M 47 65 Q 50 68 53 65" fill="none" stroke={color} strokeWidth="1.2" />
+        {/* Mission Patch Insignia */}
+        <polygon points="40,58 45,58 42.5,62" fill={color} stroke="#ffffff" strokeWidth="0.6" />
+        <ellipse cx="42.5" cy="60" rx="3.5" ry="1.2" fill="none" stroke="#f59e0b" strokeWidth="0.6" transform="rotate(-20 42.5 60)" />
+      </g>
+    );
+  }
+
+  // Default Cyber Suit (Corporate Executive)
+  return (
+    <g id="staff-3d-cyber-suit">
+      <polygon points="28,54 72,54 65,74 35,74" fill={`url(#${gradId}-left)`} stroke={color} strokeWidth="1.4" />
+      <polygon points="30,54 44,66 38,66" fill="#090d16" stroke={color} strokeWidth="0.8" />
+      <polygon points="70,54 56,66 62,66" fill="#090d16" stroke={color} strokeWidth="0.8" />
+      <line x1="50" y1="54" x2="50" y2="70" stroke={color} strokeWidth="1.2" />
+      <path d="M 46 54 Q 50 63 54 54" stroke={accentColor} strokeWidth="1" fill="none" opacity="0.85" />
+      <rect x="46" y="61" width="8" height="10" rx="1" fill="#070a12" stroke={color} strokeWidth="0.8" />
+      <rect x="47.5" y="62.5" width="5" height="3" fill={color} />
+      <line x1="47.5" y1="67" x2="52.5" y2="67" stroke="#ffffff" strokeWidth="0.6" />
+      <rect x="47" y="71" width="6" height="3.5" rx="0.8" fill="#1e293b" stroke={color} strokeWidth="0.8" />
+    </g>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// 1. 3D AGENT SKINS (50 CURATED ICONIC MODELS)
 // ----------------------------------------------------------------------------
 function Render3DSkin({ item, gradId }) {
-  const { name, color, archetype } = item;
+  const { name, color, archetype, variant = "tactical_visor", secondaryColor = "#111827", accentColor = "#ffffff" } = item;
 
   let headgear = null;
-  let visorExtra = null;
 
-  if (archetype === "stealth_ninja" || name.includes("Ninja") || name.includes("Blade")) {
+  // 1. CYBER SUIT VARIANTS (10)
+  if (variant === "tactical_visor") {
     headgear = (
-      <>
-        {/* Holographic Katana on back */}
-        <line x1="18" y1="52" x2="82" y2="12" stroke="#334155" strokeWidth="3" strokeLinecap="round" />
-        <line x1="22" y1="48" x2="80" y2="14" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
-        {/* Headband Ties */}
-        <path d="M74,32 Q88,28 92,42 Q80,38 72,36" fill={color} opacity="0.85" />
-      </>
+      <g>
+        <polygon points="40,8 60,8 55,2 45,2" fill={color} />
+        <line x1="50" y1="2" x2="50" y2="8" stroke={accentColor} strokeWidth="1.5" />
+        <polygon points="18,24 10,12 18,18" fill={color} />
+        <polygon points="82,24 90,12 82,18" fill={color} />
+      </g>
     );
-  } else if (archetype === "mecha_pilot" || name.includes("Mecha") || name.includes("Titan")) {
+  } else if (variant === "laser_scout") {
     headgear = (
-      <>
-        {/* Heavy Shoulder Pods */}
+      <g>
+        <circle cx="60" cy="34" r="8" fill="none" stroke={color} strokeWidth="1.8" />
+        <line x1="60" y1="22" x2="60" y2="46" stroke={color} strokeWidth="1" strokeDasharray="1 2" />
+        <line x1="48" y1="34" x2="72" y2="34" stroke={color} strokeWidth="1" strokeDasharray="1 2" />
+        <circle cx="60" cy="34" r="2.5" fill="#ff0000" />
+      </g>
+    );
+  } else if (variant === "riot_shield") {
+    headgear = (
+      <g>
+        <rect x="22" y="18" width="56" height="10" rx="3" fill="#181824" stroke={color} strokeWidth="1.8" />
+        <circle cx="32" cy="23" r="2.5" fill={accentColor} />
+        <circle cx="68" cy="23" r="2.5" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "cyber_horns") {
+    headgear = (
+      <g>
+        <polygon points="28,20 16,2 34,14" fill={color} stroke={secondaryColor} strokeWidth="1" />
+        <polygon points="72,20 84,2 66,14" fill={color} stroke={secondaryColor} strokeWidth="1" />
+        <line x1="30" y1="16" x2="22" y2="6" stroke={accentColor} strokeWidth="1.5" />
+        <line x1="70" y1="16" x2="78" y2="6" stroke={accentColor} strokeWidth="1.5" />
+      </g>
+    );
+  } else if (variant === "crown_radiator") {
+    headgear = (
+      <g fill={color}>
+        <polygon points="32,18 36,4 42,16" />
+        <polygon points="46,14 50,0 54,14" />
+        <polygon points="58,16 64,4 68,18" />
+        <circle cx="50" cy="18" r="3" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "gas_respirator") {
+    headgear = (
+      <g>
+        <circle cx="34" cy="46" r="7" fill="#181824" stroke={color} strokeWidth="1.6" />
+        <circle cx="66" cy="46" r="7" fill="#181824" stroke={color} strokeWidth="1.6" />
+        <circle cx="34" cy="46" r="3" fill={color} />
+        <circle cx="66" cy="46" r="3" fill={color} />
+        <rect x="42" y="44" width="16" height="6" rx="2" fill="#0f0f18" stroke={color} strokeWidth="1" />
+      </g>
+    );
+  } else if (variant === "prism_goggles") {
+    headgear = (
+      <g>
+        <polygon points="30,28 40,24 48,28 48,40 40,44 30,40" fill="#0c4a6e" stroke={color} strokeWidth="1.8" />
+        <polygon points="52,28 60,24 70,28 70,40 60,44 52,40" fill="#0c4a6e" stroke={color} strokeWidth="1.8" />
+        <circle cx="39" cy="34" r="3" fill={accentColor} />
+        <circle cx="61" cy="34" r="3" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "samurai_crest") {
+    headgear = (
+      <g>
+        <path d="M 24 18 Q 50 -6 76 18 Q 50 6 24 18 Z" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+        <circle cx="50" cy="10" r="3.5" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "overdrive_vents") {
+    headgear = (
+      <g strokeLinecap="round">
+        <line x1="28" y1="16" x2="16" y2="2" stroke={color} strokeWidth="3.5" />
+        <line x1="72" y1="16" x2="84" y2="2" stroke={color} strokeWidth="3.5" />
+        <line x1="34" y1="18" x2="26" y2="6" stroke={accentColor} strokeWidth="2" />
+        <line x1="66" y1="18" x2="74" y2="6" stroke={accentColor} strokeWidth="2" />
+      </g>
+    );
+  } else if (variant === "holo_shroud") {
+    headgear = (
+      <g>
+        <ellipse cx="50" cy="18" rx="34" ry="14" fill="none" stroke={color} strokeWidth="1.8" strokeDasharray="5 3" />
+        <circle cx="50" cy="4" r="4" fill={accentColor} />
+      </g>
+    );
+  }
+
+  // 2. MECHA PILOT VARIANTS (10)
+  else if (variant === "v_fin") {
+    headgear = (
+      <g>
+        <polygon points="20,-2 26,-6 50,14 74,-6 80,-2 50,20" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+        <polygon points="46,18 50,10 54,18 50,22" fill="#ef4444" />
+      </g>
+    );
+  } else if (variant === "blast_shield") {
+    headgear = (
+      <g>
+        <rect x="22" y="22" width="56" height="18" rx="3" fill="#0f172a" stroke={color} strokeWidth="2" />
+        <circle cx="28" cy="8" r="4" fill="#fde047" stroke={color} strokeWidth="1.5" />
+        <circle cx="72" cy="8" r="4" fill="#fde047" stroke={color} strokeWidth="1.5" />
         <rect x="8" y="48" width="16" height="12" rx="3" fill="#1a1a26" stroke={color} strokeWidth="1.5" />
         <rect x="76" y="48" width="16" height="12" rx="3" fill="#1a1a26" stroke={color} strokeWidth="1.5" />
-        {/* Dual High-Gain Antennas */}
-        <line x1="30" y1="12" x2="22" y2="2" stroke={color} strokeWidth="2" strokeLinecap="round" />
-        <circle cx="22" cy="2" r="2.5" fill={color} />
-        <line x1="70" y1="12" x2="78" y2="2" stroke={color} strokeWidth="2" strokeLinecap="round" />
-        <circle cx="78" cy="2" r="2.5" fill={color} />
-      </>
+      </g>
     );
-  } else if (archetype === "celestial_astro" || name.includes("Astro") || name.includes("Cosmic")) {
+  } else if (variant === "eva_horn") {
     headgear = (
-      <>
-        {/* Gold Reflective Solar Bubble Halo */}
-        <ellipse cx="50" cy="34" rx="36" ry="24" fill="none" stroke={color} strokeWidth="1.8" opacity="0.4" strokeDasharray="4 2" />
-        <circle cx="50" cy="8" r="3.5" fill={color} />
-      </>
+      <g>
+        <polygon points="47,18 50,-14 53,18" fill={color} stroke={secondaryColor} strokeWidth="1" />
+        <rect x="12" y="32" width="6" height="24" rx="2" fill={color} stroke={secondaryColor} strokeWidth="1" />
+        <rect x="82" y="32" width="6" height="24" rx="2" fill={color} stroke={secondaryColor} strokeWidth="1" />
+      </g>
     );
-  } else if (archetype === "matrix_hacker" || name.includes("Hacker") || name.includes("Root")) {
+  } else if (variant === "cage_grille") {
     headgear = (
-      <>
-        {/* Cyberpunk Matrix Cowl */}
-        <path d="M14,42 Q14,8 50,8 Q86,8 86,42 Q70,48 50,48 Q30,48 14,42 Z" fill="#081018" stroke={color} strokeWidth="1.5" />
-        {/* Digital Binary Dots on Cowl */}
-        <circle cx="28" cy="18" r="1.2" fill={color} opacity="0.6" />
-        <circle cx="36" cy="14" r="1.2" fill={color} opacity="0.8" />
-        <circle cx="64" cy="14" r="1.2" fill={color} opacity="0.8" />
-        <circle cx="72" cy="18" r="1.2" fill={color} opacity="0.6" />
-      </>
+      <g>
+        <rect x="30" y="30" width="40" height="20" rx="3" fill="#18181b" stroke={color} strokeWidth="1.8" />
+        <line x1="38" y1="30" x2="38" y2="50" stroke={color} strokeWidth="1.5" />
+        <line x1="46" y1="30" x2="46" y2="50" stroke={color} strokeWidth="1.5" />
+        <line x1="54" y1="30" x2="54" y2="50" stroke={color} strokeWidth="1.5" />
+        <line x1="62" y1="30" x2="62" y2="50" stroke={color} strokeWidth="1.5" />
+        <rect x="22" y="-2" width="6" height="22" rx="1" fill="#27272a" stroke={color} strokeWidth="1" />
+        <rect x="72" y="-2" width="6" height="22" rx="1" fill="#27272a" stroke={color} strokeWidth="1" />
+      </g>
+    );
+  } else if (variant === "missile_pod") {
+    headgear = (
+      <g>
+        <rect x="6" y="38" width="14" height="18" rx="3" fill="#1c1917" stroke={color} strokeWidth="1.5" />
+        <circle cx="13" cy="44" r="2" fill="#ef4444" />
+        <circle cx="13" cy="50" r="2" fill="#ef4444" />
+        <rect x="80" y="38" width="14" height="18" rx="3" fill="#1c1917" stroke={color} strokeWidth="1.5" />
+        <circle cx="87" cy="44" r="2" fill="#ef4444" />
+        <circle cx="87" cy="50" r="2" fill="#ef4444" />
+      </g>
+    );
+  } else if (variant === "quad_array") {
+    headgear = (
+      <g stroke={color} strokeWidth="2">
+        <line x1="24" y1="18" x2="16" y2="-4" />
+        <line x1="36" y1="14" x2="32" y2="-8" />
+        <line x1="64" y1="14" x2="68" y2="-8" />
+        <line x1="76" y1="18" x2="84" y2="-4" />
+        <circle cx="16" cy="-4" r="2.5" fill={accentColor} stroke="none" />
+        <circle cx="32" cy="-8" r="2.5" fill={accentColor} stroke="none" />
+        <circle cx="68" cy="-8" r="2.5" fill={accentColor} stroke="none" />
+        <circle cx="84" cy="-4" r="2.5" fill={accentColor} stroke="none" />
+      </g>
+    );
+  } else if (variant === "halo_shield") {
+    headgear = (
+      <g>
+        <polygon points="6,44 14,38 22,44 22,54 14,60 6,54" fill="#064e3b" stroke={color} strokeWidth="1.8" />
+        <polygon points="78,44 86,38 94,44 94,54 86,60 78,54" fill="#064e3b" stroke={color} strokeWidth="1.8" />
+      </g>
+    );
+  } else if (variant === "ram_horns") {
+    headgear = (
+      <g>
+        <path d="M 28 16 C 6 2, 8 -16, 28 -10 C 20 -4, 20 8, 34 16 Z" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+        <path d="M 72 16 C 94 2, 92 -16, 72 -10 C 80 -4, 80 8, 66 16 Z" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+      </g>
+    );
+  } else if (variant === "radar_dish") {
+    headgear = (
+      <g>
+        <ellipse cx="20" cy="2" rx="9" ry="16" fill="#18181b" stroke={color} strokeWidth="2" transform="rotate(-25 20 2)" />
+        <circle cx="20" cy="2" r="3" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "hyper_wings") {
+    headgear = (
+      <g>
+        <polygon points="20,44 -2,22 10,54" fill={color} stroke={secondaryColor} strokeWidth="1.5" />
+        <polygon points="80,44 102,22 90,54" fill={color} stroke={secondaryColor} strokeWidth="1.5" />
+      </g>
+    );
+  }
+
+  // 3. STEALTH NINJA VARIANTS (10)
+  else if (variant === "flowing_headband") {
+    headgear = (
+      <g>
+        <line x1="18" y1="52" x2="82" y2="12" stroke="#334155" strokeWidth="3" strokeLinecap="round" />
+        <line x1="22" y1="48" x2="80" y2="14" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+        <path d="M 74 32 Q 90 26 96 42 Q 84 38 72 36" fill={color} opacity="0.9" />
+      </g>
+    );
+  } else if (variant === "tactical_cowl") {
+    headgear = (
+      <g>
+        <path d="M 22 24 Q 50 14 78 24 L 74 52 Q 50 60 26 52 Z" fill="#0f172a" stroke={color} strokeWidth="1.6" opacity="0.85" />
+        <circle cx="58" cy="34" r="6" fill="none" stroke="#22c55e" strokeWidth="2" />
+        <circle cx="58" cy="34" r="2" fill="#22c55e" />
+      </g>
+    );
+  } else if (variant === "oni_mask") {
+    headgear = (
+      <g>
+        <polygon points="30,16 18,-4 34,8" fill="#ef4444" stroke="#450a0a" strokeWidth="1.2" />
+        <polygon points="70,16 82,-4 66,8" fill="#ef4444" stroke="#450a0a" strokeWidth="1.2" />
+        <path d="M 32 44 L 40 50 L 46 44 L 50 48 L 54 44 L 60 50 L 68 44 L 62 56 L 38 56 Z" fill="#ffffff" stroke={color} strokeWidth="1.2" />
+      </g>
+    );
+  } else if (variant === "kitsune_ears") {
+    headgear = (
+      <g>
+        <polygon points="22,18 32,-4 42,12" fill="#1e2430" />
+        <polygon points="25,16 32,-1 39,12" fill={color} />
+        <polygon points="58,12 68,-4 78,18" fill="#1e2430" />
+        <polygon points="61,12 68,-1 75,16" fill={color} />
+        <line x1="36" y1="42" x2="22" y2="40" stroke={color} strokeWidth="1.5" />
+        <line x1="64" y1="42" x2="78" y2="40" stroke={color} strokeWidth="1.5" />
+      </g>
+    );
+  } else if (variant === "conical_kasa") {
+    headgear = (
+      <g>
+        <polygon points="6,24 50,-8 94,24" fill="#18181b" stroke={color} strokeWidth="2" />
+        <line x1="6" y1="24" x2="94" y2="24" stroke={accentColor} strokeWidth="3" />
+      </g>
+    );
+  } else if (variant === "twin_katanas") {
+    headgear = (
+      <g strokeLinecap="round">
+        <line x1="16" y1="56" x2="84" y2="-4" stroke="#475569" strokeWidth="3.5" />
+        <line x1="20" y1="52" x2="82" y2="-2" stroke={color} strokeWidth="2" />
+        <line x1="84" y1="56" x2="16" y2="-4" stroke="#475569" strokeWidth="3.5" />
+        <line x1="80" y1="52" x2="18" y2="-2" stroke={color} strokeWidth="2" />
+      </g>
+    );
+  } else if (variant === "tengu_beak") {
+    headgear = (
+      <g>
+        <polygon points="36,42 50,58 64,42 50,46" fill="#0f172a" stroke={color} strokeWidth="1.8" />
+      </g>
+    );
+  } else if (variant === "veil_shroud") {
+    headgear = (
+      <g>
+        <path d="M 22 30 Q 50 18 78 30 L 74 54 Q 50 64 26 54 Z" fill="#0f172a" opacity="0.85" stroke={color} strokeWidth="1.5" strokeDasharray="4 2" />
+      </g>
+    );
+  } else if (variant === "scythe_crest") {
+    headgear = (
+      <g>
+        <path d="M 50 -10 C 32 -10, 24 6, 32 18 C 24 10, 32 -4, 50 -4 C 68 -4, 76 10, 68 18 C 76 6, 68 -10, 50 -10 Z" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+      </g>
+    );
+  } else if (variant === "void_mask") {
+    headgear = (
+      <g>
+        <rect x="28" y="24" width="44" height="24" rx="4" fill="#000000" stroke={color} strokeWidth="2" />
+        <text x="50" y="42" fill={color} fontSize="14" fontFamily="monospace" textAnchor="middle" fontWeight="bold">零</text>
+      </g>
+    );
+  }
+
+  // 4. MATRIX HACKER VARIANTS (10)
+  else if (variant === "hoodie_cowl") {
+    headgear = (
+      <g>
+        <path d="M 14,42 Q 14,8 50,8 Q 86,8 86,42 Q 70,48 50,48 Q 30,48 14,42 Z" fill="#081018" stroke={color} strokeWidth="1.8" />
+        <circle cx="28" cy="18" r="1.5" fill={color} opacity="0.7" />
+        <circle cx="36" cy="14" r="1.5" fill={color} opacity="0.9" />
+        <circle cx="64" cy="14" r="1.5" fill={color} opacity="0.9" />
+        <circle cx="72" cy="18" r="1.5" fill={color} opacity="0.7" />
+      </g>
+    );
+  } else if (variant === "vr_goggles") {
+    headgear = (
+      <g>
+        <rect x="24" y="24" width="52" height="18" rx="4" fill="#083344" stroke={color} strokeWidth="2" />
+        <line x1="36" y1="24" x2="30" y2="4" stroke={color} strokeWidth="2" />
+        <circle cx="30" cy="4" r="3" fill={accentColor} />
+        <line x1="32" y1="33" x2="68" y2="33" stroke={accentColor} strokeWidth="1.6" />
+      </g>
+    );
+  } else if (variant === "daemon_horns") {
+    headgear = (
+      <g>
+        <path d="M 22 20 Q 50 4 78 20" stroke={color} strokeWidth="3.5" fill="none" />
+        <polygon points="32,20 24,0 40,14" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+        <polygon points="68,20 76,0 60,14" fill={color} stroke={secondaryColor} strokeWidth="1.2" />
+      </g>
+    );
+  } else if (variant === "glitch_halo") {
+    headgear = (
+      <g>
+        <rect x="18" y="10" width="64" height="48" fill="none" stroke={color} strokeWidth="1.8" strokeDasharray="8 4 3 5" />
+        <rect x="28" y="4" width="16" height="8" fill={color} opacity="0.8" />
+        <rect x="62" y="46" width="14" height="6" fill={color} opacity="0.8" />
+      </g>
+    );
+  } else if (variant === "floating_hud") {
+    headgear = (
+      <g>
+        <rect x="74" y="6" width="40" height="22" rx="3" fill="#09090b" stroke={color} strokeWidth="1.2" />
+        <text x="78" y="20" fill={color} fontSize="8" fontFamily="monospace">root#_</text>
+      </g>
+    );
+  } else if (variant === "respirator_eq") {
+    headgear = (
+      <g strokeWidth="2.5">
+        <rect x="28" y="42" width="44" height="14" rx="4" fill="#0f172a" stroke={color} strokeWidth="1.5" />
+        <line x1="36" y1="52" x2="36" y2="46" stroke="#22c55e" />
+        <line x1="43" y1="52" x2="43" y2="44" stroke="#eab308" />
+        <line x1="50" y1="52" x2="50" y2="43" stroke="#ef4444" />
+        <line x1="57" y1="52" x2="57" y2="45" stroke="#eab308" />
+        <line x1="64" y1="52" x2="64" y2="47" stroke="#22c55e" />
+      </g>
+    );
+  } else if (variant === "heatsink_fins") {
+    headgear = (
+      <g fill="#ea580c" stroke="#fed7aa" strokeWidth="1.2">
+        <rect x="28" y="-2" width="6" height="18" rx="1.5" />
+        <rect x="38" y="-6" width="6" height="22" rx="1.5" />
+        <rect x="47" y="-8" width="6" height="24" rx="1.5" />
+        <rect x="56" y="-6" width="6" height="22" rx="1.5" />
+        <rect x="66" y="-2" width="6" height="18" rx="1.5" />
+      </g>
+    );
+  } else if (variant === "cable_dreads") {
+    headgear = (
+      <g fill="none" strokeLinecap="round">
+        <path d="M 24 30 C 12 46, 14 74, 16 90" stroke={color} strokeWidth="3" />
+        <path d="M 30 26 C 22 50, 24 80, 26 94" stroke={accentColor} strokeWidth="2.5" />
+        <path d="M 70 26 C 78 50, 76 80, 74 94" stroke={accentColor} strokeWidth="2.5" />
+        <path d="M 76 30 C 88 46, 86 74, 84 90" stroke={color} strokeWidth="3" />
+      </g>
+    );
+  } else if (variant === "cyber_skull") {
+    headgear = (
+      <g>
+        <ellipse cx="42" cy="34" rx="6" ry="5" fill="#000000" stroke={color} strokeWidth="1.8" />
+        <ellipse cx="58" cy="34" rx="6" ry="5" fill="#000000" stroke={color} strokeWidth="1.8" />
+        <polygon points="48,44 50,40 52,44" fill={color} />
+        <line x1="40" y1="50" x2="60" y2="50" stroke={color} strokeWidth="2" />
+        <line x1="44" y1="47" x2="44" y2="53" stroke={color} strokeWidth="1.5" />
+        <line x1="50" y1="47" x2="50" y2="53" stroke={color} strokeWidth="1.5" />
+        <line x1="56" y1="47" x2="56" y2="53" stroke={color} strokeWidth="1.5" />
+      </g>
+    );
+  } else if (variant === "wireframe_cube") {
+    headgear = (
+      <g stroke={color}>
+        <rect x="20" y="8" width="60" height="52" rx="4" fill="none" strokeWidth="1.8" />
+        <rect x="30" y="18" width="40" height="32" rx="2" fill="none" stroke={accentColor} strokeWidth="1.4" strokeDasharray="4 2" />
+        <line x1="20" y1="8" x2="30" y2="18" strokeWidth="1.4" />
+        <line x1="80" y1="8" x2="70" y2="18" strokeWidth="1.4" />
+        <line x1="20" y1="60" x2="30" y2="50" strokeWidth="1.4" />
+        <line x1="80" y1="60" x2="70" y2="50" strokeWidth="1.4" />
+      </g>
+    );
+  }
+
+  // 5. CELESTIAL ASTRO VARIANTS (10)
+  else if (variant === "bubble_dome") {
+    headgear = (
+      <g>
+        <ellipse cx="50" cy="34" rx="36" ry="26" fill="none" stroke={color} strokeWidth="2.8" opacity="0.9" />
+        <circle cx="50" cy="4" r="4.5" fill="#fef08a" stroke={color} strokeWidth="1.5" />
+        <path d="M 32 18 Q 50 8 68 18" stroke="#ffffff" strokeWidth="2.5" fill="none" opacity="0.7" strokeLinecap="round" />
+      </g>
+    );
+  } else if (variant === "lunar_pack") {
+    headgear = (
+      <g>
+        <rect x="24" y="-4" width="3" height="24" fill={color} />
+        <circle cx="25.5" cy="-4" r="2.5" fill="#ffffff" />
+        <ellipse cx="50" cy="34" rx="32" ry="24" fill="none" stroke="#e2e8f0" strokeWidth="2.2" />
+      </g>
+    );
+  } else if (variant === "sunburst_halo") {
+    headgear = (
+      <g stroke={color} strokeWidth="2" opacity="0.9">
+        <line x1="50" y1="-2" x2="50" y2="-14" />
+        <line x1="76" y1="8" x2="88" y2="-4" />
+        <line x1="86" y1="34" x2="100" y2="34" />
+        <line x1="76" y1="60" x2="88" y2="72" />
+        <line x1="50" y1="70" x2="50" y2="82" />
+        <line x1="24" y1="60" x2="12" y2="72" />
+        <line x1="14" y1="34" x2="0" y2="34" />
+        <line x1="24" y1="8" x2="12" y2="-4" />
+      </g>
+    );
+  } else if (variant === "saturn_ring") {
+    headgear = (
+      <g>
+        <ellipse cx="50" cy="34" rx="46" ry="14" fill="none" stroke={color} strokeWidth="2.8" transform="rotate(-15 50 34)" />
+        <circle cx="86" cy="26" r="3.5" fill={accentColor} />
+      </g>
+    );
+  } else if (variant === "star_crown") {
+    headgear = (
+      <g fill={color}>
+        <polygon points="30,12 36,-2 42,10" />
+        <polygon points="44,8 50,-8 56,8" />
+        <polygon points="58,10 64,-2 70,12" />
+        <circle cx="50" cy="10" r="3" fill="#ffffff" />
+      </g>
+    );
+  } else if (variant === "eclipse_corona") {
+    headgear = (
+      <g>
+        <ellipse cx="50" cy="34" rx="40" ry="24" fill="none" stroke={color} strokeWidth="3.5" opacity="0.65" strokeDasharray="10 5" />
+        <circle cx="50" cy="34" r="28" fill="#000000" stroke={color} strokeWidth="1.8" />
+      </g>
+    );
+  } else if (variant === "pulsar_spires") {
+    headgear = (
+      <g stroke={color} strokeWidth="3.2" strokeLinecap="round">
+        <line x1="50" y1="8" x2="50" y2="-16" />
+        <circle cx="50" cy="-16" r="3.5" fill="#ffffff" stroke="none" />
+        <line x1="50" y1="60" x2="50" y2="78" />
+        <circle cx="50" cy="78" r="3.5" fill="#ffffff" stroke="none" />
+      </g>
+    );
+  } else if (variant === "aurora_ribbons") {
+    headgear = (
+      <g fill="none" strokeLinecap="round">
+        <path d="M 14 -2 Q 32 -18 50 -4 T 86 -8" stroke={color} strokeWidth="3.5" opacity="0.8" />
+        <path d="M 20 -8 Q 38 -24 56 -10 T 80 -14" stroke={accentColor} strokeWidth="2.5" opacity="0.6" />
+      </g>
+    );
+  } else if (variant === "angel_wings") {
+    headgear = (
+      <g>
+        <polygon points="20,44 -6,6 12,54" fill={color} stroke={secondaryColor} strokeWidth="1.5" opacity="0.9" />
+        <polygon points="80,44 106,6 88,54" fill={color} stroke={secondaryColor} strokeWidth="1.5" opacity="0.9" />
+        <ellipse cx="50" cy="2" rx="20" ry="6" fill="none" stroke={accentColor} strokeWidth="2" />
+      </g>
+    );
+  } else if (variant === "singularity_core") {
+    headgear = (
+      <g>
+        <ellipse cx="50" cy="34" rx="38" ry="32" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.9" />
+        <circle cx="22" cy="18" r="3" fill={accentColor} />
+        <circle cx="78" cy="50" r="3" fill={accentColor} />
+      </g>
     );
   } else {
     // Default High-Tech Helm
@@ -209,10 +722,14 @@ function Render3DSkin({ item, gradId }) {
     <g transform="translate(0, 2)">
       {headgear}
 
-      {/* 3D Chibi Chassis Body */}
-      <path d="M30,56 L70,56 L64,74 L36,74 Z" fill={`url(#${gradId}-left)`} stroke={color} strokeWidth="1.5" />
-      <rect x="42" y="60" width="16" height="10" rx="3" fill="#090912" stroke={color} strokeWidth="1" />
-      <circle cx="50" cy="65" r="2.5" fill={color} />
+      {/* 3D Chibi Chassis Body with Distinct Staff Uniform */}
+      <Render3DStaffTorso
+        archetype={archetype}
+        color={color}
+        secondaryColor={secondaryColor}
+        accentColor={accentColor}
+        gradId={gradId}
+      />
 
       {/* 3D Volumetric Head Helmet */}
       <ellipse cx="50" cy="34" rx="30" ry="22" fill="#171724" stroke={color} strokeWidth="2" />
@@ -236,7 +753,7 @@ function Render3DSkin({ item, gradId }) {
 }
 
 // ----------------------------------------------------------------------------
-// 2. 3D TECH DESK PROPS (350 PROPS)
+// 2. 3D TECH DESK PROPS (35 CURATED MODELS ACROSS 7 ARCHETYPES)
 // ----------------------------------------------------------------------------
 function Render3DProp({ item, gradId }) {
   const { name, color, archetype } = item;
@@ -253,7 +770,7 @@ function Render3DProp({ item, gradId }) {
 
   let prop3D = null;
 
-  if (archetype === "supercomputer" || name.includes("Server") || name.includes("Tower")) {
+  if (archetype === "supercomputer" || name.includes("Server") || name.includes("Tower") || name.includes("Mainframe") || name.includes("Cluster") || name.includes("Rig")) {
     prop3D = (
       <g transform="translate(54, 18)">
         {/* Isometric Top Face */}
@@ -274,7 +791,7 @@ function Render3DProp({ item, gradId }) {
         <circle cx="6" cy="42" r="1" fill="#ec4899" />
       </g>
     );
-  } else if (archetype === "dual_monitor" || name.includes("Monitor") || name.includes("Screen")) {
+  } else if (archetype === "dual_monitor" || name.includes("Monitor") || name.includes("Screen") || name.includes("OLED") || name.includes("Display")) {
     prop3D = (
       <g transform="translate(50, 22)">
         {/* Monitor 1 (Main Left) */}
@@ -293,7 +810,7 @@ function Render3DProp({ item, gradId }) {
         <ellipse cx="25" cy="46" rx="8" ry="3" fill="#334155" />
       </g>
     );
-  } else if (archetype === "hologram_emitter" || name.includes("Holo") || name.includes("Projector")) {
+  } else if (archetype === "hologram_emitter" || name.includes("Holo") || name.includes("Projector") || name.includes("Emitter") || name.includes("Tesseract")) {
     prop3D = (
       <g transform="translate(56, 16)">
         {/* Hexagonal Projector Base */}
@@ -307,7 +824,7 @@ function Render3DProp({ item, gradId }) {
         <polygon points="26,14 18,18 18,26 26,22" fill="#0369a1" opacity="0.95" />
       </g>
     );
-  } else if (archetype === "espresso_station" || name.includes("Espresso") || name.includes("Coffee")) {
+  } else if (archetype === "espresso_station" || name.includes("Espresso") || name.includes("Coffee") || name.includes("Brewer") || name.includes("Drip")) {
     prop3D = (
       <g transform="translate(56, 26)">
         {/* 3D Espresso Box */}
@@ -321,7 +838,26 @@ function Render3DProp({ item, gradId }) {
         <path d="M18,22 Q20,17 18,13" stroke={color} strokeWidth="1.5" fill="none" opacity="0.8" strokeLinecap="round" />
       </g>
     );
-  } else if (archetype === "terrarium_bonsai" || name.includes("Bonsai") || name.includes("Plant")) {
+  } else if (archetype === "arcade_cabinet" || name.includes("Arcade") || name.includes("Pinball") || name.includes("Cabinet")) {
+    prop3D = (
+      <g transform="translate(54, 16)">
+        {/* Isometric Cabinet Top & Sides */}
+        <polygon points="14,2 32,8 20,14 2,8" fill={`url(#${gradId}-top)`} stroke={color} strokeWidth="1" />
+        <polygon points="2,8 20,14 20,54 2,48" fill="#18181b" stroke="#2b2d3d" strokeWidth="1" />
+        <polygon points="20,14 32,8 32,48 20,54" fill="#0f0f14" stroke="#2b2d3d" strokeWidth="1" />
+        {/* Glowing Marquee Banner */}
+        <polygon points="4,12 18,17 18,22 4,17" fill={color} />
+        {/* Angled CRT Screen */}
+        <polygon points="4,22 18,27 18,38 4,33" fill="#000000" stroke={color} strokeWidth="0.8" />
+        <rect x="8" y="27" width="5" height="5" fill={color} transform="skewY(15)" />
+        {/* Control Deck with Joystick and Buttons */}
+        <polygon points="3,36 19,41 17,45 1,40" fill="#27272a" stroke={color} strokeWidth="0.8" />
+        <circle cx="6" cy="40" r="1.5" fill="#ef4444" />
+        <circle cx="12" cy="42" r="1.2" fill={color} />
+        <circle cx="15" cy="43" r="1.2" fill="#eab308" />
+      </g>
+    );
+  } else if (archetype === "terrarium_bonsai" || name.includes("Bonsai") || name.includes("Plant") || name.includes("Garden") || name.includes("Dome")) {
     prop3D = (
       <g transform="translate(56, 20)">
         {/* Hexagonal Ceramic Pot */}
@@ -329,9 +865,27 @@ function Render3DProp({ item, gradId }) {
         {/* Twisted Bonsai Trunk */}
         <path d="M17,40 Q17,30 13,26 Q24,22 21,14" stroke="#92400e" strokeWidth="3" fill="none" strokeLinecap="round" />
         {/* Foliage Clouds */}
-        <ellipse cx="14" cy="20" rx="9" ry="5.5" fill="#10b981" />
-        <ellipse cx="25" cy="15" rx="8" ry="5" fill="#34d399" />
+        <ellipse cx="14" cy="20" rx="9" ry="5.5" fill={color} />
+        <ellipse cx="25" cy="15" rx="8" ry="5" fill={color} opacity="0.8" />
         <ellipse cx="19" cy="25" rx="6" ry="4" fill="#059669" />
+      </g>
+    );
+  } else if (archetype === "lab_oscilloscope" || name.includes("Oscilloscope") || name.includes("Multimeter") || name.includes("Analyzer") || name.includes("Scope") || name.includes("Meter")) {
+    prop3D = (
+      <g transform="translate(52, 22)">
+        {/* Instrument Enclosure Top */}
+        <polygon points="12,4 38,4 32,16 6,16" fill={`url(#${gradId}-top)`} stroke="#475569" strokeWidth="1" />
+        {/* Instrument Front Face */}
+        <polygon points="6,16 32,16 32,44 6,44" fill="#111827" stroke={color} strokeWidth="1.2" />
+        <polygon points="32,16 38,4 38,32 32,44" fill="#090d16" stroke="#334155" strokeWidth="1" />
+        {/* CRT Phosphor Screen */}
+        <rect x="9" y="19" width="16" height="15" rx="1.5" fill="#031a12" stroke={color} strokeWidth="0.8" />
+        {/* Oscilloscope Sine Wave Trace */}
+        <path d="M 10 26 Q 14 20 17 26 T 24 26" stroke={color} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        {/* Rotary Knobs & Terminals */}
+        <circle cx="28" cy="23" r="2" fill="#374151" stroke="#9ca3af" strokeWidth="0.6" />
+        <circle cx="28" cy="30" r="2" fill="#374151" stroke="#9ca3af" strokeWidth="0.6" />
+        <circle cx="28" cy="37" r="1.2" fill={color} />
       </g>
     );
   } else {

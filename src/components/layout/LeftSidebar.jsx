@@ -22,6 +22,7 @@ import {
   Blocks,
 } from "lucide-react";
 import FileExplorer from "./FileExplorer";
+import { TOTAL_CATALOG_COUNT } from "@/lib/catalog/index.js";
 
 export default function LeftSidebar({
   workstations = [],
@@ -470,13 +471,13 @@ export default function LeftSidebar({
             type="button"
             onClick={onOpenStore}
             className="w-full flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-amber-500/15 to-amber-600/10 hover:from-amber-500/25 hover:to-amber-600/20 border border-amber-500/30 text-amber-300 transition-all cursor-pointer text-xs"
-            title="Open Supporter Store: 1,000 Tech Items & 3D Effects"
+            title={`Open Supporter Store: ${TOTAL_CATALOG_COUNT} Tech Items & 3D Effects`}
           >
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-amber-400" />
               <div className="text-left">
                 <div className="font-bold text-white text-[11px] leading-tight">Supporter Store</div>
-                <div className="text-[10px] text-amber-400/80">1,000 Tech Items & 3D Effects</div>
+                <div className="text-[10px] text-amber-400/80">{TOTAL_CATALOG_COUNT} Tech Items & 3D Effects</div>
               </div>
             </div>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40">

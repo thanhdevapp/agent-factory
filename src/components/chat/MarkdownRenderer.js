@@ -21,7 +21,7 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
   if (!content) return null;
 
   return (
-    <div className="chat-markdown text-slate-200 text-sm leading-relaxed break-words">
+    <div className="chat-markdown text-[var(--text-main)] text-[var(--font-size-ui)] leading-relaxed break-words font-sans">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -31,7 +31,7 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
               <span className="inline-block my-2 max-w-full group">
                 <span
                   onClick={() => onImageClick?.({ src: resolved, alt: alt || "Image preview" })}
-                  className="relative inline-block cursor-pointer overflow-hidden rounded-lg border border-slate-700/80 bg-slate-950 shadow-md transition-all hover:border-cyan-500/70 hover:shadow-cyan-500/10 hover:shadow-xl"
+                  className="relative inline-block cursor-pointer overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-chat-code)] shadow-md transition-all hover:border-[var(--accent-secondary)] hover:shadow-xl"
                   title="Click to view popup preview"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -48,7 +48,7 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
                   </span>
                 </span>
                 {alt && (
-                  <span className="block mt-1 text-center text-[11px] text-slate-400 italic">
+                  <span className="block mt-1 text-center text-[11px] text-[var(--text-muted)] italic">
                     {alt}
                   </span>
                 )}
@@ -105,19 +105,19 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
                 <button
                   type="button"
                   onClick={() => onImageClick?.({ src: resolved, alt: cleanPath })}
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 my-0.5 rounded bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-mono text-[11px] transition-all cursor-pointer group shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 my-0.5 rounded bg-[var(--bg-chat-user)] hover:brightness-110 border border-[var(--border-chat-user)] text-[var(--accent-secondary)] font-mono text-[11px] transition-all cursor-pointer group shadow-sm"
                   title="Click to preview image in popup"
                 >
-                  <ImageIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0 transition-transform group-hover:scale-110" />
-                  <span className="underline decoration-cyan-500/40">{cleanPath}</span>
-                  <Maximize2 className="w-3 h-3 text-cyan-400 opacity-60 group-hover:opacity-100" />
+                  <ImageIcon className="w-3.5 h-3.5 text-[var(--accent-secondary)] shrink-0 transition-transform group-hover:scale-110" />
+                  <span className="underline decoration-[var(--border-chat-user)]">{cleanPath}</span>
+                  <Maximize2 className="w-3 h-3 text-[var(--accent-secondary)] opacity-60 group-hover:opacity-100" />
                 </button>
               );
             }
 
             return (
               <code
-                className="px-1.5 py-0.5 rounded bg-slate-800/90 text-cyan-300 font-mono text-[12px] border border-slate-700/50"
+                className="px-1.5 py-0.5 rounded bg-[var(--bg-chat-code)] text-[var(--accent-secondary)] font-mono text-[12px] border border-[var(--border-subtle)]"
                 {...props}
               >
                 {children}
@@ -133,10 +133,10 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
               return (
                 <span
                   onClick={() => onImageClick?.({ src: resolved, alt: String(children) || "Image link" })}
-                  className="cursor-pointer text-cyan-400 underline decoration-cyan-500/40 hover:decoration-cyan-400 hover:text-cyan-300 font-medium transition-colors inline-flex items-center gap-1.5"
+                  className="cursor-pointer text-[var(--accent-secondary)] underline decoration-[var(--accent-secondary)]/40 hover:decoration-[var(--accent-secondary)] hover:brightness-110 font-medium transition-colors inline-flex items-center gap-1.5"
                   title="Click to view image"
                 >
-                  <ImageIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <ImageIcon className="w-3.5 h-3.5 text-[var(--accent-secondary)] shrink-0" />
                   <span>{children}</span>
                 </span>
               );
@@ -147,7 +147,7 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
                 href={href}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="text-cyan-400 underline decoration-cyan-500/40 hover:decoration-cyan-400 hover:text-cyan-300 transition-colors"
+                className="text-[var(--accent-secondary)] underline decoration-[var(--accent-secondary)]/40 hover:decoration-[var(--accent-secondary)] hover:brightness-110 transition-colors"
               >
                 {children}
               </a>
@@ -155,8 +155,8 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
           },
           table({ children }) {
             return (
-              <div className="my-3 overflow-x-auto rounded-lg border border-slate-700/80 bg-slate-900/60">
-                <table className="min-w-full divide-y divide-slate-800 text-left text-xs">
+              <div className="my-3 overflow-x-auto rounded-lg border border-[var(--border-card)] bg-[var(--bg-card)]">
+                <table className="min-w-full divide-y divide-[var(--border-subtle)] text-left text-xs">
                   {children}
                 </table>
               </div>
@@ -164,21 +164,21 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
           },
           th({ children }) {
             return (
-              <th className="px-3 py-2 font-semibold text-slate-300 bg-slate-800/60">
+              <th className="px-3 py-2 font-semibold text-[var(--text-bright)] bg-[var(--bg-card-inner)]">
                 {children}
               </th>
             );
           },
           td({ children }) {
             return (
-              <td className="px-3 py-2 border-t border-slate-800/60 text-slate-300">
+              <td className="px-3 py-2 border-t border-[var(--border-subtle)] text-[var(--text-main)]">
                 {children}
               </td>
             );
           },
           blockquote({ children }) {
             return (
-              <blockquote className="my-2 border-l-2 border-cyan-500/60 pl-3 italic text-slate-400 text-xs">
+              <blockquote className="my-2 border-l-2 border-[var(--accent-primary)] pl-3 italic text-[var(--text-muted)] text-xs">
                 {children}
               </blockquote>
             );
@@ -193,13 +193,13 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
             return <p className="mb-2 last:mb-0">{children}</p>;
           },
           h1({ children }) {
-            return <h1 className="text-lg font-bold text-slate-100 my-2">{children}</h1>;
+            return <h1 className="text-lg font-bold text-[var(--text-bright)] my-2">{children}</h1>;
           },
           h2({ children }) {
-            return <h2 className="text-base font-semibold text-slate-100 my-2">{children}</h2>;
+            return <h2 className="text-base font-semibold text-[var(--text-bright)] my-2">{children}</h2>;
           },
           h3({ children }) {
-            return <h3 className="text-sm font-semibold text-slate-200 my-1.5">{children}</h3>;
+            return <h3 className="text-sm font-semibold text-[var(--text-bright)] my-1.5">{children}</h3>;
           },
         }}
       >

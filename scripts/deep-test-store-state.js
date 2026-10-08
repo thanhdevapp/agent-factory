@@ -73,7 +73,7 @@ const vipRes = unlockWithCode("AGMON-COFFEE-VIP");
 assert(vipRes.success === true, "AGMON-COFFEE-VIP was accepted");
 assert(vipRes.state.isSupporter === true, "isSupporter is true");
 assert(vipRes.state.supporterTier === "vip", "tier is vip");
-assert(vipRes.state.unlockedItems.length >= 1000, `Unlocked at least 1000 items, got ${vipRes.state.unlockedItems.length}`);
+assert(vipRes.state.unlockedItems.length >= 140, `Unlocked at least 140 items, got ${vipRes.state.unlockedItems.length}`);
 
 console.log("=== STEP 4: EQUIP SKINS ACROSS ALL 5 ARCHETYPES ===");
 const sampleSkins = ['skin_0', 'skin_50', 'skin_100', 'skin_150', 'skin_200'];

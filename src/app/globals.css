@@ -38,6 +38,20 @@
   --text-main: #cccccc;
   --text-muted: #858585;
   --text-bright: #ffffff;
+  --text-on-accent: #ffffff;
+
+  /* Chat Semantics */
+  --bg-chat-user: rgba(8, 47, 73, 0.6);
+  --border-chat-user: rgba(6, 182, 212, 0.35);
+  --text-chat-user: #67e8f9;
+  --text-chat-user-body: #f1f5f9;
+  --bg-chat-agent: #1e1e1e;
+  --border-chat-agent: #2b2b2b;
+  --bg-chat-tool: #141414;
+  --border-chat-tool: #2b2b2b;
+  --bg-chat-code: #141414;
+  --text-chat-code: #e2e8f0;
+  --bg-input: #252526;
 }
 
 /* 1. One Dark Pro */
@@ -61,6 +75,20 @@
   --text-main: #abb2bf;
   --text-muted: #5c6370;
   --text-bright: #e5e5e5;
+  --text-on-accent: #ffffff;
+
+  /* Chat Semantics */
+  --bg-chat-user: #21252b;
+  --border-chat-user: rgba(97, 175, 239, 0.4);
+  --text-chat-user: #61afef;
+  --text-chat-user-body: #e5e5e5;
+  --bg-chat-agent: #282c34;
+  --border-chat-agent: #353b45;
+  --bg-chat-tool: #1e2227;
+  --border-chat-tool: #181a1f;
+  --bg-chat-code: #1e2227;
+  --text-chat-code: #abb2bf;
+  --bg-input: #21252b;
 }
 
 /* 2. Tokyo Night */
@@ -84,6 +112,20 @@
   --text-main: #a9b1d6;
   --text-muted: #565f89;
   --text-bright: #c0caf5;
+  --text-on-accent: #ffffff;
+
+  /* Chat Semantics */
+  --bg-chat-user: #1f2335;
+  --border-chat-user: rgba(122, 162, 247, 0.4);
+  --text-chat-user: #7aa2f7;
+  --text-chat-user-body: #c0caf5;
+  --bg-chat-agent: #1a1b26;
+  --border-chat-agent: #292e42;
+  --bg-chat-tool: #16161e;
+  --border-chat-tool: #292e42;
+  --bg-chat-code: #13141c;
+  --text-chat-code: #a9b1d6;
+  --bg-input: #1f2335;
 }
 
 /* 3. GitHub Dark */
@@ -107,6 +149,20 @@
   --text-main: #c9d1d9;
   --text-muted: #8b949e;
   --text-bright: #f0f6fc;
+  --text-on-accent: #ffffff;
+
+  /* Chat Semantics */
+  --bg-chat-user: #161b22;
+  --border-chat-user: rgba(47, 129, 247, 0.4);
+  --text-chat-user: #58a6ff;
+  --text-chat-user-body: #f0f6fc;
+  --bg-chat-agent: #161b22;
+  --border-chat-agent: #30363d;
+  --bg-chat-tool: #0d1117;
+  --border-chat-tool: #21262d;
+  --bg-chat-code: #0a0c10;
+  --text-chat-code: #c9d1d9;
+  --bg-input: #0d1117;
 }
 
 /* 4. Monokai Pro */
@@ -130,6 +186,20 @@
   --text-main: #fcfcfa;
   --text-muted: #939293;
   --text-bright: #ffffff;
+  --text-on-accent: #19181a;
+
+  /* Chat Semantics */
+  --bg-chat-user: #2d2a2e;
+  --border-chat-user: rgba(255, 216, 102, 0.4);
+  --text-chat-user: #ffd866;
+  --text-chat-user-body: #fcfcfa;
+  --bg-chat-agent: #221f22;
+  --border-chat-agent: #403e41;
+  --bg-chat-tool: #19181a;
+  --border-chat-tool: #403e41;
+  --bg-chat-code: #171618;
+  --text-chat-code: #fcfcfa;
+  --bg-input: #2d2a2e;
 }
 
 /* 5. Light+ (VS Code Modern) */
@@ -154,6 +224,20 @@
   --text-main: #24292f;
   --text-muted: #6e7781;
   --text-bright: #09090b;
+  --text-on-accent: #ffffff;
+
+  /* Chat Semantics for Light Mode */
+  --bg-chat-user: #e0f2fe;
+  --border-chat-user: #7dd3fc;
+  --text-chat-user: #0284c7;
+  --text-chat-user-body: #0f172a;
+  --bg-chat-agent: #ffffff;
+  --border-chat-agent: #e2e8f0;
+  --bg-chat-tool: #f8fafc;
+  --border-chat-tool: #e2e8f0;
+  --bg-chat-code: #f1f5f9;
+  --text-chat-code: #0f172a;
+  --bg-input: #ffffff;
 }
 
 html {
@@ -206,6 +290,13 @@ samp {
 .bg-\[\#37373d\] { background-color: var(--bg-selection) !important; }
 .bg-\[\#007acc\] { background-color: var(--accent-primary) !important; }
 
+/* Dynamic mappings for auxiliary dark shades */
+.bg-\[\#141414\] { background-color: var(--bg-chat-code) !important; }
+.bg-\[\#121214\] { background-color: var(--bg-workbench) !important; }
+.bg-\[\#18181b\] { background-color: var(--bg-card) !important; }
+.bg-\[\#1f1f23\] { background-color: var(--bg-card-inner) !important; }
+.bg-\[\#27272a\] { background-color: var(--bg-hover) !important; }
+
 .hover\:bg-\[\#2a2d2e\]:hover { background-color: var(--bg-hover) !important; }
 .hover\:bg-\[\#333333\]:hover { background-color: var(--bg-hover) !important; }
 .hover\:bg-\[\#2d2d2e\]:hover { background-color: var(--bg-hover) !important; }
@@ -216,10 +307,42 @@ samp {
 .border-\[\#3e3e42\] { border-color: var(--border-card) !important; }
 .border-\[\#1e1e1e\] { border-color: var(--border-subtle) !important; }
 .border-\[\#007acc\] { border-color: var(--border-focus) !important; }
+.border-\[\#27272a\] { border-color: var(--border-subtle) !important; }
+.border-\[\#333338\] { border-color: var(--border-card) !important; }
 
 .text-\[\#cccccc\] { color: var(--text-main) !important; }
 .text-\[\#858585\] { color: var(--text-muted) !important; }
 .text-\[\#007acc\] { color: var(--accent-primary) !important; }
+
+/* Light+ theme adaptations for slate elements & text contrast */
+[data-theme="light-plus"] .text-slate-100,
+[data-theme="light-plus"] .text-slate-200 {
+  color: var(--text-bright) !important;
+}
+
+[data-theme="light-plus"] .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+[data-theme="light-plus"] .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light-plus"] .text-white:not([class*="bg-indigo-"]):not([class*="bg-cyan-"]):not([class*="bg-sky-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-[#007acc]"]):not(.keep-white) {
+  color: var(--text-bright) !important;
+}
+
+/* Light mode selection and input styling */
+[data-theme="light-plus"] select {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-card) !important;
+}
+
+[data-theme="light-plus"] select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
 
 /* Global cursor: pointer for all buttons, interactive controls, and action elements */
 button:not(:disabled),

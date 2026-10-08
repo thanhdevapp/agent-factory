@@ -39,15 +39,15 @@ export default function CodeBlock({ language = "text", code = "" }) {
   };
 
   return (
-    <div className="my-3 rounded-lg border border-slate-700/80 bg-slate-950 overflow-hidden shadow-md text-xs font-mono">
+    <div className="my-3 rounded-lg border border-[var(--border-card)] bg-[var(--bg-chat-code)] overflow-hidden shadow-md text-xs font-mono">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400">
-        <span className="font-semibold uppercase tracking-wider text-slate-300">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-card-inner)] border-b border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)]">
+        <span className="font-semibold uppercase tracking-wider text-[var(--text-bright)]">
           {cleanLang || "code"}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-slate-800 hover:text-slate-200 transition-colors text-slate-400"
+          className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-bright)] transition-colors text-[var(--text-muted)] cursor-pointer"
           title="Copy code"
         >
           {copied ? (
@@ -65,7 +65,7 @@ export default function CodeBlock({ language = "text", code = "" }) {
       </div>
 
       {/* Code body */}
-      <pre className="p-3 overflow-x-auto text-slate-200 leading-relaxed font-mono whitespace-pre text-[12px]">
+      <pre className="p-3 overflow-x-auto text-[var(--text-chat-code)] leading-relaxed font-mono whitespace-pre text-[12px]">
         <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
     </div>

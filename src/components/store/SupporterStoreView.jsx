@@ -44,7 +44,10 @@ import {
   SUPPORTER_CHANGE_EVENT,
 } from "@/lib/supporterStore";
 import { startAmbient, stopAmbient, setAmbientVolume } from "@/lib/ambientAudio";
+import { TOTAL_CATALOG_COUNT } from "@/lib/catalog/index.js";
 import { Item3DPreview } from "./Item3DRenderer";
+import LiveFittingRoom from "./LiveFittingRoom";
+import { LiveReactAgent } from "./LiveReactAgent";
 
 // VietQR donation recipient info (MB Bank)
 const VIETQR_CONFIG = {
@@ -77,7 +80,7 @@ const DONATE_TIERS = [
     amount: 100000,
     amountUsd: "$5",
     tag: "VIP Supporter",
-    description: "Unlock all 1,000 3D isometric items, aura effects, and exclusive badges.",
+    description: `Unlock all ${TOTAL_CATALOG_COUNT} 3D isometric items, aura effects, and exclusive badges.`,
   },
 ];
 
@@ -253,9 +256,16 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     {
       id: "all",
       label: "All Items",
-      count: 1010,
+      count: TOTAL_CATALOG_COUNT,
       icon: Grid,
-      desc: "10 Themes · 250 Skins · 350 Props · 200 Pets · 100 Auras · 100 Trophies",
+      desc: "10 Themes · 50 Skins · 35 Props · 21 Pets · 16 Auras · 16 Trophies",
+    },
+    {
+      id: "fitting_room",
+      label: "Live Fitting Room",
+      badge: "LIVE 3D",
+      icon: Sparkles,
+      desc: "Interactive avatar sandbox, mix props & test actions",
     },
     {
       id: "themes",
@@ -371,7 +381,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
             </div>
             <div>
               <h2 className="text-sm font-bold text-white leading-tight">Supporter Store</h2>
-              <p className="text-[11px] text-amber-400 font-mono">1,000 3D Items & Effects</p>
+              <p className="text-[11px] text-amber-400 font-mono">{TOTAL_CATALOG_COUNT} 3D Items & Effects</p>
             </div>
           </div>
           {onClose && (
@@ -391,7 +401,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search across 1,000 items..."
+              placeholder={`Search across ${TOTAL_CATALOG_COUNT} items...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-7 py-1.5 bg-[#202026] border border-[#33333d] rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#007acc] transition-colors"
@@ -410,7 +420,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Aside Category Navigation Menu */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1 text-xs">
           <div className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            Categories (1,000 Items)
+            Categories ({TOTAL_CATALOG_COUNT} Items)
           </div>
           {asideMenuItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -494,10 +504,10 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                 type="button"
                 onClick={handleQuickUnlockAll}
                 className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm"
-                title="Unlock all 1,000 items instantly to preview"
+                title={`Unlock all ${TOTAL_CATALOG_COUNT} items instantly to preview`}
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Unlock all 1,000 items (VIP Demo)</span>
+                <span>Unlock all {TOTAL_CATALOG_COUNT} items (VIP Demo)</span>
               </button>
             </div>
           )}
@@ -519,10 +529,20 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           </div>
 
           <div className="flex items-center gap-3 p-2 rounded-xl bg-[#1d1d23] border border-[#2b2b34] shadow-inner">
-            <div className="w-14 h-14 rounded-lg bg-[#141418] border border-[#33333d] flex items-center justify-center shrink-0 overflow-hidden">
-              <div className="scale-75">
-                <Item3DPreview itemId={storeState.equippedSkin} className="w-20 h-20" />
-              </div>
+            <div className="w-14 h-14 rounded-lg bg-[#141418] border border-[#33333d] flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
+              <LiveReactAgent
+                skinId={storeState.equippedSkin || "skin_0"}
+                petId={storeState.equippedPet || "pet_0"}
+                propsList={storeState.equippedProps || []}
+                auraId={storeState.equippedAura || "aura_0"}
+                themeId={storeState.equippedOfficeTheme || "theme_default"}
+                mode="streaming"
+                intensity={0.5}
+                showFloor={false}
+                showDesk={false}
+                interactive={false}
+                className="w-full h-full"
+              />
             </div>
             <div className="space-y-0.5 flex-1 min-w-0">
               <div className="font-bold text-white text-xs truncate">
@@ -554,6 +574,15 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
               )}
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("fitting_room")}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-semibold cursor-pointer transition-all shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Open 3D Fitting Room</span>
+          </button>
         </div>
       </aside>
 
@@ -564,10 +593,11 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[#007acc]/20 text-cyan-300 border border-[#007acc]/40">
-                CATALOG 1,010
+                CATALOG {TOTAL_CATALOG_COUNT}
               </span>
               <h1 className="text-base font-bold text-white flex items-center gap-2">
                 {activeTab === "all" && <Grid className="w-4 h-4 text-cyan-400" />}
+                {activeTab === "fitting_room" && <Sparkles className="w-4 h-4 text-cyan-400" />}
                 {activeTab === "themes" && <Palette className="w-4 h-4 text-purple-400" />}
                 {activeTab === "skins" && <Bot className="w-4 h-4 text-pink-400" />}
                 {activeTab === "props" && <Laptop className="w-4 h-4 text-emerald-400" />}
@@ -577,20 +607,22 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                 {activeTab === "ambient" && <Volume2 className="w-4 h-4 text-cyan-400" />}
                 {activeTab === "donate" && <Coffee className="w-4 h-4 text-amber-400" />}
                 <span>
-                  {activeTab === "all" && "All 1,010 Tech Items & 3D Effects"}
+                  {activeTab === "all" && `All ${TOTAL_CATALOG_COUNT} Tech Items & 3D Effects`}
+                  {activeTab === "fitting_room" && "Live Avatar Fitting Room & Sandbox"}
                   {activeTab === "themes" && "Office Themes & Wallpapers (10 Floor Styles)"}
-                  {activeTab === "skins" && "Agent 3D Skins (250 Armor & Visor Models)"}
-                  {activeTab === "props" && "Desk Props & Hardware (350 Devices & Rigs)"}
-                  {activeTab === "pets" && "Pets & Cyber Companions (200 Pets & Drones)"}
-                  {activeTab === "auras" && "Auras & Character Effects (100 Energy Spectrums)"}
-                  {activeTab === "trophies" && "Trophies & Silicon Badges (100 3D Medals)"}
+                  {activeTab === "skins" && "Agent 3D Skins (50 Curated Armor & Visor Models)"}
+                  {activeTab === "props" && "Desk Props & Hardware (35 Curated Devices & Rigs)"}
+                  {activeTab === "pets" && "Pets & Cyber Companions (21 Pets & Drones)"}
+                  {activeTab === "auras" && "Auras & Character Effects (16 Energy Spectrums)"}
+                  {activeTab === "trophies" && "Trophies & Silicon Badges (16 3D Medals)"}
                   {activeTab === "ambient" && "Lo-Fi Ambient Audio (6 Soundscapes)"}
                   {activeTab === "donate" && "Buy Me a Coffee (VietQR Bank Transfer)"}
                 </span>
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              {activeTab === "all" && "Collection of 1,010 high-precision 3D isometric items: cast shadows, directional lighting, and microchip details."}
+              {activeTab === "all" && `Collection of ${TOTAL_CATALOG_COUNT} high-precision 3D isometric items: cast shadows, directional lighting, and microchip details.`}
+              {activeTab === "fitting_room" && "Interactive 3D sandbox to mix skins, desk props, cyber pets, auras, and floor styles with live animated actions."}
               {activeTab === "themes" && "Custom floor environments, neon gridlines, and ambient lighting for the 2D Virtual Office canvas."}
               {activeTab === "skins" && "Customize chibi robot avatars for AI programming agents on the visual canvas."}
               {activeTab === "props" && "Decorate workstations with dual displays, server racks, espresso machines, and cyber bonsai."}
@@ -633,7 +665,9 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
             </div>
 
             <span className="text-xs font-mono text-cyan-300 bg-[#202026] px-3 py-1 rounded-md border border-[#2f2f38]">
-              {activeTab === "ambient"
+              {activeTab === "fitting_room"
+                ? "Live 3D Stage"
+                : activeTab === "ambient"
                 ? `${(COSMETIC_CATALOG.soundscapes || []).length} Audio Tracks`
                 : activeTab === "donate"
                 ? "3 Tiers"
@@ -655,13 +689,14 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Quick Category Tabs Bar */}
         <div className="px-6 py-2 bg-[#1b1b20] border-b border-[#26262b] flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
           {[
-            { id: "all", label: "All (1,010)", icon: Grid },
-            { id: "themes", label: "Themes (10)", icon: Palette },
-            { id: "skins", label: "Skins (250)", icon: Bot },
-            { id: "props", label: "Props (350)", icon: Laptop },
-            { id: "pets", label: "Pets (200)", icon: Gift },
-            { id: "auras", label: "Auras (100)", icon: Sparkles },
-            { id: "trophies", label: "Trophies (100)", icon: Trophy },
+            { id: "all", label: `All (${TOTAL_CATALOG_COUNT})`, icon: Grid },
+            { id: "fitting_room", label: "Fitting Room (3D)", icon: Sparkles },
+            { id: "themes", label: `Themes (${(COSMETIC_CATALOG.officeThemes || []).length})`, icon: Palette },
+            { id: "skins", label: `Skins (${(COSMETIC_CATALOG.skins || []).length})`, icon: Bot },
+            { id: "props", label: `Props (${(COSMETIC_CATALOG.props || []).length})`, icon: Laptop },
+            { id: "pets", label: `Pets (${(COSMETIC_CATALOG.pets || []).length})`, icon: Gift },
+            { id: "auras", label: `Auras (${(COSMETIC_CATALOG.auras || []).length})`, icon: Sparkles },
+            { id: "trophies", label: `Trophies (${(COSMETIC_CATALOG.trophies || []).length})`, icon: Trophy },
             { id: "ambient", label: "Ambient (6)", icon: Volume2 },
             { id: "donate", label: "VietQR Vault", icon: Coffee },
           ].map((cat) => {
@@ -687,6 +722,14 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Scrollable Catalog Grid View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-7xl mx-auto space-y-6">
+
+            {/* TAB: LIVE FITTING ROOM & SANDBOX */}
+            {activeTab === "fitting_room" && (
+              <LiveFittingRoom
+                initialStoreState={storeState}
+                onEquipSuccess={(updated) => setStoreState(updated)}
+              />
+            )}
 
             {/* TAB: AMBIENT SOUNDSCAPES */}
             {activeTab === "ambient" && (
@@ -795,7 +838,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                     <h2 className="text-xl font-bold text-white">Supporter Vault - Fuel the Developers</h2>
                     <p className="text-xs text-slate-300 leading-relaxed">
                       AGMon is built independently with high-quality open-source spirit.
-                      Every donation via VietQR helps support server infrastructure, sustain development, and unlocks all 1,000 3D isometric items.
+                      Every donation via VietQR helps support server infrastructure, sustain development, and unlocks all {TOTAL_CATALOG_COUNT} 3D isometric items.
                     </p>
                   </div>
                 </div>
@@ -934,8 +977,8 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
               </section>
             )}
 
-            {/* TAB: ITEM GRID (ALL, SKINS, PROPS, PETS, AURAS, TROPHIES) */}
-            {activeTab !== "ambient" && activeTab !== "donate" && (
+            {/* TAB: ITEM GRID (ALL, THEMES, SKINS, PROPS, PETS, AURAS, TROPHIES) */}
+            {activeTab !== "ambient" && activeTab !== "donate" && activeTab !== "fitting_room" && (
               <section className="space-y-4">
                 {/* Items Grid */}
                 <div className={gridClasses}>
@@ -982,9 +1025,26 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
 
                         {/* Equip Action Bar */}
                         <div className="mt-3 pt-2.5 border-t border-[#2a2a34] flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">
-                            {isEquipped ? "EQUIPPED" : isUnlocked ? "UNLOCKED" : "LOCKED"}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">
+                              {isEquipped ? "EQUIPPED" : isUnlocked ? "UNLOCKED" : "LOCKED"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (item.category === "skins") equipSkin(item.id);
+                                else if (item.category === "pets") equipPet(item.id);
+                                else if (item.category === "props") toggleProp(item.id);
+                                else if (item.category === "auras") equipAura(item.id);
+                                else if (item.category === "themes") equipOfficeTheme(item.id);
+                                setActiveTab("fitting_room");
+                              }}
+                              className="p-1 rounded hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                              title="Test in 3D Fitting Room"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
 
                           {isUnlocked ? (
                             <button

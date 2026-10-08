@@ -22,3 +22,4 @@ yarn-debug.log*
 /*.png
 /public/screenshots/
 /.playwright-mcp/
+scratch/

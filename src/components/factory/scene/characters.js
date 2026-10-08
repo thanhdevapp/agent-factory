@@ -51,24 +51,81 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   const skinItem = typeof skin === "string" ? getItemById(skin) : null;
   const hasCustomSkin = Boolean(skinItem || (skin && skin !== "classic" && skin !== "none"));
   const skinArchetype = skinItem?.archetype || (skin === "cat" ? "cyber_cat" : skin === "ninja" ? "stealth_ninja" : skin === "hacker" ? "matrix_hacker" : skin || "cyber_classic");
+  const skinVariant = skinItem?.variant || "tactical_visor";
   const skinColor = skinItem?.color ? parseHexColor(skinItem.color, trimColor ?? defaultTrim) : (trimColor ?? defaultTrim);
+  const skinSecondaryColor = skinItem?.secondaryColor ? parseHexColor(skinItem.secondaryColor, 0x111827) : 0x111827;
+  const skinAccentColor = skinItem?.accentColor ? parseHexColor(skinItem.accentColor, 0xffffff) : 0xffffff;
   const trim = skinColor;
   const SHELL = hasCustomSkin ? 0x1e2430 : 0xf3f5f9;
   const SHADE = hasCustomSkin ? 0x111622 : 0xc9d0dc;
 
-  // Torso: two stacked shells with a coloured band between them.
+  // Torso: 5 Distinct Staff Uniforms & Silhouettes
   const body = new Graphics();
-  body.roundRect(-17, -30, 34, 22, 11).fill(vgrad(0xffffff, SHELL, SHADE));
-  body.roundRect(-17, -30, 34, 8, 8).fill({ color: 0xffffff, alpha: 0.6 });
-  body.roundRect(-14, -12, 28, 8, 4).fill({ color: trim });
-  body.roundRect(-16, -8, 32, 16, 8).fill(vgrad(SHELL, SHADE, 0x8c97a9));
-  body.roundRect(-16, 2, 32, 6, 4).fill({ color: SHADE, alpha: 0.6 });
-
-  // Chest arc reactor for equipped custom skins
-  if (hasCustomSkin) {
-    body.circle(0, -18, 4).fill({ color: 0x0f172a });
-    body.circle(0, -18, 4).stroke({ width: 1.2, color: skinColor });
-    body.circle(0, -18, 2).fill({ color: skinColor });
+  if (skinArchetype === "mecha_pilot") {
+    // Heavy Industrial Exoskeleton Vest
+    body.poly([-22, -30, 22, -30, 18, -6, -18, -6]).fill({ color: 0x18181b }).stroke({ width: 1.5, color: skinColor });
+    // Pauldrons
+    body.poly([-27, -29, -20, -33, -17, -25, -25, -20]).fill({ color: 0x27272a }).stroke({ width: 1, color: skinColor });
+    body.poly([27, -29, 20, -33, 17, -25, 25, -20]).fill({ color: 0x27272a }).stroke({ width: 1, color: skinColor });
+    // Hazard Chevrons
+    body.poly([-12, -26, -7, -26, -3, -20, -8, -20]).fill({ color: 0xeab308 });
+    body.poly([2, -26, 7, -26, 11, -20, 6, -20]).fill({ color: 0xeab308 });
+    // Heavy Tactical Harness Straps
+    body.rect(-13, -30, 2, 24).fill({ color: skinColor });
+    body.rect(11, -30, 2, 24).fill({ color: skinColor });
+    // Central Fusion Core with Cage Grille
+    body.circle(0, -14, 5.5).fill({ color: 0x09090b }).stroke({ width: 1.4, color: skinColor });
+    body.circle(0, -14, 3).fill({ color: skinColor });
+    body.rect(-4, -15, 8, 2).fill({ color: 0xffffff });
+  } else if (skinArchetype === "stealth_ninja") {
+    // Sleek Form-Fitting Shinobi Gi
+    body.poly([-16, -30, 16, -30, 13, -6, -13, -6]).fill({ color: 0x090d16 }).stroke({ width: 1.4, color: skinColor });
+    // Crossed Kimono Lapels
+    body.poly([-16, -30, 5, -14, 2, -14, -16, -28]).fill({ color: skinColor });
+    // Diagonal Tactical Sash
+    body.poly([-16, -28, -11, -30, 14, -9, 9, -7]).fill({ color: skinColor, alpha: 0.9 });
+    // Obi Waist Sash & Knot
+    body.roundRect(-14, -12, 28, 6, 2).fill({ color: 0x1e1b4b }).stroke({ width: 1.2, color: skinColor });
+    body.poly([3, -7, 6, 1, 4, 6, 1, 1, 3, -7]).fill({ color: skinColor });
+  } else if (skinArchetype === "matrix_hacker") {
+    // Loose Oversized Slouchy Techwear Hoodie Body
+    body.roundRect(-21, -30, 42, 25, 7).fill({ color: 0x121217 }).stroke({ width: 1.5, color: skinColor });
+    // Cowl Neck Collar
+    body.roundRect(-18, -32, 36, 10, 4).fill({ color: 0x1f1f28 }).stroke({ width: 1.2, color: skinColor });
+    // Hanging Drawstrings with Metal Aglets
+    body.rect(-7, -23, 2, 16).fill({ color: 0xffffff });
+    body.rect(-7.5, -7, 3, 4).fill({ color: skinColor });
+    body.rect(5, -23, 2, 16).fill({ color: 0xffffff });
+    body.rect(4.5, -7, 3, 4).fill({ color: skinColor });
+    // Kangaroo Pouch Pocket
+    body.poly([-15, -14, 15, -14, 13, -6, -13, -6]).fill({ color: 0x09090d }).stroke({ width: 1, color: 0x27272a });
+  } else if (skinArchetype === "celestial_astro") {
+    // Pressurized Flight Suit Body
+    body.poly([-18, -30, 18, -30, 16, -6, -16, -6]).fill({ color: 0xf1f5f9 }).stroke({ width: 1.4, color: skinColor });
+    // Hermetic Helmet Seal Ring
+    body.roundRect(-14, -33, 28, 5, 2).fill({ color: 0x334155 }).stroke({ width: 1.2, color: skinColor });
+    // Gold Command Epaulets on Shoulders
+    body.roundRect(-24, -31, 8, 4.5, 1).fill({ color: 0xf59e0b }).stroke({ width: 0.8, color: 0x78350f });
+    body.roundRect(16, -31, 8, 4.5, 1).fill({ color: 0xf59e0b }).stroke({ width: 0.8, color: 0x78350f });
+    // Dual Atmospheric Pressure Regulator Dials
+    body.circle(-7, -17, 3.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: skinColor });
+    body.circle(-7, -17, 1.5).fill({ color: 0x22c55e });
+    body.circle(7, -17, 3.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: skinColor });
+    body.circle(7, -17, 1.5).fill({ color: 0x38bdf8 });
+  } else {
+    // Default Cyber Suit (Corporate Tech Field Ops / Executive Security)
+    body.poly([-18, -30, 18, -30, 15, -6, -15, -6]).fill(vgrad(0xffffff, SHELL, SHADE)).stroke({ width: 1.2, color: skinColor });
+    // Sharp Lapels
+    body.poly([-17, -30, -7, -14, -13, -14]).fill({ color: 0x0d1117 });
+    body.poly([17, -30, 7, -14, 13, -14]).fill({ color: 0x0d1117 });
+    // Security ID Badge Lanyard
+    body.poly([-5, -30, 0, -18, 5, -30]).stroke({ width: 1.2, color: skinAccentColor, alpha: 0.85 });
+    body.roundRect(-4.5, -19, 9, 12, 1.5).fill({ color: 0x090d16 }).stroke({ width: 1, color: skinColor });
+    body.rect(-3, -17.5, 6, 4.5).fill({ color: skinColor });
+    body.rect(-3, -11, 6, 1.5).fill({ color: 0xffffff });
+    // Corporate Belt & Buckle
+    body.rect(-15, -10, 30, 4).fill({ color: 0x020617 });
+    body.roundRect(-3.5, -11, 7, 6, 1).fill({ color: 0x1e293b }).stroke({ width: 1, color: skinColor });
   }
 
   const neck = new Graphics();
@@ -108,42 +165,220 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   head.ellipse(0, -53, 20, 15.5).fill({ color: 0x0f141c });
   head.ellipse(-5, -58, 11, 5).fill({ color: 0xffffff, alpha: 0.06 });
 
-  // Custom Skin Accessories on Head according to 5 Archetypes
-  if (skinArchetype === "cyber_suit") {
-    // Cyber Suit: Angular Tactical Brow Visor & Wing Antennas
+  // Custom Skin Accessories on Head matching 50 Curated Variants
+  // 1. CYBER SUIT VARIANTS
+  if (skinVariant === "tactical_visor") {
     head.roundRect(-24, -66, 48, 7, 2.5).fill({ color: 0x0f172a });
     head.roundRect(-24, -66, 48, 7, 2.5).stroke({ width: 1.6, color: skinColor });
     head.poly([-26, -66, -34, -76, -26, -72]).fill({ color: skinColor });
     head.poly([26, -66, 34, -76, 26, -72]).fill({ color: skinColor });
-    head.circle(0, -62.5, 2.5).fill({ color: skinColor });
-  } else if (skinArchetype === "stealth_ninja" || skinArchetype === "ninja") {
-    // Ninja Headband & Laser Visor
-    head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b });
-    head.roundRect(-24, -66, 48, 8, 3).stroke({ width: 1.5, color: skinColor });
+    head.circle(0, -62.5, 2.5).fill({ color: skinAccentColor });
+  } else if (skinVariant === "laser_scout") {
+    head.circle(8, -57, 7).stroke({ width: 1.6, color: skinColor });
+    head.circle(8, -57, 2.5).fill({ color: 0xff0000 });
+  } else if (skinVariant === "riot_shield") {
+    head.roundRect(-25, -68, 50, 9, 3).fill({ color: 0x1e2430 });
+    head.roundRect(-25, -68, 50, 9, 3).stroke({ width: 1.8, color: skinColor });
+    head.circle(-16, -64, 2.5).fill({ color: skinAccentColor });
+    head.circle(16, -64, 2.5).fill({ color: skinAccentColor });
+  } else if (skinVariant === "cyber_horns") {
+    head.poly([-20, -70, -30, -88, -14, -76]).fill({ color: skinColor });
+    head.poly([20, -70, 30, -88, 14, -76]).fill({ color: skinColor });
+  } else if (skinVariant === "crown_radiator") {
+    head.poly([-16, -72, -14, -86, -8, -74]).fill({ color: skinColor });
+    head.poly([-4, -74, 0, -92, 4, -74]).fill({ color: skinColor });
+    head.poly([8, -74, 14, -86, 16, -72]).fill({ color: skinColor });
+    head.circle(0, -70, 3).fill({ color: skinAccentColor });
+  } else if (skinVariant === "gas_respirator") {
+    head.circle(-14, -44, 6).fill({ color: 0x1e2430 }).stroke({ width: 1.5, color: skinColor });
+    head.circle(14, -44, 6).fill({ color: 0x1e2430 }).stroke({ width: 1.5, color: skinColor });
+    head.circle(-14, -44, 3).fill({ color: skinColor });
+    head.circle(14, -44, 3).fill({ color: skinColor });
+  } else if (skinVariant === "prism_goggles") {
+    head.poly([-16, -62, -8, -66, -2, -62, -2, -52, -8, -48, -16, -52]).fill({ color: 0x0c4a6e }).stroke({ width: 1.6, color: skinColor });
+    head.poly([2, -62, 8, -66, 16, -62, 16, -52, 8, -48, 2, -52]).fill({ color: 0x0c4a6e }).stroke({ width: 1.6, color: skinColor });
+    head.circle(-9, -57, 2.5).fill({ color: skinAccentColor });
+    head.circle(9, -57, 2.5).fill({ color: skinAccentColor });
+  } else if (skinVariant === "samurai_crest") {
+    head.poly([-22, -72, 0, -88, 22, -72, 0, -80]).fill({ color: skinColor });
+    head.circle(0, -78, 3).fill({ color: skinAccentColor });
+  } else if (skinVariant === "overdrive_vents") {
+    head.poly([-18, -72, -28, -90, -14, -76]).fill({ color: skinColor });
+    head.poly([18, -72, 28, -90, 14, -76]).fill({ color: skinColor });
+  } else if (skinVariant === "holo_shroud") {
+    head.ellipse(0, -66, 28, 12).stroke({ width: 1.8, color: skinColor, alpha: 0.8 });
+    head.circle(0, -78, 4).fill({ color: skinAccentColor });
+  }
+  // 2. MECHA PILOT VARIANTS
+  else if (skinVariant === "v_fin") {
+    head.poly([-24, -88, -18, -92, 0, -76, 18, -92, 24, -88, 0, -72]).fill({ color: skinColor });
+    head.poly([-4, -72, 0, -78, 4, -72, 0, -68]).fill({ color: 0xef4444 });
+  } else if (skinVariant === "blast_shield") {
+    head.roundRect(-24, -68, 48, 14, 3).fill({ color: 0x0f172a }).stroke({ width: 2, color: skinColor });
+    head.circle(-18, -80, 3.5).fill({ color: 0xfde047 });
+    head.circle(18, -80, 3.5).fill({ color: 0xfde047 });
+  } else if (skinVariant === "eva_horn") {
+    head.poly([-3, -74, 0, -98, 3, -74]).fill({ color: skinColor });
+    head.roundRect(-28, -48, 5, 18, 2).fill({ color: skinColor });
+    head.roundRect(23, -48, 5, 18, 2).fill({ color: skinColor });
+  } else if (skinVariant === "cage_grille") {
+    head.roundRect(-16, -52, 32, 14, 2).fill({ color: 0x18181b }).stroke({ width: 1.6, color: skinColor });
+    head.roundRect(-22, -86, 4, 16, 1).fill({ color: 0x27272a }).stroke({ width: 1, color: skinColor });
+    head.roundRect(18, -86, 4, 16, 1).fill({ color: 0x27272a }).stroke({ width: 1, color: skinColor });
+  } else if (skinVariant === "missile_pod") {
+    head.roundRect(-30, -42, 8, 12, 2).fill({ color: 0x1c1917 }).stroke({ width: 1.5, color: skinColor });
+    head.roundRect(22, -42, 8, 12, 2).fill({ color: 0x1c1917 }).stroke({ width: 1.5, color: skinColor });
+    head.circle(-26, -38, 1.5).fill({ color: 0xef4444 });
+    head.circle(26, -38, 1.5).fill({ color: 0xef4444 });
+  } else if (skinVariant === "quad_array") {
+    head.poly([-22, -72, -26, -90, -20, -72]).fill({ color: skinColor });
+    head.poly([-12, -76, -14, -94, -10, -76]).fill({ color: skinColor });
+    head.poly([10, -76, 14, -94, 12, -76]).fill({ color: skinColor });
+    head.poly([20, -72, 26, -90, 22, -72]).fill({ color: skinColor });
+    head.circle(-26, -90, 2).fill({ color: skinAccentColor });
+    head.circle(26, -90, 2).fill({ color: skinAccentColor });
+  } else if (skinVariant === "halo_shield") {
+    head.poly([-32, -42, -26, -46, -20, -42, -20, -34, -26, -30, -32, -34]).fill({ color: 0x064e3b }).stroke({ width: 1.5, color: skinColor });
+    head.poly([20, -42, 26, -46, 32, -42, 32, -34, 26, -30, 20, -34]).fill({ color: 0x064e3b }).stroke({ width: 1.5, color: skinColor });
+  } else if (skinVariant === "ram_horns") {
+    head.poly([-18, -72, -34, -86, -18, -92, -14, -72]).fill({ color: skinColor });
+    head.poly([18, -72, 34, -86, 18, -92, 14, -72]).fill({ color: skinColor });
+  } else if (skinVariant === "radar_dish") {
+    head.ellipse(-24, -84, 7, 12).fill({ color: 0x18181b }).stroke({ width: 1.5, color: skinColor });
+    head.circle(-24, -84, 2).fill({ color: skinAccentColor });
+  } else if (skinVariant === "hyper_wings") {
+    head.poly([-26, -46, -44, -64, -34, -40]).fill({ color: skinColor });
+    head.poly([26, -46, 44, -64, 34, -40]).fill({ color: skinColor });
+  }
+  // 3. STEALTH NINJA VARIANTS
+  else if (skinVariant === "flowing_headband") {
+    head.roundRect(-24, -66, 48, 8, 2).fill({ color: 0x1e1b4b }).stroke({ width: 1.5, color: skinColor });
     head.circle(0, -62, 3).fill({ color: 0x38bdf8 });
-    head.poly([24, -62, 38, -56, 32, -50, 22, -56]).fill({ color: skinColor, alpha: 0.9 });
+    head.poly([24, -62, 38, -56, 46, -46, 36, -48, 24, -56]).fill({ color: skinColor });
+  } else if (skinVariant === "tactical_cowl") {
+    head.roundRect(-24, -68, 48, 24, 6).fill({ color: 0x0f172a, alpha: 0.8 }).stroke({ width: 1.4, color: skinColor });
+    head.circle(6, -57, 4.5).stroke({ width: 1.8, color: 0x22c55e });
+    head.circle(6, -57, 1.5).fill({ color: 0x22c55e });
+  } else if (skinVariant === "oni_mask") {
+    head.poly([-16, -72, -24, -88, -12, -76]).fill({ color: 0xef4444 });
+    head.poly([16, -72, 24, -88, 12, -76]).fill({ color: 0xef4444 });
+    head.poly([-16, -46, -10, -40, 0, -42, 10, -40, 16, -46, 12, -36, -12, -36]).fill({ color: 0xffffff });
+  } else if (skinVariant === "kitsune_ears") {
+    head.poly([-22, -72, -14, -88, -6, -76]).fill({ color: 0x1e2430 });
+    head.poly([-20, -73, -14, -85, -8, -76]).fill({ color: skinColor });
+    head.poly([6, -76, 14, -88, 22, -72]).fill({ color: 0x1e2430 });
+    head.poly([8, -76, 14, -85, 20, -73]).fill({ color: skinColor });
+  } else if (skinVariant === "conical_kasa") {
+    head.poly([-36, -72, 0, -92, 36, -72]).fill({ color: 0x18181b }).stroke({ width: 1.6, color: skinColor });
+    head.roundRect(-36, -72, 72, 2.5, 1).fill({ color: skinAccentColor });
+  } else if (skinVariant === "twin_katanas") {
+    head.poly([-24, -32, 28, -88, 25, -88, -27, -32]).fill({ color: skinColor });
+    head.poly([24, -32, -28, -88, -25, -88, 27, -32]).fill({ color: skinColor });
+  } else if (skinVariant === "tengu_beak") {
+    head.poly([-12, -48, 0, -34, 12, -48, 0, -44]).fill({ color: 0x0f172a }).stroke({ width: 1.5, color: skinColor });
+  } else if (skinVariant === "veil_shroud") {
+    head.roundRect(-22, -62, 44, 26, 6).fill({ color: 0x0f172a, alpha: 0.85 }).stroke({ width: 1.2, color: skinColor });
+  } else if (skinVariant === "scythe_crest") {
+    head.poly([-14, -66, 0, -88, 14, -66, 0, -82]).fill({ color: skinColor });
+  } else if (skinVariant === "void_mask") {
+    head.roundRect(-18, -62, 36, 20, 4).fill({ color: 0x000000 }).stroke({ width: 1.8, color: skinColor });
+    head.circle(0, -52, 3).fill({ color: skinColor });
+  }
+  // 4. MATRIX HACKER VARIANTS
+  else if (skinVariant === "hoodie_cowl") {
+    head.roundRect(-28, -74, 56, 46, 14).fill({ color: 0x051f0b, alpha: 0.9 }).stroke({ width: 1.8, color: skinColor });
+  } else if (skinVariant === "vr_goggles") {
+    head.roundRect(-22, -64, 44, 15, 3).fill({ color: 0x083344 }).stroke({ width: 1.8, color: skinColor });
+    head.circle(-16, -78, 2.5).fill({ color: skinAccentColor });
+    head.poly([-16, -64, -16, -78, -14, -78, -14, -64]).fill({ color: skinColor });
+  } else if (skinVariant === "daemon_horns") {
+    head.poly([-16, -70, -22, -86, -10, -74]).fill({ color: skinColor });
+    head.poly([16, -70, 22, -86, 10, -74]).fill({ color: skinColor });
+  } else if (skinVariant === "glitch_halo") {
+    head.rect(-28, -76, 56, 42).stroke({ width: 1.5, color: skinColor, alpha: 0.8 });
+    head.rect(-18, -82, 12, 6).fill({ color: skinColor, alpha: 0.7 });
+  } else if (skinVariant === "floating_hud") {
+    head.roundRect(24, -78, 30, 16, 2).fill({ color: 0x09090b }).stroke({ width: 1, color: skinColor });
+  } else if (skinVariant === "respirator_eq") {
+    head.roundRect(-18, -46, 36, 10, 3).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: skinColor });
+    head.rect(-12, -43, 4, 5).fill({ color: 0x22c55e });
+    head.rect(-4, -45, 4, 7).fill({ color: 0xeab308 });
+    head.rect(4, -45, 4, 7).fill({ color: 0xef4444 });
+    head.rect(12, -43, 4, 5).fill({ color: 0x22c55e });
+  } else if (skinVariant === "heatsink_fins") {
+    head.rect(-18, -84, 4, 14).fill({ color: 0xea580c });
+    head.rect(-10, -88, 4, 18).fill({ color: 0xea580c });
+    head.rect(-2, -90, 4, 20).fill({ color: 0xea580c });
+    head.rect(6, -88, 4, 18).fill({ color: 0xea580c });
+    head.rect(14, -84, 4, 14).fill({ color: 0xea580c });
+  } else if (skinVariant === "cable_dreads") {
+    head.poly([-22, -62, -32, -48, -28, -12, -26, -12, -30, -48, -20, -62]).fill({ color: skinColor });
+    head.poly([22, -62, 32, -48, 28, -12, 26, -12, 30, -48, 20, -62]).fill({ color: skinColor });
+  } else if (skinVariant === "cyber_skull") {
+    head.circle(-7, -55, 4).fill({ color: 0x000000 }).stroke({ width: 1.5, color: skinColor });
+    head.circle(7, -55, 4).fill({ color: 0x000000 }).stroke({ width: 1.5, color: skinColor });
+    head.poly([-8, -40, 8, -40, 8, -38, -8, -38]).fill({ color: skinColor });
+  } else if (skinVariant === "wireframe_cube") {
+    head.rect(-24, -76, 48, 42).stroke({ width: 1.6, color: skinColor });
+    head.rect(-16, -68, 32, 26).stroke({ width: 1.2, color: skinAccentColor, alpha: 0.8 });
+  }
+  // 5. CELESTIAL ASTRO VARIANTS
+  else if (skinVariant === "bubble_dome") {
+    head.circle(0, -56, 28).stroke({ width: 2.5, color: skinColor, alpha: 0.9 });
+    head.circle(0, -84, 3.5).fill({ color: 0xfef08a });
+  } else if (skinVariant === "lunar_pack") {
+    head.rect(-20, -86, 2, 18).fill({ color: skinColor });
+    head.circle(-19, -86, 2).fill({ color: 0xffffff });
+    head.ellipse(0, -54, 24, 18).stroke({ width: 2, color: 0xe2e8f0 });
+  } else if (skinVariant === "sunburst_halo") {
+    head.ellipse(0, -64, 30, 8).stroke({ width: 2, color: skinColor, alpha: 0.85 });
+    head.circle(0, -76, 3).fill({ color: 0xfef08a });
+    head.circle(-22, -70, 2).fill({ color: 0xfef08a });
+    head.circle(22, -70, 2).fill({ color: 0xfef08a });
+  } else if (skinVariant === "saturn_ring") {
+    head.ellipse(0, -56, 36, 10).stroke({ width: 2.2, color: skinColor });
+    head.circle(28, -62, 3).fill({ color: skinAccentColor });
+  } else if (skinVariant === "star_crown") {
+    head.poly([-16, -74, -12, -86, -8, -76]).fill({ color: skinColor });
+    head.poly([-6, -76, 0, -92, 6, -76]).fill({ color: skinColor });
+    head.poly([8, -76, 12, -86, 16, -74]).fill({ color: skinColor });
+    head.circle(0, -74, 2.5).fill({ color: 0xffffff });
+  } else if (skinVariant === "eclipse_corona") {
+    head.ellipse(0, -56, 32, 18).stroke({ width: 3, color: skinColor, alpha: 0.6 });
+    head.circle(0, -56, 22).fill({ color: 0x000000 }).stroke({ width: 1.5, color: skinColor });
+  } else if (skinVariant === "pulsar_spires") {
+    head.poly([-1.5, -78, 1.5, -78, 1.5, -98, -1.5, -98]).fill({ color: skinColor });
+    head.circle(0, -98, 3).fill({ color: 0xffffff });
+    head.poly([-1.5, -34, 1.5, -34, 1.5, -18, -1.5, -18]).fill({ color: skinColor });
+    head.circle(0, -18, 3).fill({ color: 0xffffff });
+  } else if (skinVariant === "aurora_ribbons") {
+    head.ellipse(0, -78, 24, 6).stroke({ width: 2.5, color: skinColor, alpha: 0.75 });
+  } else if (skinVariant === "angel_wings") {
+    head.poly([-26, -46, -48, -78, -32, -38]).fill({ color: skinColor, alpha: 0.85 });
+    head.poly([26, -46, 48, -78, 32, -38]).fill({ color: skinColor, alpha: 0.85 });
+    head.ellipse(0, -80, 16, 5).stroke({ width: 1.6, color: skinAccentColor });
+  } else if (skinVariant === "singularity_core") {
+    head.ellipse(0, -56, 30, 26).stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+    head.circle(-22, -70, 2.5).fill({ color: skinAccentColor });
+    head.circle(22, -42, 2.5).fill({ color: skinAccentColor });
+  }
+  // Archetype fallbacks
+  else if (skinArchetype === "stealth_ninja" || skinArchetype === "ninja") {
+    head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b }).stroke({ width: 1.5, color: skinColor });
+    head.circle(0, -62, 3).fill({ color: 0x38bdf8 });
   } else if (skinArchetype === "mecha_pilot") {
-    // Dual Heavy Antennas
     head.poly([-22, -72, -18, -90, -12, -70]).fill({ color: skinColor });
     head.poly([12, -70, 18, -90, 22, -72]).fill({ color: skinColor });
-    head.circle(-18, -90, 2.5).fill({ color: 0xffffff });
-    head.circle(18, -90, 2.5).fill({ color: 0xffffff });
   } else if (skinArchetype === "celestial_astro") {
-    // Golden Solar Halo
     head.ellipse(0, -64, 30, 8).stroke({ width: 2, color: skinColor, alpha: 0.85 });
-    head.circle(0, -72, 3).fill({ color: 0xfef08a });
   } else if (skinArchetype === "matrix_hacker" || skinArchetype === "hacker") {
-    // Hacker Matrix Hoodie Cowl
-    head.roundRect(-27, -78, 54, 48, 16).fill({ color: 0x111827 });
-    head.roundRect(-27, -78, 54, 48, 16).stroke({ width: 1.6, color: skinColor });
+    head.roundRect(-27, -78, 54, 48, 16).fill({ color: 0x111827 }).stroke({ width: 1.6, color: skinColor });
   } else if (skinArchetype === "cyber_cat" || skin === "cat") {
-    // Cute Cat Ears
     head.poly([-22, -72, -14, -86, -6, -76]).fill({ color: SHELL });
-    head.poly([-20, -73, -14, -83, -8, -76]).fill({ color: 0xf472b6, alpha: 0.8 }); // pink inner ear
+    head.poly([-20, -73, -14, -83, -8, -76]).fill({ color: 0xf472b6, alpha: 0.8 });
     head.poly([6, -76, 14, -86, 22, -72]).fill({ color: SHELL });
     head.poly([8, -76, 14, -83, 20, -73]).fill({ color: 0xf472b6, alpha: 0.8 });
   } else {
-    // High-Tech Crest
     head.poly([-8, -68, 0, -78, 8, -68]).fill({ color: skinColor });
   }
 

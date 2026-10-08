@@ -97,14 +97,14 @@ export default function ToolCallCard({ tool, onImageClick }) {
     <div className={`my-2 rounded-xl border ${styleClass} overflow-hidden text-xs transition-all shadow-md`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/40 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Icon className="w-3.5 h-3.5 shrink-0 opacity-80" />
-          <span className="font-semibold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-slate-900/60 border border-slate-700/50 shrink-0">
+          <span className="font-semibold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-inner)] border border-[var(--border-subtle)] text-[var(--text-bright)] shrink-0">
             {type}
           </span>
-          <span className="truncate font-mono text-[11px] text-slate-200">
+          <span className="truncate font-mono text-[11px] text-[var(--text-bright)]">
             {detailSummary}
           </span>
         </div>
@@ -127,16 +127,16 @@ export default function ToolCallCard({ tool, onImageClick }) {
           )}
 
           {isOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
           )}
         </div>
       </button>
 
       {/* Special Inline Cards when expanded */}
       {isOpen && (
-        <div className="p-3 border-t border-slate-800/60 bg-slate-950/70 space-y-3">
+        <div className="p-3 border-t border-[var(--border-subtle)] bg-[var(--bg-chat-tool)] space-y-3">
           {/* 1. Subagent Tree View */}
           {isSubagentTool && (
             <SubagentTree 
