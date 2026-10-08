@@ -49,11 +49,12 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
 
   // Resolve custom skin from catalog
   const skinItem = typeof skin === "string" ? getItemById(skin) : null;
+  const hasCustomSkin = Boolean(skinItem || (skin && skin !== "classic" && skin !== "none"));
   const skinArchetype = skinItem?.archetype || (skin === "cat" ? "cyber_cat" : skin === "ninja" ? "stealth_ninja" : skin === "hacker" ? "matrix_hacker" : skin || "cyber_classic");
   const skinColor = skinItem?.color ? parseHexColor(skinItem.color, trimColor ?? defaultTrim) : (trimColor ?? defaultTrim);
   const trim = skinColor;
-  const SHELL = 0xf3f5f9;
-  const SHADE = 0xc9d0dc;
+  const SHELL = hasCustomSkin ? 0x1e2430 : 0xf3f5f9;
+  const SHADE = hasCustomSkin ? 0x111622 : 0xc9d0dc;
 
   // Torso: two stacked shells with a coloured band between them.
   const body = new Graphics();
@@ -62,6 +63,13 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   body.roundRect(-14, -12, 28, 8, 4).fill({ color: trim });
   body.roundRect(-16, -8, 32, 16, 8).fill(vgrad(SHELL, SHADE, 0x8c97a9));
   body.roundRect(-16, 2, 32, 6, 4).fill({ color: SHADE, alpha: 0.6 });
+
+  // Chest arc reactor for equipped custom skins
+  if (hasCustomSkin) {
+    body.circle(0, -18, 4).fill({ color: 0x0f172a });
+    body.circle(0, -18, 4).stroke({ width: 1.2, color: skinColor });
+    body.circle(0, -18, 2).fill({ color: skinColor });
+  }
 
   const neck = new Graphics();
   neck.roundRect(-10, -36, 20, 8, 4).fill({ color: trim });
@@ -80,11 +88,19 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   }
 
   const head = new Graphics();
-  head.circle(-27, -56, 8).fill({ color: trim });
-  head.circle(27, -56, 8).fill({ color: trim });
-  head.circle(-29, -58, 3).fill({ color: 0xffffff, alpha: 0.35 });
-  head.circle(25, -58, 3).fill({ color: 0xffffff, alpha: 0.35 });
-  head.ellipse(0, -56, 26, 24).fill(vgrad(0xffffff, SHELL, 0x9aa6b8));
+  // Ear comm pods
+  head.circle(-27, -56, 8).fill({ color: skinColor });
+  head.circle(27, -56, 8).fill({ color: skinColor });
+  head.circle(-27, -56, 8).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
+  head.circle(27, -56, 8).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
+  head.circle(-29, -58, 3).fill({ color: 0xffffff, alpha: 0.7 });
+  head.circle(25, -58, 3).fill({ color: 0xffffff, alpha: 0.7 });
+
+  // Helmet Sphere
+  head.ellipse(0, -56, 26, 24).fill(vgrad(hasCustomSkin ? 0x2d3748 : 0xffffff, SHELL, SHADE));
+  if (hasCustomSkin) {
+    head.ellipse(0, -56, 27, 25).stroke({ width: 2.2, color: skinColor, alpha: 0.95 }); // Emissive contour rim
+  }
   head.ellipse(4, -50, 24, 21).stroke({ width: 3, color: 0x6b7a90, alpha: 0.25 }); // bottom-right rim shade
   head.ellipse(-8, -68, 12, 5.5).fill({ color: 0xffffff, alpha: 0.8 }); // specular
   head.circle(-14, -64, 2).fill({ color: 0xffffff, alpha: 0.9 });
@@ -93,7 +109,14 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   head.ellipse(-5, -58, 11, 5).fill({ color: 0xffffff, alpha: 0.06 });
 
   // Custom Skin Accessories on Head according to 5 Archetypes
-  if (skinArchetype === "stealth_ninja" || skinArchetype === "ninja") {
+  if (skinArchetype === "cyber_suit") {
+    // Cyber Suit: Angular Tactical Brow Visor & Wing Antennas
+    head.roundRect(-24, -66, 48, 7, 2.5).fill({ color: 0x0f172a });
+    head.roundRect(-24, -66, 48, 7, 2.5).stroke({ width: 1.6, color: skinColor });
+    head.poly([-26, -66, -34, -76, -26, -72]).fill({ color: skinColor });
+    head.poly([26, -66, 34, -76, 26, -72]).fill({ color: skinColor });
+    head.circle(0, -62.5, 2.5).fill({ color: skinColor });
+  } else if (skinArchetype === "stealth_ninja" || skinArchetype === "ninja") {
     // Ninja Headband & Laser Visor
     head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b });
     head.roundRect(-24, -66, 48, 8, 3).stroke({ width: 1.5, color: skinColor });
@@ -139,7 +162,7 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   root.scale.set(scale * depth);
 
   let currentMode = mode;
-  let faceColor = color;
+  let faceColor = hasCustomSkin ? skinColor : color;
 
   const eye = (cx, cy, w, h, a, kind) => {
     if (kind === "happy") {

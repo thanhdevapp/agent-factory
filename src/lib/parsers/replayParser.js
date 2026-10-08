@@ -5,23 +5,17 @@
  * into a sequential timeline of interactive keyframe milestones.
  */
 
-const MODEL_PRICING = {
-  "claude-3-7-sonnet": { input: 3.0 / 1e6, output: 15.0 / 1e6, cached: 0.3 / 1e6 },
-  "claude-3-5-sonnet": { input: 3.0 / 1e6, output: 15.0 / 1e6, cached: 0.3 / 1e6 },
-  "claude-3-5-haiku": { input: 0.8 / 1e6, output: 4.0 / 1e6, cached: 0.08 / 1e6 },
-  "gemini-2.5-pro": { input: 1.25 / 1e6, output: 5.0 / 1e6, cached: 0.3125 / 1e6 },
-  "gemini-2.5-flash": { input: 0.075 / 1e6, output: 0.3 / 1e6, cached: 0.01875 / 1e6 },
-  "gemini-3.8-flash": { input: 0.075 / 1e6, output: 0.3 / 1e6, cached: 0.01875 / 1e6 },
-  default: { input: 1.0 / 1e6, output: 4.0 / 1e6, cached: 0.2 / 1e6 },
-};
+import { getPricingForModel } from "../modelPricing.js";
 
 function calculateCost(tokens, modelName) {
-  if (!tokens) return 0;
-  const p = MODEL_PRICING[modelName] || MODEL_PRICING.default;
-  const inputCost = (tokens.input || 0) * p.input;
-  const outputCost = (tokens.output || 0) * p.output;
-  const cachedCost = (tokens.cached || 0) * p.cached;
-  return inputCost + outputCost + cachedCost;
+  if (!tokens) return null;
+  const price = getPricingForModel(modelName);
+  if (!price) return null;
+  return (
+    (tokens.input || 0) * (price.input / 1e6) +
+    (tokens.output || 0) * (price.output / 1e6) +
+    (tokens.cached || 0) * (price.cached / 1e6)
+  );
 }
 
 /**
@@ -43,7 +37,7 @@ export function normalizeTranscriptToKeyframes(transcript) {
 
   const session = transcript.session || {};
   const turns = transcript.turns || [];
-  const modelName = session.model || "gemini-3.8-flash";
+  const modelName = session.model || null;
   const cli = session.cli || "antigravity";
 
   const keyframes = [];
@@ -304,7 +298,7 @@ export function synthesizeTraceFromKeyframe(keyframe, sessionInfo = {}) {
     activeTool: keyframe.activeTool || null,
     tokens: { input: null, output: null, cached: null },
     totalTokens: keyframe.cumulativeTokens ?? null,
-    cost: keyframe.cumulativeCost || 0,
+    cost: keyframe.cumulativeCost ?? null,
     elapsedMs: (keyframe.elapsedSeconds || 0) * 1000,
     currentCommand: keyframe.title || "",
     summary: keyframe.summary || "",

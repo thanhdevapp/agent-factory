@@ -88,6 +88,23 @@ function saveAndNotify(nextState) {
   }
 }
 
+// Cross-tab and window focus synchronization
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === SUPPORTER_STORAGE_KEY) {
+      try {
+        const next = e.newValue ? JSON.parse(e.newValue) : DEFAULT_STATE;
+        window.dispatchEvent(new CustomEvent(SUPPORTER_CHANGE_EVENT, { detail: next }));
+      } catch (err) {}
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    const current = getSupporterState();
+    window.dispatchEvent(new CustomEvent(SUPPORTER_CHANGE_EVENT, { detail: current }));
+  });
+}
+
 // Unlock via code (Supporter Key / Coupon Code)
 export function unlockWithCode(code) {
   const c = String(code || "").trim().toUpperCase();

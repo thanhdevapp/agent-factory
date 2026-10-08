@@ -4,53 +4,9 @@ import path from "path";
 import os from "os";
 import readline from "readline";
 
-// Standard AI Token Pricing (per 1,000,000 tokens)
-export const MODEL_PRICING = {
-  // Gemini 1.5 & 2.5 & 3.8 Flash
-  "gemini-3.8-flash": { input: 0.075, output: 0.30, cached: 0.01875 },
-  "gemini-2.5-flash": { input: 0.075, output: 0.30, cached: 0.01875 },
-  "gemini-1.5-flash": { input: 0.075, output: 0.30, cached: 0.01875 },
-  // Gemini Pro
-  "gemini-2.5-pro": { input: 1.25, output: 5.00, cached: 0.3125 },
-  "gemini-1.5-pro": { input: 1.25, output: 5.00, cached: 0.3125 },
-  // Claude 3.5 Sonnet & Claude 3.7 Sonnet
-  "claude-3-7-sonnet": { input: 3.00, output: 15.00, cached: 0.30 },
-  "claude-3-5-sonnet": { input: 3.00, output: 15.00, cached: 0.30 },
-  "claude-3-haiku": { input: 0.25, output: 1.25, cached: 0.025 },
-  "claude-3-opus": { input: 15.00, output: 75.00, cached: 1.50 },
-  // OpenAI
-  "gpt-4o": { input: 2.50, output: 10.00, cached: 1.25 },
-  "gpt-4o-mini": { input: 0.15, output: 0.60, cached: 0.075 },
-  // MiniMax
-  "minimax": { input: 0.20, output: 0.80, cached: 0.05 },
-};
+import { calculateCost, calculateCacheSavings, getPricingForModel, MODEL_PRICING } from "./modelPricing.js";
 
-export function getPricingForModel(model) {
-  const norm = (model || "").toLowerCase();
-  for (const [key, p] of Object.entries(MODEL_PRICING)) {
-    if (norm.includes(key)) return p;
-  }
-  return null;
-}
-
-export function calculateCost(model, input = 0, output = 0, cached = 0) {
-  const p = getPricingForModel(model);
-  if (!p) return null;
-  const cost =
-    (input / 1_000_000) * p.input +
-    (output / 1_000_000) * p.output +
-    (cached / 1_000_000) * p.cached;
-  return Math.round(cost * 10000) / 10000;
-}
-
-export function calculateCacheSavings(model, cached = 0) {
-  const p = getPricingForModel(model);
-  if (!p) return null;
-  // How much was saved compared to reading these cached tokens as raw input
-  const diff = Math.max(0, p.input - p.cached);
-  const savings = (cached / 1_000_000) * diff;
-  return Math.round(savings * 10000) / 10000;
-}
+export { calculateCost, calculateCacheSavings, getPricingForModel, MODEL_PRICING };
 
 // In-memory cache for parsed transcripts to avoid reading large files repeatedly
 const transcriptCache = new Map(); // path -> { mtime, size, data }

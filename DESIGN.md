@@ -27,6 +27,12 @@ Tài liệu này quy định các tiêu chuẩn thiết kế UI/UX, Design Token
   - Cho phép người dùng chủ động zoom qua con lăn chuột hoặc nút điều khiển với khoảng giới hạn an toàn (`MIN_ZOOM = 0.2`, `MAX_ZOOM = 1.15` - `1.2`).
   - Hỗ trợ Double Click vào vùng trống hoặc nút *Reset Zoom* để tự động fit toàn bộ văn phòng vào khung nhìn (`fit to screen`).
 
+### 1.4. Quy tắc Chế độ Cửa sổ & Trình bày (Windowing & Pin Mode - Cấm Popup thô)
+* **Cấm Popup che khuất (No Blocking Popup Modals)**: Tuyệt đối không sử dụng modal popup lơ lửng chiếm toàn màn hình hoặc che khuất giao diện làm việc chính, gây gián đoạn việc giám sát canvas hoặc các tiến trình chạy nền.
+* **Chỉ hỗ trợ 2 chế độ hiển thị linh hoạt**:
+  - **Pinned Mode (Ghim vào Workbench Layout)**: Ghim trực tiếp vào Bottom Panel, Right Sidebar, hoặc mở như một Editor Tab chuẩn của VS Code Workbench, cho phép tương tác song song với các panel khác.
+  - **Window Mode (Floating Window / Independent Window)**: Cửa sổ nổi chuyên dụng có thể kéo di chuyển (Draggable), thu nhỏ (Minimize), phóng to toàn màn hình (Maximize), hoặc di chuyển sang màn hình phụ mà không làm gián đoạn việc giám sát hệ thống.
+
 ---
 
 ## 2. Bảng màu & Design Tokens (VS Code Workbench Theme)
@@ -85,9 +91,77 @@ Virtual Office hỗ trợ 10 phong cách nền sàn với bảng màu và ánh s
 
 ---
 
-## 4. Typography & Phông chữ
+## 4. Typography & Hệ Thống Phông Chữ Toàn Cục
 
-1. **Monospace (`font-mono`)**: Bắt buộc sử dụng cho:
+Typography trong AGMon được chuẩn hoá 100% về hệ thống biến CSS toàn cục và hỗ trợ chuyển đổi giao diện/phông chữ linh hoạt trong runtime theo chuẩn Design System của VS Code.
+
+### 4.1. Hệ Thống Biến CSS Toàn Cục (Global CSS Variables)
+Toàn bộ mã nguồn (CSS, Tailwind, Inline styles, SVG, Canvas) tuyệt đối không hardcode tên phông chữ cụ thể (như `Inter`, `-apple-system`, `monospace`). Phải sử dụng bộ biến chuẩn sau:
+
+| Biến CSS | Giá trị Mặc định | Mục đích Sử dụng |
+| :--- | :--- | :--- |
+| `--font-family-ui` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif` | Phông giao diện chính (UI sans-serif) |
+| `--font-family-mono` | `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace` | Phông mã nguồn, số liệu, tokens, lệnh (Monospace) |
+| `--font-sans` | `var(--font-family-ui)` | Bí danh chuẩn Tailwind v4 `@theme` cho lớp `.font-sans` |
+| `--font-mono` | `var(--font-family-mono)` | Bí danh chuẩn Tailwind v4 `@theme` cho lớp `.font-mono` |
+| `--font-ui` | `var(--font-family-ui)` | Bí danh tương thích cho các component workbench |
+| `--font-code` | `var(--font-family-mono)` | Bí danh tương thích cho editor và code blocks |
+| `--font-size-ui` | `13px` | Cỡ chữ cơ sở của toàn bộ workbench |
+| `--font-size-base` | `13px` | Bí danh cỡ chữ chuẩn |
+
+### 4.2. Bảng Phông Chữ Tuyển Chọn & Chuyển Đổi Động (Dynamic Font Switching)
+Hệ thống cung cấp danh mục phông chữ tuyển chọn và nạp sẵn qua Google Fonts CDN kèm `preconnect` trong `layout.js`:
+* **UI Fonts (`AVAILABLE_UI_FONTS`)**:
+  - `System Default`: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`
+  - `Inter`: `"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  - `Segoe UI`: `"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif`
+  - `Roboto`: `"Roboto", "Helvetica Neue", Arial, sans-serif`
+  - `Geist Sans`: `"Geist Sans", "Geist", -apple-system, BlinkMacSystemFont, sans-serif`
+* **Code Fonts (`AVAILABLE_CODE_FONTS`)**:
+  - `System Monospace`: `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace`
+  - `JetBrains Mono`: `"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`
+  - `Fira Code`: `"Fira Code", ui-monospace, Menlo, Consolas, monospace`
+  - `Cascadia Code`: `"Cascadia Code", "Cascadia Mono", Consolas, monospace`
+  - `Geist Mono`: `"Geist Mono", ui-monospace, Menlo, Consolas, monospace`
+
+### 4.3. Quy Tắc Kế Thừa Phông Chữ Bắt Buộc cho Form Controls & HTML Elements
+Do các phần tử HTML form gốc (`button`, `input`, `select`, `textarea`) mặc định trên trình duyệt không kế thừa phông chữ từ thẻ cha `body`, CSS toàn cục `globals.css` bắt buộc phải áp dụng quy tắc kế thừa:
+```css
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.font-mono, pre, code, kbd, samp {
+  font-family: var(--font-family-mono) !important;
+}
+
+.font-sans {
+  font-family: var(--font-family-ui) !important;
+}
+```
+
+### 4.4. Quy Tắc Cho Canvas 2D / PixiJS & Monaco Editor
+* **Môi trường Canvas 2D & PixiJS**:
+  - Canvas 2D (`ctx.font = ...`) và PixiJS `Text({ style: { fontFamily } })` **không thể tự động phân giải** cú pháp CSS `var(...)`.
+  - Bắt buộc phải sử dụng hàm tiện ích `getActiveFont("ui" | "mono")` từ `src/lib/themeStore.js` để lấy chuỗi phông thực tế đã được cấu hình.
+  - Bắt buộc đăng ký sự kiện `THEME_CHANGE_EVENT` (`agmon:theme-change`) để tự động vẽ lại (re-render) chữ trên bàn làm việc, badge, và chỉ số khi người dùng đổi phông hoặc theme.
+* **Monaco Code Editor (`CodeFileEditor.jsx`)**:
+  - Tuyệt đối không hardcode font-family hay font-size dạng chuỗi tĩnh.
+  - Sử dụng state động `editorFontFamily` và `editorFontSize` đồng bộ với `getActiveFont("mono")` và tự động cập nhật khi bắt được `THEME_CHANGE_EVENT`.
+
+### 4.5. Quy Tắc Cho Đồ Họa Vector SVG & File Export
+* **SVG Text Elements**: Mọi thẻ `<text>` trong SVG (như `FileIcon.jsx`, `Item3DRenderer.jsx`, `AgentGraphView.jsx`) phải sử dụng thuộc tính `fontFamily="var(--font-family-ui)"` hoặc `fontFamily="var(--font-family-mono)"`.
+* **Sơ đồ Mermaid (`MermaidBlock.js`)**: Cấu hình `themeVariables.fontFamily` bằng `getActiveFont("mono")`.
+* **File HTML Xuất Báo Cáo (`exportUtils.js`)**: Khi xuất báo cáo HTML độc lập, trang HTML phải khai báo các biến `--font-family-ui` và `--font-family-mono` trong `:root` để đảm bảo báo cáo hiển thị nhất quán trên mọi máy tính.
+
+### 4.6. Phân Định Phạm Vi Áp Dụng (Usage Scopes)
+1. **Monospace (`font-mono` / `var(--font-family-mono)`)**: Bắt buộc sử dụng cho:
    - Session IDs, Trace IDs, Process PIDs.
    - Số lượng Token (Input, Output, Cache, Total).
    - Chi phí tiền tệ (`$0.0150`).
@@ -95,7 +169,8 @@ Virtual Office hỗ trợ 10 phong cách nền sàn với bảng màu và ánh s
    - Tên Models (`gemini-2.5-pro`, `claude-3-7-sonnet`).
    - Tên Tools (`run_command`, `replace_file_content`).
    - Mã phím tắt (`Cmd+Shift+P`, `Esc`, `/`).
-2. **Sans-serif (`font-sans`)**: Sử dụng cho tiêu đề bảng điều khiển, nhãn điều hướng, thông điệp hướng dẫn, nội dung hội thoại chat.
+   - Khối mã code và terminal logs.
+2. **Sans-serif (`font-sans` / `var(--font-family-ui)`)**: Sử dụng cho tiêu đề bảng điều khiển, nhãn điều hướng, thông điệp hướng dẫn, nội dung hội thoại chat.
 
 ---
 
@@ -106,10 +181,10 @@ Virtual Office hỗ trợ 10 phong cách nền sàn với bảng màu và ánh s
 * **Sticky Header**: Tiêu đề cột luôn nhìn thấy khi cuộn trang, hỗ trợ click sắp xếp (Sortable) với icon `ArrowUpDown`.
 * **Empty State**: Khi không có dữ liệu, hiển thị thông báo dịu mắt kèm gợi ý xóa bộ lọc, không dùng emoji.
 
-### 5.2. Hộp thoại nổi (Modals & Drawers)
-* Nền backdrop tối mờ nhẹ (`backdrop-blur-md bg-black/60`).
-* Nút đóng (`X`) rõ ràng với phím tắt `Escape`.
-* Hỗ trợ nút phóng to toàn màn hình (`Maximize2` / `Minimize2`).
+### 5.2. Panel Điều Khiển & Cửa Sổ (Panels & Windows - Bỏ Popup thô)
+* **Loại bỏ Popup che khuất**: Không sử dụng modal popup chặn tương tác giữa màn hình. Chuyển đổi toàn bộ hội thoại và thanh công cụ sang Pin hoặc Cửa sổ nổi.
+* **Pin Mode**: Ghim vào Bottom Panel (`Terminal`, `Output`, `Problems`, `Chat`) hoặc mở thành một Editor Tab độc lập trong nhóm tabs chính.
+* **Window Mode**: Hỗ trợ cửa sổ độc lập với backdrop mờ (`backdrop-blur-md bg-black/60`), có thể thu nhỏ (`Minimize2`), phóng to toàn màn hình (`Maximize2`), hoặc kéo sang màn hình phụ mà không làm gián đoạn việc giám sát hệ thống.
 * Header và Footer luôn cố định (sticky), phần thân nội dung cuộn độc lập (`overflow-y-auto`).
 
 ### 5.3. Badge & Chip Tags
@@ -121,6 +196,28 @@ Virtual Office hỗ trợ 10 phong cách nền sàn với bảng màu và ánh s
   - **COFFEE**: Tông màu vàng hổ phách (`bg-amber-500/20 text-amber-300 border-amber-500/30`).
   - **VIP SUPPORTER**: Tông vàng kim sang trọng (`bg-amber-500/20 text-amber-300 border-amber-500/40`).
   - **EQUIPPED**: Tông cyan nổi bật (`bg-cyan-500/20 text-cyan-300 border-cyan-500/40`).
+
+### 5.4. Danh Sách Active Agents (Bố Cục 2 Dòng & Fallback Workspace An Toàn)
+* **Bố cục hiển thị 2 dòng chuẩn (Two-Line Layout)**:
+  - **Dòng 1 (Primary Header)**: Tên phiên (Session Title / Slug / Connection ID), icon Client (`APP` / `CLI`), Status Badge (`Streaming`, `Idle`, `Error`, `Done`).
+  - **Dòng 2 (Secondary Preview)**: Preview tin nhắn cuối cùng (Last Message Preview) hoặc công cụ đang thực thi (`Tool: run_command`, `File: view_file`), được cắt ngắn an toàn với dấu `…` (truncate).
+* **Cơ chế Fallback Workspace An Toàn**:
+  - Khi một session không có metadata (thiếu title, thiếu slug, không có tin nhắn ban đầu từ extension/CLI), hệ thống bắt buộc fallback an toàn về tên Workspace / CWD hiện tại (ví dụ: `agent-factory` hoặc tên thư mục dự án cha).
+  - Tuyệt đối không để trống dòng tiêu đề hoặc hiển thị các giá trị `undefined`, `null`, `[object Object]`.
+
+### 5.5. Trình Xem & Soạn Thảo Tệp Tin (File Viewer, Markdown Preview & Image Viewer)
+Tích hợp bộ công cụ quản lý và xem tệp tin lấy cảm hứng từ Developer Builder Kit:
+* **Code & Config Editor (Monaco Editor)**:
+  - Hỗ trợ xem và chỉnh sửa với đầy đủ cú pháp tô màu (Syntax Highlighting) cho JavaScript, TypeScript, Python, JSON, YAML, TOML, Markdown, HTML, CSS, SQL, Shell script...
+  - Hỗ trợ đếm dòng (Line Numbers), Mini-map, và nút Copy nội dung nhanh (`Copy` / `Check` icon).
+  - Tự động đồng bộ kích thước chữ và phông chữ theo Theme Settings qua `THEME_CHANGE_EVENT`.
+* **Markdown Preview**:
+  - Chuyển đổi linh hoạt giữa chế độ Code thô và Preview định dạng Markdown hoàn chỉnh (tiêu đề, danh sách, bảng, blockquote, inline code).
+* **Image Viewer**:
+  - Hỗ trợ xem trực tiếp các định dạng ảnh `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`, `.ico`.
+  - Cung cấp thanh công cụ điều khiển: Zoom in (`ZoomIn`), Zoom out (`ZoomOut`), Tỷ lệ gốc 1:1 (`Maximize`), và Nút tải tệp (`Download`).
+* **File Cấu Hình (Config Files)**:
+  - Tự động nhận diện và định dạng các file `.env*`, `.json`, `.yml`, `.yaml`, `.ini`, `.toml` với syntax highlighting chuẩn xác.
 
 ---
 
@@ -195,3 +292,16 @@ Supporter Store cung cấp hệ thống 1,010 vật phẩm công nghệ cao chia
 * **Bounded Buffer**: Cap tối đa buffer log ở 200 - 250 dòng để tránh rò rỉ bộ nhớ DOM.
 * **Tránh Heavy Serialization**: Không gọi `JSON.stringify` trực tiếp trong render body của component cập nhật thường xuyên; bọc trong `useMemo`.
 * **Garbage Collection**: Luôn quét và xóa các session ID đã kết thúc trong `useRef` Map state khi size vượt ngưỡng (> 100).
+
+### 8.3. Giám Sát & Quét Transcripts Động (Dynamic Watcher & Multi-Agent Telemetry)
+* **Dynamic Path Discovery**:
+  - Bộ quét (`watcherManager.js`, `antigravityWatcher.js`, `claudeWatcher.js`) tự động khám phá và duyệt thư mục dự án và session logs tại `~/.gemini/antigravity-cli/brain/` và `~/.claude/` mà không phụ thuộc vào đường dẫn cố định.
+  - Tự động nhận diện session từ Claude Extension (`extension-sessions/`) và CLI thông thường.
+* **Null-Safe Token & Metric Handling**:
+  - Khi phiên chưa phát sinh lượt gọi LLM hoặc không có dữ liệu token trong transcript, gán giá trị `null` thay vì số liệu giả lập.
+  - Mọi hàm reducer, tính tổng, hiển thị chỉ số pod hay status bar bắt buộc phải kiểm tra an toàn:
+    ```javascript
+    const totalTokens = (session.tokens?.input ?? 0) + (session.tokens?.output ?? 0);
+    ```
+* **Tự Động Nhận Diện Provider & Model**:
+  - Chuẩn hoá thông minh nhà cung cấp (Anthropic, Gemini, OpenAI, MiniMax, DeepSeek) dựa trên tên model thực tế và loại client (`app`, `cli`, `extension`).

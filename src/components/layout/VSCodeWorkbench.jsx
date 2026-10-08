@@ -129,6 +129,14 @@ export default function VSCodeWorkbench({
     }
   }, [layout, isHydrated]);
 
+  // When switching back to canvas tab, broadcast supporter change event to ensure canvas instantly refreshes cosmetics
+  useEffect(() => {
+    if (activeTabId === "canvas" && typeof window !== "undefined") {
+      const s = getSupporterState();
+      window.dispatchEvent(new CustomEvent(SUPPORTER_CHANGE_EVENT, { detail: s }));
+    }
+  }, [activeTabId]);
+
   // Synthesize trace snapshot from replay keyframe
   const replayingTrace = useMemo(() => {
     if (!replaySessionId || !replay.currentKeyframe) return null;

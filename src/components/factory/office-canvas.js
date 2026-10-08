@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { mountOfficeScene } from "./office-scene";
+import { SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
 
 export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedId = null }) {
   const hostRef = useRef(null);
@@ -85,6 +86,16 @@ export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedI
       sceneRef.current.rebuild?.(traces);
     }
   }, [traces]);
+
+  useEffect(() => {
+    const handleSupporterChange = () => {
+      if (sceneRef.current) {
+        sceneRef.current.rebuild?.(latest.current.traces, true);
+      }
+    };
+    window.addEventListener(SUPPORTER_CHANGE_EVENT, handleSupporterChange);
+    return () => window.removeEventListener(SUPPORTER_CHANGE_EVENT, handleSupporterChange);
+  }, []);
 
   useEffect(() => {
     if (sceneRef.current) {
