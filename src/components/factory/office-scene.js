@@ -137,12 +137,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   let podEntries = [];
   let couriers = [];
   let rackActive = false;
-
-  const track = (layer, obj) => {
-    layer.addChild(obj);
-    dyn.push(obj);
-    return obj;
-  };
+  let lastTracesSignature = "";
+  let currentTraces = traces;
 
   function refreshSelection() {
     for (const e of deskEntries) e.desk.setSelected(e.ws.connectionId === selectedId);
@@ -161,12 +157,37 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     }
   }
 
-  function rebuild(nextTraces) {
-    for (const o of dyn) o.destroy({ children: true });
-    dyn = [];
-    deskEntries = [];
-    podEntries = [];
-    couriers = [];
+  function getTracesSignature(list) {
+    if (!Array.isArray(list) || list.length === 0) return "0:empty";
+    let sig = list.length + ":";
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i];
+      if (!t) continue;
+      sig += `${t.connectionId || t.id || i}_${t.state || ""}_${t.mode || ""}_${t.isLooping ? 1 : 0}_${t.cost || 0}_${t.elapsedMs || 0}_${t.tokens?.input || 0}_${t.tokens?.output || 0}_${t.tools?.length || 0}_${t.error || ""}|`;
+    }
+    return sig;
+  }
+
+  function rebuild(nextTraces, force = false) {
+    currentTraces = nextTraces;
+    const nextSig = getTracesSignature(nextTraces);
+    if (!force && nextSig === lastTracesSignature && dyn.length > 0) {
+      return;
+    }
+    lastTracesSignature = nextSig;
+
+    // Double-buffering pattern: build next display hierarchy first before destroying old ones
+    // This completely eliminates single-frame flickers on telemetry refreshes
+    const newDyn = [];
+    const nextDeskEntries = [];
+    const nextPodEntries = [];
+    const nextCouriers = [];
+
+    const track = (layer, obj) => {
+      layer.addChild(obj);
+      newDyn.push(obj);
+      return obj;
+    };
 
     const office = buildOffice(nextTraces);
     const podByProvider = new Map(office.pods.map((p) => [p.provider, p]));
@@ -271,7 +292,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         track(toolLayer, coin);
       }
 
-      deskEntries.push({ desk, character, ws, toolBadges, statusBadge, coin });
+      nextDeskEntries.push({ desk, character, ws, toolBadges, statusBadge, coin });
 
       const pod = podByProvider.get(ws.provider);
       if (ws.busy > 0) {
@@ -349,7 +370,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       sub.y = pod.y + 53;
       track(deskLayer, sub);
 
-      podEntries.push({ pod, operator, siren });
+      nextPodEntries.push({ pod, operator, siren });
     }
 
     // Fallback lanes + courier drones: from the failed provider to the one that served it.
@@ -383,7 +404,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       const flame = new Graphics();
       drone.root.addChild(parcel, flame);
       track(actorLayer, drone.root);
-      couriers.push({ drone, flame, laneX, y1: from.y, y2: to.y, offset: k * 900 });
+      nextCouriers.push({ drone, flame, laneX, y1: from.y, y2: to.y, offset: k * 900 });
     });
 
     rack.x = OFFICE.rackX;
@@ -392,7 +413,24 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     rackActive = office.rack.active > 0;
     dispatcher.setMode(rackActive ? "streaming" : "sleeping");
     streams.setRoutes(routes);
+
+    // Swap dynamic display lists atomically
+    const oldDyn = dyn;
+    dyn = newDyn;
+    deskEntries = nextDeskEntries;
+    podEntries = nextPodEntries;
+    couriers = nextCouriers;
+
     refreshSelection();
+
+    // Safely destroy previous objects now that the new objects are already attached
+    for (const o of oldDyn) {
+      try {
+        o.destroy({ children: true });
+      } catch (err) {
+        // safe suppress
+      }
+    }
   }
 
   // ---- camera -----------------------------------------------------------
@@ -472,11 +510,28 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     fit();
   };
 
+  const onContextLost = (e) => {
+    e.preventDefault(); // Crucial: prevents browser from permanently discarding the WebGL context
+    console.warn("[OfficeScene] WebGL context lost - browser reclaimed GPU memory");
+  };
+
+  const onContextRestored = () => {
+    console.info("[OfficeScene] WebGL context restored - re-rendering office scene");
+    try {
+      rebuild(currentTraces, true);
+      app.render();
+    } catch (err) {
+      console.warn("[OfficeScene] Error restoring scene:", err);
+    }
+  };
+
   canvas.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   canvas.addEventListener("wheel", onWheel, { passive: false });
   canvas.addEventListener("dblclick", onDblClick);
+  canvas.addEventListener("webglcontextlost", onContextLost, false);
+  canvas.addEventListener("webglcontextrestored", onContextRestored, false);
 
   // ---- animation --------------------------------------------------------
   let t = 0;
@@ -640,12 +695,41 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       onSelect = fn;
     },
     destroy: () => {
-      canvas.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      canvas.removeEventListener("wheel", onWheel);
-      canvas.removeEventListener("dblclick", onDblClick);
-      app.destroy(true, { children: true });
+      try {
+        canvas.removeEventListener("pointerdown", onPointerDown);
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+        canvas.removeEventListener("wheel", onWheel);
+        canvas.removeEventListener("dblclick", onDblClick);
+        canvas.removeEventListener("webglcontextlost", onContextLost);
+        canvas.removeEventListener("webglcontextrestored", onContextRestored);
+        app.renderer?.off?.("resize", fit);
+      } catch {}
+
+      try {
+        app.ticker?.stop?.();
+      } catch {}
+
+      try {
+        // Safe WebGL loseContext handling:
+        // If context is already lost, prevent Pixi v8 from calling WEBGL_lose_context.loseContext()
+        const gl = app.renderer?.gl;
+        if (gl) {
+          const isLost = typeof gl.isContextLost === "function" && gl.isContextLost();
+          if (isLost) {
+            const origGetExt = gl.getExtension?.bind(gl);
+            if (origGetExt) {
+              gl.getExtension = (name) => {
+                if (name === "WEBGL_lose_context") return null;
+                return origGetExt(name);
+              };
+            }
+          }
+        }
+        app.destroy(false, { children: true });
+      } catch (err) {
+        console.warn("[OfficeScene] Cleanly handled app.destroy:", err);
+      }
     },
   };
 }

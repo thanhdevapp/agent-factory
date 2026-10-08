@@ -155,14 +155,24 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     };
   }, [mode, connectionEpoch]);
 
-  // 3. Auto-reconnect when laptop wakes up or tab gains focus
+  // 3. Auto-reconnect when laptop wakes up or tab gains focus (debounced & safe)
   useEffect(() => {
     if (mode !== "live") return undefined;
 
+    let wakeupTimer = null;
     const handleWakeup = () => {
       if (document.visibilityState === "visible") {
-        console.log("[AgentFactory] Tab active / wake up, refreshing telemetry...");
-        refresh();
+        if (wakeupTimer) clearTimeout(wakeupTimer);
+        wakeupTimer = setTimeout(() => {
+          const es = eventSourceRef.current;
+          // If SSE is already healthy and active, no need to tear down the connection
+          if (!es || es.readyState !== EventSource.OPEN) {
+            console.log("[AgentFactory] Tab active / wake up, reconnecting telemetry stream...");
+            refresh();
+          } else {
+            console.log("[AgentFactory] Tab active / wake up, stream is already active.");
+          }
+        }, 300);
       }
     };
 
@@ -171,6 +181,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     window.addEventListener("focus", handleWakeup);
 
     return () => {
+      if (wakeupTimer) clearTimeout(wakeupTimer);
       window.removeEventListener("visibilitychange", handleWakeup);
       window.removeEventListener("online", handleWakeup);
       window.removeEventListener("focus", handleWakeup);

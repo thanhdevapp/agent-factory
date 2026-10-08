@@ -28,6 +28,8 @@ export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedI
     canvas.style.width = "100%";
     canvas.style.height = "100%";
     canvas.style.display = "block";
+    canvas.style.opacity = "0";
+    canvas.style.transition = "opacity 0.2s ease-in-out";
     host.appendChild(canvas);
 
     (async () => {
@@ -39,29 +41,42 @@ export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedI
         });
 
         if (disposed) {
-          mounted.destroy?.();
-          canvas.remove();
+          try {
+            mounted?.destroy?.();
+          } catch {}
+          try {
+            canvas.remove();
+          } catch {}
           return;
         }
 
         handle = mounted;
         sceneRef.current = handle;
+        canvas.style.opacity = "1";
 
         // Immediately reconcile in case traces arrived during async init
         if (latest.current.traces && latest.current.traces.length > 0) {
           handle.rebuild?.(latest.current.traces);
         }
       } catch (err) {
-        console.error("[OfficeCanvas] mount failed:", err);
-        setError(err?.message || "Failed to start the scene");
+        if (!disposed) {
+          console.error("[OfficeCanvas] mount failed:", err);
+          setError(err?.message || "Failed to start the scene");
+        }
       }
     })();
 
     return () => {
       disposed = true;
-      handle?.destroy?.();
+      try {
+        handle?.destroy?.();
+      } catch (e) {
+        console.warn("[OfficeCanvas] Cleanup warning:", e);
+      }
       sceneRef.current = null;
-      host?.replaceChildren();
+      try {
+        canvas.remove();
+      } catch {}
     };
   }, []);
 
