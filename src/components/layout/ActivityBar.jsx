@@ -10,12 +10,15 @@ import {
   BarChart3,
   SlidersHorizontal,
   GitFork,
+  MessageSquare,
 } from "lucide-react";
 
 export default function ActivityBar({
   activeView = "explorer",
   onViewChange,
   agentCount = 0,
+  isRightSidebarVisible = false,
+  activeRightSidebarTab = "chat",
   isBottomPanelVisible = false,
   onToggleBottomPanel,
   onOpenSettings,
@@ -26,6 +29,11 @@ export default function ActivityBar({
       title: "Explorer: Agents & Sessions (Ctrl+Shift+E)",
       icon: FolderTree,
       badge: agentCount > 0 ? agentCount : undefined,
+    },
+    {
+      id: "chat",
+      title: "Live Chat / Transcript (Sidebar)",
+      icon: MessageSquare,
     },
     {
       id: "office",
@@ -57,7 +65,10 @@ export default function ActivityBar({
       {/* Top View Icons */}
       <div className="flex flex-col gap-1 w-full items-center">
         {topViews.map((item) => {
-          const isActive = activeView === item.id;
+          const isActive =
+            item.id === "chat"
+              ? isRightSidebarVisible && activeRightSidebarTab === "chat"
+              : activeView === item.id;
           const Icon = item.icon;
           return (
             <button

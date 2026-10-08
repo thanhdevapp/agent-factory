@@ -70,7 +70,7 @@ export const Modal = ({
               size="icon-sm"
               onClick={onClose}
               className="text-[#8c8c8c] hover:text-white"
-              title="Đóng (Esc)"
+              title="Close (Esc)"
             >
               <X className="w-3.5 h-3.5" />
             </Button>

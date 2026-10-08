@@ -91,7 +91,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
       setData(json);
     } catch (err) {
       console.error("[TokenReportView] Fetch failed:", err);
-      setError(err.message || "Không thể tải báo cáo");
+      setError(err.message || "Failed to load token reports");
     } finally {
       setLoading(false);
     }
@@ -283,13 +283,13 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             </div>
             <div>
               <h1 className="font-bold text-sm text-white flex items-center gap-2">
-                Báo Cáo Token & Chi Phí AI
+                Token & AI Cost Analytics
                 <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
                   Multi-Criteria Analytics
                 </span>
               </h1>
               <p className="text-[11px] text-slate-400">
-                Phân tích sâu mức độ tiêu thụ token theo đa tiêu chí, mốc thời gian, model và provider
+                In-depth analysis of token consumption by multi-criteria, time ranges, models, and providers
               </p>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               variant="secondary"
               size="icon-sm"
               onClick={fetchData}
-              title="Làm mới dữ liệu"
+              title="Refresh data"
             >
               <RotateCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-emerald-400" : ""}`} />
             </Button>
@@ -308,16 +308,16 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               variant="secondary"
               size="sm"
               onClick={handleExportCsv}
-              title="Xuất file CSV"
+              title="Export CSV"
               leftIcon={<Download className="w-3.5 h-3.5 text-cyan-400" />}
             >
-              Xuất CSV
+              Export CSV
             </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={handleExportJson}
-              title="Xuất dữ liệu thô JSON"
+              title="Export raw JSON"
               leftIcon={<FileCode className="w-3.5 h-3.5 text-purple-400" />}
             >
               <span className="hidden sm:inline">JSON</span>
@@ -330,15 +330,15 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Time Presets */}
           <div className="flex items-center gap-1 flex-wrap">
             <span className="text-slate-500 text-[11px] font-medium mr-1 flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-slate-400" /> Mốc thời gian:
+              <Calendar className="w-3 h-3 text-slate-400" /> Time Range:
             </span>
             {[
-              { id: "today", label: "Hôm nay" },
-              { id: "yesterday", label: "Hôm qua" },
-              { id: "week", label: "7 Ngày (Tuần)" },
-              { id: "month", label: "30 Ngày (Tháng)" },
-              { id: "year", label: "Năm nay" },
-              { id: "all", label: "Toàn bộ" },
+              { id: "today", label: "Today" },
+              { id: "yesterday", label: "Yesterday" },
+              { id: "week", label: "7 Days (Week)" },
+              { id: "month", label: "30 Days (Month)" },
+              { id: "year", label: "This Year" },
+              { id: "all", label: "All Time" },
             ].map((t) => (
               <button
                 key={t.id}
@@ -382,7 +382,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                     setEndDate("");
                   }}
                   className="p-1 text-slate-400 hover:text-white hover:bg-[#2a2d2e] rounded transition-colors"
-                  title="Xóa khoảng ngày tùy chỉnh"
+                  title="Clear custom range"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -393,14 +393,14 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Granularity Selector */}
           <div className="flex items-center gap-1.5">
             <span className="text-slate-500 text-[11px] font-medium flex items-center gap-1">
-              <Clock className="w-3 h-3 text-slate-400" /> Gom nhóm:
+              <Clock className="w-3 h-3 text-slate-400" /> Granularity:
             </span>
             <div className="flex items-center bg-[#252526] border border-[#3e3e42] rounded p-0.5 text-[11px]">
               {[
-                { id: "hourly", label: "Theo Giờ" },
-                { id: "daily", label: "Theo Ngày" },
-                { id: "weekly", label: "Theo Tuần" },
-                { id: "monthly", label: "Theo Tháng" },
+                { id: "hourly", label: "Hourly" },
+                { id: "daily", label: "Daily" },
+                { id: "weekly", label: "Weekly" },
+                { id: "monthly", label: "Monthly" },
               ].map((g) => (
                 <button
                   key={g.id}
@@ -421,7 +421,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
         {/* Multi-Criteria Filters Bar */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#2a2a2c] text-xs">
           <span className="text-slate-500 text-[11px] font-medium flex items-center gap-1">
-            <Filter className="w-3 h-3 text-slate-400" /> Tiêu chí lọc:
+            <Filter className="w-3 h-3 text-slate-400" /> Filters:
           </span>
 
           {/* Provider Filter */}
@@ -431,7 +431,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             onChange={(e) => setProviderFilter(e.target.value)}
             wrapperClassName="w-auto"
           >
-            <option value="all">Tất cả Provider</option>
+            <option value="all">All Providers</option>
             <option value="gemini (cli)">Gemini (CLI)</option>
             <option value="gemini (app)">Gemini (App)</option>
             <option value="claude">Claude Code</option>
@@ -444,7 +444,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             onChange={(e) => setModelFilter(e.target.value)}
             wrapperClassName="w-auto"
           >
-            <option value="all">Tất cả Model</option>
+            <option value="all">All Models</option>
             {meta.availableModels?.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -459,7 +459,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             onChange={(e) => setProjectFilter(e.target.value)}
             wrapperClassName="w-auto max-w-[180px]"
           >
-            <option value="all">Tất cả Dự Án</option>
+            <option value="all">All Projects</option>
             {meta.availableProjects?.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -474,7 +474,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             onChange={(e) => setToolFilter(e.target.value)}
             wrapperClassName="w-auto"
           >
-            <option value="all">Tất cả Công cụ (Tools)</option>
+            <option value="all">All Tools</option>
             {meta.availableTools?.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -489,9 +489,9 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             onChange={(e) => setHasErrorFilter(e.target.value)}
             wrapperClassName="w-auto"
           >
-            <option value="all">Tất cả Trạng thái</option>
-            <option value="false">Chỉ phiên Thành Công</option>
-            <option value="true">Chỉ phiên Có Lỗi</option>
+            <option value="all">All Statuses</option>
+            <option value="false">Successful Only</option>
+            <option value="true">Errors Only</option>
           </Select>
 
           {/* Reset filters button if any is active */}
@@ -508,7 +508,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               }}
               leftIcon={<X className="w-3 h-3" />}
             >
-              Đặt lại bộ lọc
+              Reset Filters
             </Button>
           )}
         </div>
@@ -521,7 +521,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Card 1: Total Tokens */}
           <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-[#007acc]/50 transition-colors">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <span>Tổng Token Tiêu Thụ</span>
+              <span>Total Tokens Consumed</span>
               <Zap className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-extrabold text-white tracking-tight mb-2">
@@ -537,17 +537,17 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Card 2: Cache Hit Rate & Savings */}
           <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-[#007acc]/50 transition-colors">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <span>Cache Hit & Tiết Kiệm</span>
+              <span>Cache Hit & Savings</span>
               <PiggyBank className="w-4 h-4 text-cyan-400" />
             </div>
             <div className="text-2xl font-extrabold text-cyan-300 tracking-tight mb-2 flex items-baseline gap-1.5">
               {summary.cacheRate}%
               <span className="text-xs font-semibold text-emerald-400">
-                (+${summary.totalSavings.toFixed(1)} tiết kiệm)
+                (+${summary.totalSavings.toFixed(1)} saved)
               </span>
             </div>
             <div className="text-[11px] text-slate-400 border-t border-[#2b2b2b] pt-2 flex items-center justify-between">
-              <span>Tiết kiệm VNĐ:</span>
+              <span>Estimated Savings:</span>
               <strong className="text-emerald-400 font-mono">
                 ~{summary.totalSavingsVnd.toLocaleString()} ₫
               </strong>
@@ -557,7 +557,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Card 3: Estimated Cost & Projection */}
           <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-[#007acc]/50 transition-colors">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <span>Chi Phí Ước Tính</span>
+              <span>Estimated Cost</span>
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
             <div className="text-2xl font-extrabold text-amber-300 tracking-tight mb-2">
@@ -567,7 +567,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               </span>
             </div>
             <div className="text-[11px] text-slate-400 border-t border-[#2b2b2b] pt-2 flex items-center justify-between">
-              <span>Dự báo tháng (Run-rate):</span>
+              <span>Monthly Run-rate:</span>
               <strong className="text-slate-200 font-mono">
                 ${summary.projectedMonthlyCost.toFixed(1)}
               </strong>
@@ -577,14 +577,14 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           {/* Card 4: Session Metrics & Averages */}
           <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-[#007acc]/50 transition-colors">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <span>Phiên & Lệnh Gọi</span>
+              <span>Sessions & Requests</span>
               <Layers className="w-4 h-4 text-purple-400" />
             </div>
             <div className="text-2xl font-extrabold text-purple-300 tracking-tight mb-2">
-              {summary.sessionCount} <span className="text-sm font-normal text-slate-400">phiên</span>
+              {summary.sessionCount} <span className="text-sm font-normal text-slate-400">sessions</span>
             </div>
             <div className="text-[11px] text-slate-400 border-t border-[#2b2b2b] pt-2 flex items-center justify-between">
-              <span>TB: {formatTokens(summary.avgTokensPerSession)} token</span>
+              <span>Avg: {formatTokens(summary.avgTokensPerSession)} tks</span>
               <span>{summary.totalRequests.toLocaleString()} turns</span>
             </div>
           </div>
@@ -601,7 +601,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Xu Hướng & Thời Gian</span>
+            <span>Trends & Timeline</span>
           </button>
           <button
             onClick={() => setActiveTab("breakdown")}
@@ -612,7 +612,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>Phân Bổ Đa Chiều (Model & Provider)</span>
+            <span>Breakdown (Model & Provider)</span>
           </button>
           <button
             onClick={() => setActiveTab("table")}
@@ -623,7 +623,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Chi Tiết Từng Phiên ({sortedSessions.length})</span>
+            <span>Sessions Ledger ({sortedSessions.length})</span>
           </button>
         </div>
 
@@ -635,10 +635,10 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
-                    Biểu Đồ Tiêu Thụ Theo Mốc Thời Gian ({timeRange} · {granularity})
+                    Consumption Trends Over Time ({timeRange} · {granularity})
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Phân tích biến động lượng token theo từng chu kỳ
+                    Token consumption variations over time intervals
                   </p>
                 </div>
 
@@ -658,7 +658,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       chartMetric === "cost" ? "bg-[#007acc] text-white" : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    Chi Phí ($)
+                    Cost ($)
                   </button>
                   <button
                     onClick={() => setChartMetric("requests")}
@@ -666,7 +666,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       chartMetric === "requests" ? "bg-[#007acc] text-white" : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    Số Phiên
+                    Sessions
                   </button>
                 </div>
               </div>
@@ -675,7 +675,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               <div className="h-64 flex items-end gap-2 pt-6 pb-2 px-2 border-b border-[#2b2b2b] overflow-x-auto">
                 {timeseries.length === 0 ? (
                   <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs italic">
-                    Không có dữ liệu trong khoảng thời gian đã chọn
+                    No data available for the selected time range
                   </div>
                 ) : (
                   timeseries.map((item, idx) => {
@@ -686,7 +686,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       labelVal = `$${item.cost.toFixed(2)}`;
                     } else if (chartMetric === "requests") {
                       val = item.sessions || 1;
-                      labelVal = `${val} phiên`;
+                      labelVal = `${val} sessions`;
                     }
 
                     const heightPercent = Math.max(Math.round((val / maxTimeseriesValue) * 100), 5);
@@ -700,11 +700,11 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                         {/* Tooltip */}
                         <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-[#252526] border border-[#3e3e42] p-2 rounded shadow-xl text-[10px] text-slate-200 z-20 whitespace-nowrap pointer-events-none">
                           <strong className="text-white mb-1">{item.date}</strong>
-                          <span>Tổng Token: <strong className="text-cyan-400">{formatTokens(item.total)}</strong></span>
+                          <span>Total Tokens: <strong className="text-cyan-400">{formatTokens(item.total)}</strong></span>
                           <span>Prompt Cache: <strong className="text-emerald-400">{formatTokens(item.cached)} ({cachedPercent}%)</strong></span>
                           <span>In: {formatTokens(item.input)} | Out: {formatTokens(item.output)}</span>
-                          <span>Chi phí: ${item.cost.toFixed(3)}</span>
-                          <span>Số phiên: {item.sessions || 1}</span>
+                          <span>Cost: ${item.cost.toFixed(3)}</span>
+                          <span>Sessions: {item.sessions || 1}</span>
                         </div>
 
                         {/* Top bar value label */}
@@ -740,10 +740,10 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-5 shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-cyan-400" />
-                Mật Độ Tiêu Thụ Theo Thứ Trong Tuần
+                Weekly Consumption Pattern
               </h3>
               <p className="text-[11px] text-slate-400">
-                Thống kê tần suất và lượng token được sử dụng nhiều nhất vào các ngày trong tuần
+                Token usage and session distribution across days of the week
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 pt-2">
@@ -752,7 +752,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                     <span className="text-slate-400 text-xs font-semibold block">{d.day}</span>
                     <div className="text-sm font-bold text-white">{formatTokens(d.tokens)}</div>
                     <div className="text-[10px] text-emerald-400 font-mono">${d.cost.toFixed(2)}</div>
-                    <div className="text-[9px] text-slate-500">{d.sessions} phiên</div>
+                    <div className="text-[9px] text-slate-500">{d.sessions} sessions</div>
                   </div>
                 ))}
               </div>
@@ -767,7 +767,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-5 shadow-sm space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-purple-400" />
-                Phân Bổ Theo AI Model ({byModel.length})
+                Breakdown by AI Model ({byModel.length})
               </h3>
               <div className="space-y-3">
                 {byModel.map((m) => {
@@ -786,7 +786,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1 border-t border-[#2e2e30]">
                         <span>In: {formatTokens(m.input)} | Out: {formatTokens(m.output)}</span>
-                        <span className="text-amber-400 font-mono">Chi phí: ${m.cost.toFixed(2)} ({m.sessions} phiên)</span>
+                        <span className="text-amber-400 font-mono">Cost: ${m.cost.toFixed(2)} ({m.sessions} sessions)</span>
                       </div>
                     </div>
                   );
@@ -798,7 +798,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-5 shadow-sm space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Layers className="w-4 h-4 text-emerald-400" />
-                Phân Bổ Theo Provider ({byProvider.length})
+                Breakdown by Provider ({byProvider.length})
               </h3>
               <div className="space-y-3">
                 {byProvider.map((p) => {
@@ -834,7 +834,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1 border-t border-[#2e2e30]">
                         <span>Cache: {formatTokens(p.cached)}</span>
-                        <span className="text-amber-400 font-mono">Chi phí: ${p.cost.toFixed(2)} ({p.sessions} phiên)</span>
+                        <span className="text-amber-400 font-mono">Cost: ${p.cost.toFixed(2)} ({p.sessions} sessions)</span>
                       </div>
                     </div>
                   );
@@ -846,7 +846,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-5 shadow-sm space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
-                Phân Bổ Theo Dự Án / Workspace ({byProject.length})
+                Breakdown by Project / Workspace ({byProject.length})
               </h3>
               <div className="space-y-3">
                 {byProject.map((proj) => {
@@ -861,7 +861,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                         <div style={{ width: `${pct}%` }} className="h-full bg-cyan-500 rounded-full" />
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-400 pt-1">
-                        <span>{proj.sessions} phiên làm việc</span>
+                        <span>{proj.sessions} sessions</span>
                         <span className="text-amber-400">${proj.cost.toFixed(2)}</span>
                       </div>
                     </div>
@@ -874,7 +874,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
             <div className="bg-[#1e1e1e] border border-[#2b2b2b] rounded-xl p-5 shadow-sm space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-amber-400" />
-                Công Cụ Được Sử Dụng Nhiều Nhất ({byTool.length})
+                Most Used Tools ({byTool.length})
               </h3>
               <div className="space-y-2">
                 {byTool.slice(0, 8).map((t) => (
@@ -882,7 +882,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                     <span className="font-mono text-slate-200 text-[11px]">{t.tool}</span>
                     <div className="flex items-center gap-3">
                       <span className="bg-[#333333] px-2 py-0.5 rounded text-[10px] text-slate-300 font-mono">
-                        {t.count} lần gọi
+                        {t.count} calls
                       </span>
                       <span className="text-slate-400 font-mono text-[11px]">{formatTokens(t.tokens)}</span>
                     </div>
@@ -901,10 +901,10 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                  Sổ Lịch Sử Chi Tiết Từng Phiên ({sortedSessions.length})
+                  Detailed Sessions Ledger ({sortedSessions.length})
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Bấm vào tiêu đề cột để sắp xếp tăng / giảm dần
+                  Click column headers to toggle sort direction
                 </p>
               </div>
 
@@ -916,7 +916,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                 value={searchTable}
                 onChange={(e) => setSearchTable(e.target.value)}
                 onClear={() => setSearchTable("")}
-                placeholder="Tìm theo ID, model, tool, project..."
+                placeholder="Search by ID, model, tool, project..."
                 wrapperClassName="w-48 sm:w-64"
               />
             </div>
@@ -928,13 +928,13 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                   <tr>
                     <th onClick={() => handleSort("timestamp")} className="py-2.5 px-4 cursor-pointer hover:text-white">
                       <div className="flex items-center gap-1">
-                        <span>Thời Gian</span>
+                        <span>Timestamp</span>
                         <ArrowUpDown className="w-2.5 h-2.5" />
                       </div>
                     </th>
                     <th onClick={() => handleSort("project")} className="py-2.5 px-4 cursor-pointer hover:text-white">
                       <div className="flex items-center gap-1">
-                        <span>Dự Án / Session ID</span>
+                        <span>Project / Session ID</span>
                         <ArrowUpDown className="w-2.5 h-2.5" />
                       </div>
                     </th>
@@ -950,24 +950,24 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                     <th className="py-2.5 px-4 text-right">Prompt Cache</th>
                     <th onClick={() => handleSort("tokens")} className="py-2.5 px-4 text-right cursor-pointer hover:text-white">
                       <div className="flex items-center justify-end gap-1">
-                        <span>Tổng Token</span>
+                        <span>Total Tokens</span>
                         <ArrowUpDown className="w-2.5 h-2.5" />
                       </div>
                     </th>
                     <th onClick={() => handleSort("cost")} className="py-2.5 px-4 text-right cursor-pointer hover:text-white">
                       <div className="flex items-center justify-end gap-1">
-                        <span>Chi Phí ($)</span>
+                        <span>Cost ($)</span>
                         <ArrowUpDown className="w-2.5 h-2.5" />
                       </div>
                     </th>
-                    <th className="py-2.5 px-3 text-center">Tác Vụ</th>
+                    <th className="py-2.5 px-3 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#242426] text-slate-300">
                   {paginatedSessions.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-8 text-center text-slate-500 italic">
-                        Không tìm thấy phiên làm việc nào phù hợp với bộ lọc
+                        No sessions found matching the current filters
                       </td>
                     </tr>
                   ) : (
@@ -1021,7 +1021,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                                 onStartReplay?.(s.id);
                               }}
                               className="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-[#333333] transition-colors cursor-pointer"
-                              title="Tua lại hành trình AI phiên này (Time-Machine Replay)"
+                              title="Time-Machine: Replay this session"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
                             </button>
@@ -1039,7 +1039,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
               <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[#2b2b2b] bg-[#1a1a1c] text-xs text-slate-400">
                 <div className="flex items-center gap-2">
                   <span>
-                    Hiển thị{" "}
+                    Showing{" "}
                     <strong className="text-white font-medium">
                       {(currentPage - 1) * pageSize + 1}
                     </strong>{" "}
@@ -1047,14 +1047,14 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                     <strong className="text-white font-medium">
                       {Math.min(currentPage * pageSize, sortedSessions.length)}
                     </strong>{" "}
-                    trong{" "}
+                    of{" "}
                     <strong className="text-white font-medium">
                       {sortedSessions.length.toLocaleString()}
                     </strong>{" "}
-                    phiên
+                    sessions
                   </span>
                   <div className="flex items-center gap-1.5 ml-4">
-                    <span className="text-slate-500">Mỗi trang:</span>
+                    <span className="text-slate-500">Per page:</span>
                     <select
                       value={pageSize}
                       onChange={(e) => {
@@ -1073,7 +1073,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
 
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500">
-                    Trang {currentPage} / {totalPages || 1}
+                    Page {currentPage} of {totalPages || 1}
                   </span>
                   <div className="flex items-center gap-1">
                     <button
@@ -1081,7 +1081,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       disabled={currentPage <= 1}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       className="p-1 rounded bg-[#252526] border border-[#3c3c3c] text-slate-300 hover:text-white hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                      title="Trang trước"
+                      title="Previous page"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -1090,7 +1090,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       disabled={currentPage >= totalPages}
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       className="p-1 rounded bg-[#252526] border border-[#3c3c3c] text-slate-300 hover:text-white hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                      title="Trang kế tiếp"
+                      title="Next page"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -1105,7 +1105,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
         <Modal
           isOpen={Boolean(selectedSessionDetail)}
           onClose={() => setSelectedSessionDetail(null)}
-          title={`Chi Tiết Phiên: ${selectedSessionDetail?.project || ""}`}
+          title={`Session Details: ${selectedSessionDetail?.project || ""}`}
           description={selectedSessionDetail ? `Session ID: ${selectedSessionDetail.id}` : undefined}
           size="md"
           footer={
@@ -1121,7 +1121,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                   }}
                   leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
                 >
-                  Tua Lại Phiên (Replay)
+                  Time-Machine Replay
                 </Button>
               )}
               <Button
@@ -1129,7 +1129,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                 size="sm"
                 onClick={() => setSelectedSessionDetail(null)}
               >
-                Đóng
+                Close
               </Button>
             </div>
           }
@@ -1150,7 +1150,7 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                   <span className="font-semibold text-slate-200">{selectedSessionDetail.provider}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">THỜI GIAN</span>
+                  <span className="text-slate-500 text-[10px] block">TIMESTAMP</span>
                   <span className="text-slate-300">{new Date(selectedSessionDetail.date).toLocaleString()}</span>
                 </div>
               </div>
@@ -1169,18 +1169,18 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                   <span className="font-mono text-emerald-400">{selectedSessionDetail.tokens.cached.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-200 font-bold pt-1 border-t border-[#2b2b2b]">
-                  <span>Tổng Token:</span>
+                  <span>Total Tokens:</span>
                   <span className="font-mono text-cyan-400">{selectedSessionDetail.tokens.total.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-amber-400 font-bold">
-                  <span>Chi phí ước tính:</span>
-                  <span className="font-mono">${selectedSessionDetail.cost.toFixed(3)} (~{Math.round(selectedSessionDetail.cost * 25400).toLocaleString()} ₫)</span>
+                  <span>Estimated Cost:</span>
+                  <span className="font-mono">${selectedSessionDetail.cost.toFixed(3)}</span>
                 </div>
               </div>
 
               {selectedSessionDetail.tools && selectedSessionDetail.tools.length > 0 && (
                 <div className="space-y-1.5">
-                  <span className="text-slate-400 text-xs font-semibold block">Công cụ đã thực thi:</span>
+                  <span className="text-slate-400 text-xs font-semibold block">Executed Tools:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedSessionDetail.tools.map((t) => (
                       <span key={t} className="px-2 py-0.5 rounded bg-[#1e1e1e] border border-[#3e3e42] text-[11px] font-mono text-slate-300">

@@ -50,7 +50,7 @@ export default function LayoutToggles({
       <button
         type="button"
         data-testid="toggle-right-sidebar"
-        title="Chuyển đổi thanh bên phụ (Inspector - Cmd+Alt+B)"
+        title="Chuyển đổi thanh bên phụ (Live Chat & Inspector - Cmd+Alt+B)"
         onClick={onToggleRightSidebar}
         className={getButtonClass(isRightSidebarVisible)}
       >

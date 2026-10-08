@@ -15,6 +15,8 @@ import {
   Command,
   BarChart3,
   RotateCcw,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 
 export default function CommandPalette({
@@ -23,6 +25,8 @@ export default function CommandPalette({
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
+  onOpenChatSidebar,
+  onOpenChatModal,
   onToggleSound,
   onToggleNotif,
   onRefresh,
@@ -76,11 +80,29 @@ export default function CommandPalette({
     },
     {
       id: "toggle-right",
-      title: "View: Toggle Secondary Side Bar (Inspector)",
+      title: "View: Toggle Secondary Side Bar (Live Chat & Inspector)",
       shortcut: "Cmd+Alt+B",
       icon: PanelRight,
       action: () => {
         onToggleRightSidebar();
+        onClose();
+      },
+    },
+    {
+      id: "open-chat-sidebar",
+      title: "Chat: Xem Live Chat & Transcript trong Sidebar (Tab phụ)",
+      icon: MessageSquare,
+      action: () => {
+        onOpenChatSidebar?.();
+        onClose();
+      },
+    },
+    {
+      id: "open-chat-modal",
+      title: "Chat: Mở Live Chat & Transcript dạng Popup Modal (Cửa sổ riêng)",
+      icon: ExternalLink,
+      action: () => {
+        onOpenChatModal?.();
         onClose();
       },
     },

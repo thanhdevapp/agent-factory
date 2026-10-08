@@ -15,7 +15,7 @@ export default function ReportsPage() {
           className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Quay lại Virtual Office</span>
+          <span>Back to Virtual Office</span>
         </Link>
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <Bot className="w-3.5 h-3.5 text-emerald-400" />

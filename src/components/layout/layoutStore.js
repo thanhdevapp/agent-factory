@@ -9,6 +9,7 @@ export const DEFAULT_WORKBENCH_LAYOUT = {
   isBottomPanelVisible: true,
   isRightSidebarVisible: false,
   activeActivityView: "explorer",
+  activeRightSidebarTab: "chat",
   activeBottomTab: "logs",
   activeEditorTab: "canvas",
   openedTabs: [

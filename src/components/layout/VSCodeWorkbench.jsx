@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { MessageSquare, ExternalLink } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import TitleBar from "./TitleBar";
 import ActivityBar from "./ActivityBar";
@@ -278,8 +279,20 @@ export default function VSCodeWorkbench({
         {/* Activity Bar (48px) */}
         <ActivityBar
           activeView={layout.activeActivityView}
+          isRightSidebarVisible={layout.isRightSidebarVisible}
+          activeRightSidebarTab={layout.activeRightSidebarTab || "chat"}
           onViewChange={(view) => {
-            if (view === "office") {
+            if (view === "chat") {
+              setLayout((p) => {
+                const isCurrentlyChat =
+                  p.isRightSidebarVisible && p.activeRightSidebarTab === "chat";
+                return {
+                  ...p,
+                  isRightSidebarVisible: !isCurrentlyChat,
+                  activeRightSidebarTab: "chat",
+                };
+              });
+            } else if (view === "office") {
               setActiveTabId("canvas");
             } else if (view === "network") {
               handleOpenNetwork();
@@ -369,8 +382,13 @@ export default function VSCodeWorkbench({
                             traces={effectiveTraces}
                             selectedTraceId={selectedId}
                             onSelectTrace={(t) => {
-                              setSelectedId(t.traceId || t.connectionId);
-                              setIsChatModalOpen(true);
+                              const id = t.traceId || t.connectionId;
+                              setSelectedId(id);
+                              setLayout((prev) => ({
+                                ...prev,
+                                isRightSidebarVisible: true,
+                                activeRightSidebarTab: "chat",
+                              }));
                             }}
                           />
                         ) : (
@@ -436,11 +454,26 @@ export default function VSCodeWorkbench({
                                 <button
                                   onClick={() => {
                                     setSelectedId(activeTab.agentData?.connectionId);
+                                    setLayout((prev) => ({
+                                      ...prev,
+                                      isRightSidebarVisible: true,
+                                      activeRightSidebarTab: "chat",
+                                    }));
+                                  }}
+                                  className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  <span>Xem Live Chat (Sidebar)</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedId(activeTab.agentData?.connectionId);
                                     setIsChatModalOpen(true);
                                   }}
-                                  className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer"
+                                  className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-300 hover:text-white rounded text-xs cursor-pointer"
+                                  title="Mở dạng Popup riêng"
                                 >
-                                  Open Transcript Modal
+                                  <ExternalLink className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -465,8 +498,13 @@ export default function VSCodeWorkbench({
                             traces={effectiveTraces}
                             selectedTraceId={selectedId}
                             onSelectTrace={(t) => {
-                              setSelectedId(t.traceId || t.connectionId);
-                              setIsChatModalOpen(true);
+                              const id = t.traceId || t.connectionId;
+                              setSelectedId(id);
+                              setLayout((prev) => ({
+                                ...prev,
+                                isRightSidebarVisible: true,
+                                activeRightSidebarTab: "chat",
+                              }));
                             }}
                           />
                         </div>
@@ -505,7 +543,7 @@ export default function VSCodeWorkbench({
             </Group>
           </Panel>
 
-          {/* Secondary Right Sidebar (Inspector) */}
+          {/* Secondary Right Sidebar (Inspector & Live Chat) */}
           {layout.isRightSidebarVisible && (
             <>
               <Separator
@@ -513,17 +551,24 @@ export default function VSCodeWorkbench({
               />
               <Panel
                 id="right-sidebar-panel"
-                defaultSize="300px"
-                minSize="200px"
-                maxSize="500px"
+                defaultSize="360px"
+                minSize="260px"
+                maxSize="750px"
                 className="overflow-hidden h-full bg-[#252526]"
               >
                 <RightSidebar
                   selectedAgent={selectedAgent}
+                  workstations={effectiveOffice.workstations}
+                  activeTab={layout.activeRightSidebarTab || "chat"}
+                  onTabChange={(tab) =>
+                    setLayout((p) => ({ ...p, activeRightSidebarTab: tab }))
+                  }
+                  onSelectAgent={handleSelectAgent}
                   onClose={() =>
                     setLayout((p) => ({ ...p, isRightSidebarVisible: false }))
                   }
                   onOpenChatModal={() => setIsChatModalOpen(true)}
+                  onStartReplay={handleStartReplay}
                 />
               </Panel>
             </>
@@ -558,6 +603,10 @@ export default function VSCodeWorkbench({
         onToggleRightSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: !p.isRightSidebarVisible }))
         }
+        onOpenChatSidebar={() =>
+          setLayout((p) => ({ ...p, isRightSidebarVisible: true, activeRightSidebarTab: "chat" }))
+        }
+        onOpenChatModal={() => setIsChatModalOpen(true)}
         onToggleSound={onToggleSound}
         onToggleNotif={onToggleNotif}
         onRefresh={onRefresh}
@@ -572,6 +621,17 @@ export default function VSCodeWorkbench({
         <SessionChatModal
           sessionTrace={selectedAgent}
           onClose={() => setIsChatModalOpen(false)}
+          onDockToSidebar={(agent) => {
+            setIsChatModalOpen(false);
+            if (agent) {
+              setSelectedId(agent.connectionId || agent.traceId);
+            }
+            setLayout((prev) => ({
+              ...prev,
+              isRightSidebarVisible: true,
+              activeRightSidebarTab: "chat",
+            }));
+          }}
           onStartReplay={handleStartReplay}
         />
       )}
