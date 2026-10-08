@@ -25,6 +25,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   X,
+  RotateCcw,
 } from "lucide-react";
 import {
   Button,
@@ -35,7 +36,7 @@ import {
   DateRangePicker,
 } from "@/components/ui";
 
-export default function TokenReportView({ onClose }) {
+export default function TokenReportView({ onClose, onStartReplay }) {
   // Time filters
   const [timeRange, setTimeRange] = useState("week"); // 'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | 'custom'
   const [startDate, setStartDate] = useState("");
@@ -944,12 +945,13 @@ export default function TokenReportView({ onClose }) {
                         <ArrowUpDown className="w-2.5 h-2.5" />
                       </div>
                     </th>
+                    <th className="py-2.5 px-3 text-center">Tác Vụ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#242426] text-slate-300">
                   {sortedSessions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-500 italic">
+                      <td colSpan={10} className="py-8 text-center text-slate-500 italic">
                         Không tìm thấy phiên làm việc nào phù hợp với bộ lọc
                       </td>
                     </tr>
@@ -996,6 +998,19 @@ export default function TokenReportView({ onClose }) {
                           <td className="py-2.5 px-4 text-right font-mono text-amber-300 font-medium">
                             ${s.cost.toFixed(3)}
                           </td>
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStartReplay?.(s.id);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-[#333333] transition-colors cursor-pointer"
+                              title="Tua lại hành trình AI phiên này (Time-Machine Replay)"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
                         </tr>
                       );
                     })
@@ -1007,7 +1022,6 @@ export default function TokenReportView({ onClose }) {
         )}
 
         {/* Modal: Session Detail Popup */}
-        {/* Modal: Session Detail Popup */}
         <Modal
           isOpen={Boolean(selectedSessionDetail)}
           onClose={() => setSelectedSessionDetail(null)}
@@ -1015,13 +1029,29 @@ export default function TokenReportView({ onClose }) {
           description={selectedSessionDetail ? `Session ID: ${selectedSessionDetail.id}` : undefined}
           size="md"
           footer={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setSelectedSessionDetail(null)}
-            >
-              Đóng
-            </Button>
+            <div className="flex items-center justify-between w-full">
+              {onStartReplay && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    const id = selectedSessionDetail.id;
+                    setSelectedSessionDetail(null);
+                    onStartReplay(id);
+                  }}
+                  leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+                >
+                  Tua Lại Phiên (Replay)
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedSessionDetail(null)}
+              >
+                Đóng
+              </Button>
+            </div>
           }
         >
           {selectedSessionDetail && (

@@ -13,6 +13,7 @@ import {
   Activity,
   Layers,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 
 export default function LeftSidebar({
@@ -22,6 +23,7 @@ export default function LeftSidebar({
   onOpenAgentTab,
   stats = {},
   onRefresh,
+  onStartReplay,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedSections, setExpandedSections] = useState({
@@ -144,9 +146,24 @@ export default function LeftSidebar({
           </div>
         </div>
 
-        {/* Tokens pill */}
-        <div className="shrink-0 text-[10px] text-slate-500 font-mono group-hover:text-slate-300">
-          {agent.tokensTotal ? `${Math.round(agent.tokensTotal / 1000)}k` : "0k"}
+        {/* Tokens pill & Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onStartReplay && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartReplay(agent.connectionId);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#3e3e42] text-slate-400 hover:text-cyan-400 transition-all cursor-pointer"
+              title="Tua lại hành trình AI phiên này (Time-Machine Replay)"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+          <span className="text-[10px] text-slate-500 font-mono group-hover:text-slate-300">
+            {agent.tokensTotal ? `${Math.round(agent.tokensTotal / 1000)}k` : "0k"}
+          </span>
         </div>
       </div>
     );

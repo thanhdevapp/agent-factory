@@ -14,6 +14,7 @@ import {
   X,
   Command,
   BarChart3,
+  RotateCcw,
 } from "lucide-react";
 
 export default function CommandPalette({
@@ -28,6 +29,7 @@ export default function CommandPalette({
   onSetMode,
   onSelectPreset,
   onOpenReports,
+  onStartReplay,
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -88,6 +90,15 @@ export default function CommandPalette({
       icon: BarChart3,
       action: () => {
         onOpenReports?.();
+        onClose();
+      },
+    },
+    {
+      id: "start-replay",
+      title: "Time-Machine: Tua lại lịch sử phiên làm việc (Session Replay)",
+      icon: RotateCcw,
+      action: () => {
+        onStartReplay?.();
         onClose();
       },
     },

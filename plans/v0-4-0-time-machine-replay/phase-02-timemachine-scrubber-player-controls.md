@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "TimeMachine Scrubber & Player Controls"
-status: pending
+status: completed
 priority: P1
 dependencies: [1]
 ---

@@ -24,6 +24,7 @@ import {
   Brain,
   Activity,
   Search,
+  RotateCcw,
 } from "lucide-react";
 import { useSessionTranscript } from "../../lib/useSessionTranscript.js";
 import ChatMessageItem from "./ChatMessageItem.js";
@@ -82,7 +83,7 @@ function formatLogTimestamp(ts) {
   return String(ts).slice(11, 19);
 }
 
-export default function SessionChatModal({ sessionTrace, onClose }) {
+export default function SessionChatModal({ sessionTrace, onClose, onStartReplay }) {
   const [filter, setFilter] = useState("all"); // "all" | "prompts" | "tools" | "thinking" | "telemetry"
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -299,6 +300,21 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
+
+          {/* Time-Machine Replay */}
+          {onStartReplay && (
+            <button
+              onClick={() => {
+                onStartReplay(sessionId || targetTraceId);
+                onClose?.();
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 text-xs font-semibold border border-cyan-500/40 transition-colors shadow-sm cursor-pointer"
+              title="Tua lại hành trình AI bằng Time-Machine Replay"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Replay</span>
+            </button>
+          )}
 
           {/* Export Markdown */}
           <button

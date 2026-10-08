@@ -14,6 +14,10 @@ import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
 import SessionChatModal from "../chat/SessionChatModal";
 import TokenReportView from "../reports/TokenReportView";
+import { useSessionReplay } from "../../lib/useSessionReplay";
+import { synthesizeTraceFromKeyframe } from "../../lib/parsers/replayParser";
+import { buildOffice } from "../factory/scene/office-layout";
+import { ReplayModeOverlay } from "../replay";
 import {
   DEFAULT_WORKBENCH_LAYOUT,
   loadWorkbenchLayout,
@@ -44,6 +48,21 @@ export default function VSCodeWorkbench({
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
+  // Time-Machine Replay State
+  const [replaySessionId, setReplaySessionId] = useState(null);
+  const replay = useSessionReplay(replaySessionId);
+
+  const handleStartReplay = useCallback((id) => {
+    const targetId = id || selectedId || traces[0]?.connectionId || traces[0]?.traceId || "default-session";
+    setReplaySessionId(targetId);
+    setSelectedId(targetId);
+    setActiveTabId("canvas");
+  }, [selectedId, traces]);
+
+  const handleExitReplay = useCallback(() => {
+    setReplaySessionId(null);
+  }, []);
+
   // Tabs state
   const [tabs, setTabs] = useState(() => [
     { id: "canvas", title: "Virtual Office", type: "canvas", closable: false },
@@ -69,19 +88,40 @@ export default function VSCodeWorkbench({
     }
   }, [layout, isHydrated]);
 
+  // Synthesize trace snapshot from replay keyframe
+  const replayingTrace = useMemo(() => {
+    if (!replaySessionId || !replay.currentKeyframe) return null;
+    return synthesizeTraceFromKeyframe(replay.currentKeyframe, replay.sessionInfo);
+  }, [replaySessionId, replay.currentKeyframe, replay.sessionInfo]);
+
+  // Synchronize traces and office geometry during Replay vs Live
+  const effectiveTraces = useMemo(() => {
+    if (replayingTrace) {
+      return [replayingTrace];
+    }
+    return traces;
+  }, [replayingTrace, traces]);
+
+  const effectiveOffice = useMemo(() => {
+    if (replayingTrace) {
+      return buildOffice(effectiveTraces);
+    }
+    return office;
+  }, [replayingTrace, effectiveTraces, office]);
+
   // Selected workstation object (fallback to traces list if not found in workstations)
   const selectedAgent = useMemo(() => {
     if (!selectedId) return null;
     return (
-      office.workstations.find(
+      effectiveOffice.workstations.find(
         (w) => w.connectionId === selectedId || w.traceId === selectedId || w.traces?.[0]?.traceId === selectedId
       ) ||
-      traces.find(
+      effectiveTraces.find(
         (t) => t.connectionId === selectedId || t.traceId === selectedId || t.traces?.[0]?.traceId === selectedId
       ) ||
       null
     );
-  }, [office.workstations, traces, selectedId]);
+  }, [effectiveOffice.workstations, effectiveTraces, selectedId]);
 
   // If an agent is selected, ensure right sidebar is visible or open a tab
   const handleSelectAgent = useCallback((id) => {
@@ -277,12 +317,13 @@ export default function VSCodeWorkbench({
                 className="overflow-hidden h-full"
               >
                 <LeftSidebar
-                  workstations={office.workstations}
+                  workstations={effectiveOffice.workstations}
                   selectedId={selectedId}
                   onSelectAgent={handleSelectAgent}
                   onOpenAgentTab={handleOpenAgentTab}
-                  stats={office.stats}
+                  stats={effectiveOffice.stats}
                   onRefresh={onRefresh}
+                  onStartReplay={handleStartReplay}
                 />
               </Panel>
               <Separator
@@ -309,78 +350,114 @@ export default function VSCodeWorkbench({
 
                 {/* Editor Content */}
                 <div className="flex-1 relative overflow-hidden bg-[#070b12]">
-                  {/* Tab 1: Virtual Office Canvas */}
-                  <div
-                    className={`absolute inset-0 transition-opacity ${
-                      activeTabId === "canvas" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
-                    }`}
-                  >
-                    <OfficeCanvas
-                      traces={traces}
-                      selectedId={selectedId}
-                      onSelect={(id) => handleSelectAgent(id)}
-                    />
-                  </div>
-
-                  {/* Tab 2: Telemetry Stream */}
-                  {activeTabId === "telemetry" && (
-                    <div className="absolute inset-0 p-4 overflow-auto font-mono text-xs bg-[#181818] text-slate-300">
-                      <div className="mb-3 flex items-center justify-between pb-2 border-b border-[#333333]">
-                        <h3 className="font-bold text-sm text-cyan-400">Realtime Telemetry Snapshots</h3>
-                        <span className="text-slate-500">{traces.length} active sessions</span>
-                      </div>
-                      <pre className="bg-[#121212] p-4 rounded border border-[#2b2b2b] text-[11px] text-emerald-400 leading-relaxed overflow-x-auto">
-                        {JSON.stringify(traces, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {/* Tab 3: Specific Agent View */}
-                  {activeTab?.type === "agent" && (
-                    <div className="absolute inset-0 p-4 overflow-auto bg-[#1e1e1e] text-slate-200">
-                      <div className="max-w-3xl mx-auto space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-[#252526] rounded-lg border border-[#333333]">
-                          <div>
-                            <h2 className="text-base font-bold text-white">
-                              {activeTab.title}
-                            </h2>
-                            <p className="text-xs text-slate-400">
-                              Connection ID: {activeTab.agentData?.connectionId}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => {
-                              setSelectedId(activeTab.agentData?.connectionId);
+                  {replaySessionId ? (
+                    <ReplayModeOverlay replay={replay} onExit={handleExitReplay}>
+                      <div className="absolute inset-0">
+                        {activeTabId === "network" ? (
+                          <AgentGraphView
+                            traces={effectiveTraces}
+                            selectedTraceId={selectedId}
+                            onSelectTrace={(t) => {
+                              setSelectedId(t.traceId || t.connectionId);
                               setIsChatModalOpen(true);
                             }}
-                            className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold"
-                          >
-                            Open Transcript Modal
-                          </button>
-                        </div>
+                          />
+                        ) : (
+                          <OfficeCanvas
+                            traces={effectiveTraces}
+                            selectedId={selectedId}
+                            onSelect={(id) => handleSelectAgent(id)}
+                          />
+                        )}
                       </div>
-                    </div>
-                  )}
+                    </ReplayModeOverlay>
+                  ) : (
+                    <>
+                      {/* Tab 1: Virtual Office Canvas */}
+                      <div
+                        className={`absolute inset-0 transition-opacity ${
+                          activeTabId === "canvas" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                        }`}
+                      >
+                        <OfficeCanvas
+                          traces={effectiveTraces}
+                          selectedId={selectedId}
+                          onSelect={(id) => handleSelectAgent(id)}
+                        />
+                      </div>
 
-                  {/* Tab 4: Token Reports & Analytics */}
-                  {activeTabId === "reports" && (
-                    <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
-                      <TokenReportView onClose={() => handleCloseTab("reports")} />
-                    </div>
-                  )}
+                      {/* Tab 2: Telemetry Stream */}
+                      {activeTabId === "telemetry" && (
+                        <div className="absolute inset-0 p-4 overflow-auto font-mono text-xs bg-[#181818] text-slate-300">
+                          <div className="mb-3 flex items-center justify-between pb-2 border-b border-[#333333]">
+                            <h3 className="font-bold text-sm text-cyan-400">Realtime Telemetry Snapshots</h3>
+                            <span className="text-slate-500">{effectiveTraces.length} active sessions</span>
+                          </div>
+                          <pre className="bg-[#121212] p-4 rounded border border-[#2b2b2b] text-[11px] text-emerald-400 leading-relaxed overflow-x-auto">
+                            {JSON.stringify(effectiveTraces, null, 2)}
+                          </pre>
+                        </div>
+                      )}
 
-                  {/* Tab 5: Multi-Agent Collaboration DAG Graph */}
-                  {activeTabId === "network" && (
-                    <div className="absolute inset-0 overflow-hidden bg-slate-950 z-20">
-                      <AgentGraphView
-                        traces={traces}
-                        selectedTraceId={selectedId}
-                        onSelectTrace={(t) => {
-                          setSelectedId(t.traceId || t.connectionId);
-                          setIsChatModalOpen(true);
-                        }}
-                      />
-                    </div>
+                      {/* Tab 3: Specific Agent View */}
+                      {activeTab?.type === "agent" && (
+                        <div className="absolute inset-0 p-4 overflow-auto bg-[#1e1e1e] text-slate-200">
+                          <div className="max-w-3xl mx-auto space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-[#252526] rounded-lg border border-[#333333]">
+                              <div>
+                                <h2 className="text-base font-bold text-white">
+                                  {activeTab.title}
+                                </h2>
+                                <p className="text-xs text-slate-400">
+                                  Connection ID: {activeTab.agentData?.connectionId}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleStartReplay(activeTab.agentData?.connectionId)}
+                                  className="px-3 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-300 rounded text-xs font-semibold cursor-pointer"
+                                >
+                                  Tua Lại Phiên
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedId(activeTab.agentData?.connectionId);
+                                    setIsChatModalOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer"
+                                >
+                                  Open Transcript Modal
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tab 4: Token Reports & Analytics */}
+                      {activeTabId === "reports" && (
+                        <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
+                          <TokenReportView
+                            onClose={() => handleCloseTab("reports")}
+                            onStartReplay={handleStartReplay}
+                          />
+                        </div>
+                      )}
+
+                      {/* Tab 5: Multi-Agent Collaboration DAG Graph */}
+                      {activeTabId === "network" && (
+                        <div className="absolute inset-0 overflow-hidden bg-slate-950 z-20">
+                          <AgentGraphView
+                            traces={effectiveTraces}
+                            selectedTraceId={selectedId}
+                            onSelectTrace={(t) => {
+                              setSelectedId(t.traceId || t.connectionId);
+                              setIsChatModalOpen(true);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </Panel>
@@ -399,7 +476,7 @@ export default function VSCodeWorkbench({
                     className="overflow-hidden bg-[#181818]"
                   >
                     <BottomPanel
-                      traces={traces}
+                      traces={effectiveTraces}
                       activeTab={layout.activeBottomTab}
                       onTabChange={(tab) =>
                         setLayout((p) => ({ ...p, activeBottomTab: tab }))
@@ -445,7 +522,7 @@ export default function VSCodeWorkbench({
         mode={mode}
         connected={connected}
         live={live}
-        stats={office.stats}
+        stats={effectiveOffice.stats}
         selectedAgent={selectedAgent}
         soundEnabled={soundEnabled}
         isBottomOpen={layout.isBottomPanelVisible}
@@ -473,6 +550,7 @@ export default function VSCodeWorkbench({
         onSetMode={onModeChange}
         onSelectPreset={onPresetChange}
         onOpenReports={handleOpenReports}
+        onStartReplay={handleStartReplay}
       />
 
       {/* Session Chat Transcript Modal */}
@@ -480,6 +558,7 @@ export default function VSCodeWorkbench({
         <SessionChatModal
           sessionTrace={selectedAgent}
           onClose={() => setIsChatModalOpen(false)}
+          onStartReplay={handleStartReplay}
         />
       )}
     </div>

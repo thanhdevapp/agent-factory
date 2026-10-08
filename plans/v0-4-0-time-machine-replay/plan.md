@@ -1,7 +1,7 @@
 ---
 title: "Time-Machine Session Replay"
 description: "Tua lại và phát lại toàn bộ diễn biến lịch sử của AI Agent theo trục thời gian với Scrubber, Milestone markers, đồng bộ trạng thái nhân vật Canvas và Inspector code diff."
-status: pending
+status: completed
 priority: P2
 branch: "main"
 tags: ["replay", "timemachine", "visualizer", "keyframes", "workbench"]
@@ -29,10 +29,10 @@ Tính năng **Time-Machine Session Replay** biến AGMon từ một công cụ q
 
 | Phase | Tên Pha | Trạng Thái | Mô Tả Trọng Tâm |
 |---|---|---|---|
-| 1 | [Event Normalizer & Keyframe Parser](./phase-01-event-normalizer-keyframe-parser.md) | Pending | Parser chuẩn hóa transcript JSONL thành mảng keyframes timeline |
-| 2 | [TimeMachine Scrubber & Player Controls](./phase-02-timemachine-scrubber-player-controls.md) | Pending | Xây dựng thanh toolbar điều khiển Play/Pause/Speed/Scrubber |
-| 3 | [Canvas & Graph Retrospective State Sync](./phase-03-canvas-graph-retrospective-state-sync.md) | Pending | Đồng bộ trạng thái hồi tố của nhân vật Canvas & Network Graph |
-| 4 | [Inspector & Keyboard Shortcuts Integration](./phase-04-inspector-keyboard-shortcuts-integration.md) | Pending | Cửa sổ chi tiết bước, phím tắt điều khiển Space/Arrows và verify |
+| 1 | [Event Normalizer & Keyframe Parser](./phase-01-event-normalizer-keyframe-parser.md) | Completed | Parser chuẩn hóa transcript JSONL thành mảng keyframes timeline |
+| 2 | [TimeMachine Scrubber & Player Controls](./phase-02-timemachine-scrubber-player-controls.md) | Completed | Xây dựng thanh toolbar điều khiển Play/Pause/Speed/Scrubber |
+| 3 | [Canvas & Graph Retrospective State Sync](./phase-03-canvas-graph-retrospective-state-sync.md) | Completed | Đồng bộ trạng thái hồi tố của nhân vật Canvas & Network Graph |
+| 4 | [Inspector & Keyboard Shortcuts Integration](./phase-04-inspector-keyboard-shortcuts-integration.md) | Completed | Cửa sổ chi tiết bước, phím tắt điều khiển Space/Arrows và verify |
 
 ## Quy Chuẩn Kỹ Thuật
 

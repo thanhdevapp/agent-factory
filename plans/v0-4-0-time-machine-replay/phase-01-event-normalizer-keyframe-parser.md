@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Event Normalizer & Keyframe Parser"
-status: pending
+status: completed
 priority: P1
 dependencies: []
 ---
