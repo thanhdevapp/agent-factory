@@ -1,5 +1,6 @@
 import { getAntigravityTraces } from "./antigravityWatcher.js";
 import { getClaudeTraces } from "./claudeWatcher.js";
+import { getCodexTraces } from "./codexWatcher.js";
 import { extractProviders } from "../traceContract.js";
 
 /**
@@ -19,15 +20,18 @@ export async function getLiveTraceSnapshot(force = false, maxAgeMs = 24 * 60 * 6
   const results = await Promise.allSettled([
     getAntigravityTraces(maxAgeMs),
     getClaudeTraces(maxAgeMs),
+    getCodexTraces(maxAgeMs),
   ]);
   const errors = [];
-  const [agyResult, claudeResult] = results;
+  const [agyResult, claudeResult, codexResult] = results;
   const agyList = agyResult.status === "fulfilled" ? agyResult.value : [];
   const claudeList = claudeResult.status === "fulfilled" ? claudeResult.value : [];
+  const codexList = codexResult.status === "fulfilled" ? codexResult.value : [];
   if (agyResult.status === "rejected") errors.push({ source: "antigravity", message: agyResult.reason?.message || "Watcher failed" });
   if (claudeResult.status === "rejected") errors.push({ source: "claude", message: claudeResult.reason?.message || "Watcher failed" });
+  if (codexResult.status === "rejected") errors.push({ source: "codex", message: codexResult.reason?.message || "Watcher failed" });
 
-  const combined = [...agyList, ...claudeList];
+  const combined = [...agyList, ...claudeList, ...codexList];
 
   // Sort: active/streaming/pending first, then by most recent startedAt
   combined.sort((a, b) => {

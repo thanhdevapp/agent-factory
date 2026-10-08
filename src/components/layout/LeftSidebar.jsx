@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Blocks,
   Monitor,
+  TerminalSquare,
 } from "lucide-react";
 import FileExplorer from "./FileExplorer";
 import { TOTAL_CATALOG_COUNT } from "@/lib/catalog/index.js";
@@ -75,6 +76,7 @@ export default function LeftSidebar({
     const groups = {
       extensions: [],
       desktop: [],
+      codex: [],
       geminiApp: [],
       geminiCli: [],
       claude: [],
@@ -91,8 +93,11 @@ export default function LeftSidebar({
       const isExtension = ct === "extension" || ct === "ide" || conn.includes("extension");
       const isDesktop = ct === "desktop" || conn.includes("desktop");
       const isClaude = cli === "claude" || p.includes("claude") || p.includes("anthropic") || model.includes("claude");
+      const isCodex = cli === "codex" || p.includes("codex") || conn.includes("codex");
 
-      if (isExtension) {
+      if (isCodex) {
+        groups.codex.push(w);
+      } else if (isExtension) {
         groups.extensions.push(w);
       } else if (isDesktop) {
         groups.desktop.push(w);
@@ -127,6 +132,7 @@ export default function LeftSidebar({
     const isDesktop =
       agent.clientType === "desktop" ||
       (agent.connectionId || "").toLowerCase().includes("desktop");
+    const isCodex = agent.cli === "codex" || (agent.connectionId || "").toLowerCase().includes("codex");
 
     const previewText = agent.lastText
       ? `${agent.lastTextRole === "assistant" ? "AI: " : agent.lastTextRole === "user" ? "You: " : ""}${agent.lastText}`
@@ -165,8 +171,20 @@ export default function LeftSidebar({
                 {sessionTitle}
               </span>
 
-              {/* Client Tag: EXT vs DESKTOP vs APP vs CLI */}
-              {isExt ? (
+              {/* Client Tag: CODEX vs EXT vs DESKTOP vs APP vs CLI */}
+              {isCodex ? (
+                <span
+                  className={`shrink-0 text-[9px] font-bold px-1 rounded uppercase tracking-wider border ${
+                    isExt
+                      ? "bg-sky-950/80 text-sky-300 border-sky-500/40"
+                      : isApp
+                      ? "bg-purple-950/80 text-purple-300 border-purple-500/40"
+                      : "bg-teal-950/80 text-teal-300 border-teal-500/40"
+                  }`}
+                >
+                  {isExt ? "CX-EXT" : isApp ? "CX-APP" : "CX"}
+                </span>
+              ) : isExt ? (
                 <span className="shrink-0 bg-sky-950/80 text-sky-300 border border-sky-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
                   EXT
                 </span>
@@ -342,6 +360,17 @@ export default function LeftSidebar({
                         <span>Claude Desktop ({groupedAgents.desktop.length})</span>
                       </div>
                       {groupedAgents.desktop.map(renderAgentRow)}
+                    </div>
+                  )}
+
+                  {/* Codex (CLI, App, VS Code extension) */}
+                  {groupedAgents.codex?.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-teal-400/90 flex items-center gap-1">
+                        <TerminalSquare className="w-2.5 h-2.5" />
+                        <span>Codex ({groupedAgents.codex.length})</span>
+                      </div>
+                      {groupedAgents.codex.map(renderAgentRow)}
                     </div>
                   )}
 
