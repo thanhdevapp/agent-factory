@@ -14,11 +14,18 @@ import {
   BarChart3,
   Coffee,
   Palette,
+  Sparkles,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
 
 const PRESETS = [
-  { id: "cases", label: "Edge Cases" },
+  { id: "showcase", label: "All Items Showcase (24)" },
+  { id: "cases", label: "Edge Cases & Items (17)" },
+  { id: "showcase_skins", label: "Skins & Outfits (15)" },
+  { id: "showcase_props", label: "Tech Props & Gadgets (14)" },
+  { id: "showcase_pets", label: "Pets & Companions (12)" },
+  { id: "showcase_auras", label: "Particle Auras & VFX (12)" },
+  { id: "showcase_trophies", label: "Trophies & Badges (12)" },
   { id: "storm", label: "Storm (30 Agents)" },
   { id: "busy", label: "Busy (8 Agents)" },
   { id: "idle", label: "Idle (2 Agents)" },
@@ -178,6 +185,24 @@ export default function TitleBar({
             </select>
           )}
         </div>
+
+        {/* Quick Showcase Button for evaluating all items */}
+        <button
+          type="button"
+          onClick={() => {
+            onModeChange?.("mock");
+            onPresetChange?.("showcase");
+          }}
+          title="Quickly showcase all 24 item archetypes in action"
+          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+            mode === "mock" && mockPreset === "showcase"
+              ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-500/20"
+              : "bg-[#252526] text-slate-300 border-[#333333] hover:text-cyan-300 hover:border-cyan-500/40"
+          }`}
+        >
+          <Sparkles className="w-3 h-3 text-cyan-400" />
+          <span>Items Showcase</span>
+        </button>
 
         {/* Refresh Button */}
         <button

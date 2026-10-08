@@ -150,6 +150,7 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   // Aura Ring Graphics (drawn behind character)
   let auraGfx = null;
   const auraItem = typeof aura === "string" ? getItemById(aura) : null;
+  const auraArchetype = auraItem?.archetype || "plasma_ring";
   if (aura && aura !== "none") {
     auraGfx = new Graphics();
     root.addChildAt(auraGfx, 0);
@@ -293,11 +294,34 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
         auraGfx.clear();
         const auraCol = auraItem?.color ? parseHexColor(auraItem.color, 0x00f0ff) : 0x00f0ff;
         const pulse = 1 + Math.sin(t * 0.006) * 0.12;
-        const aAlpha = m === "happy" ? 0.95 : m === "error" ? 0.35 + Math.sin(t * 0.08) * 0.35 : m === "sleeping" ? 0.25 : 0.6;
-        auraGfx.ellipse(0, -42, 34 * pulse, 13 * pulse).stroke({ width: 2, color: auraCol, alpha: aAlpha });
-        auraGfx.ellipse(0, -42, 26 * pulse, 9 * pulse).stroke({ width: 1.2, color: 0xffffff, alpha: aAlpha * 0.8 });
-        if (m === "happy") {
-          auraGfx.circle(Math.sin(t * 0.01) * 32, -42 + Math.cos(t * 0.01) * 12, 2).fill({ color: 0xffffff });
+        const aAlpha = m === "happy" ? 0.95 : m === "error" ? 0.35 + Math.sin(t * 0.08) * 0.35 : m === "sleeping" ? 0.25 : 0.65;
+
+        if (auraArchetype === "matrix_rain") {
+          for (let col = -3; col <= 3; col++) {
+            const cx = col * 9;
+            const dropP = ((t * 0.002 + col * 0.33 + seed * 0.2) % 1);
+            const cy = -70 + dropP * 50;
+            auraGfx.moveTo(cx, cy - 8).lineTo(cx, cy).stroke({ width: 1.5, color: auraCol, alpha: aAlpha * 0.8 });
+            auraGfx.circle(cx, cy, 1.2).fill({ color: 0xffffff, alpha: aAlpha });
+          }
+        } else if (auraArchetype === "quantum_mist") {
+          for (let p = 0; p < 4; p++) {
+            const ang = t * 0.003 + (p * Math.PI) / 2;
+            const rx = 30 * pulse + Math.sin(ang) * 4;
+            const ry = 14 * pulse + Math.cos(ang) * 3;
+            auraGfx.ellipse(0, -42, rx, ry).stroke({ width: 1.2, color: auraCol, alpha: aAlpha * 0.5 });
+          }
+          auraGfx.circle(Math.sin(t * 0.007) * 28, -42 + Math.cos(t * 0.007) * 11, 2.2).fill({ color: 0xffffff, alpha: aAlpha });
+        } else if (auraArchetype === "glitch_halo") {
+          const jitterX = Math.sin(t * 0.09) * 2;
+          auraGfx.roundRect(-30 * pulse + jitterX, -54 * pulse, 60 * pulse, 24 * pulse, 6).stroke({ width: 2, color: auraCol, alpha: aAlpha });
+          auraGfx.circle(jitterX * 2, -42, 3).stroke({ width: 1, color: 0xffffff, alpha: aAlpha * 0.7 });
+        } else {
+          auraGfx.ellipse(0, -42, 34 * pulse, 13 * pulse).stroke({ width: 2, color: auraCol, alpha: aAlpha });
+          auraGfx.ellipse(0, -42, 26 * pulse, 9 * pulse).stroke({ width: 1.2, color: 0xffffff, alpha: aAlpha * 0.8 });
+          if (m === "happy") {
+            auraGfx.circle(Math.sin(t * 0.01) * 32, -42 + Math.cos(t * 0.01) * 12, 2.5).fill({ color: 0xffffff });
+          }
         }
       }
 
@@ -431,12 +455,15 @@ export function createDesk({
   sub.x = W / 2;
   sub.y = 57;
 
-  const safeCost = typeof cost === "number" ? cost : Number(cost) || 0;
-  const safeElapsed = typeof elapsedMs === "number" ? elapsedMs : Number(elapsedMs) || 0;
-  const safeCachedPct = typeof cachedPct === "number" ? cachedPct : Number(cachedPct) || 0;
-  const secs = safeElapsed >= 1000 ? `${(safeElapsed / 1000).toFixed(1)}s` : `${safeElapsed}ms`;
+  // Unknown telemetry (null) renders as an em dash, never as a fabricated zero.
+  const safeElapsed = Number.isFinite(elapsedMs) ? elapsedMs : null;
+  const costLabel = Number.isFinite(cost) ? `$${cost.toFixed(2)}` : "—";
+  const cachedLabel = Number.isFinite(cachedPct) ? `${cachedPct}% cached` : "— cached";
+  const secs = safeElapsed === null
+    ? "—"
+    : safeElapsed >= 1000 ? `${(safeElapsed / 1000).toFixed(1)}s` : `${safeElapsed}ms`;
   const stats = new Text({
-    text: `${secs} · $${safeCost.toFixed(2)} · ${safeCachedPct}% cached`,
+    text: `${secs} · ${costLabel} · ${cachedLabel}`,
     style: { fontFamily: getMonoFont(), fontSize: 8.5, fill: barColor },
   });
   stats.anchor.set(0.5, 0);
@@ -452,6 +479,9 @@ export function createDesk({
   const hasBonsai = propList.includes("bonsai") || propItems.some((it) => it.archetype === "terrarium_bonsai" || it.id?.includes("prop_4") || it.id?.includes("bonsai"));
   const hasServer = propItems.some((it) => it.archetype === "supercomputer" || it.id?.includes("prop_0") || it.id?.includes("server"));
   const hasHolo = propItems.some((it) => it.archetype === "hologram_emitter" || it.id?.includes("prop_2") || it.id?.includes("holo"));
+  const hasDualMonitor = propItems.some((it) => it.archetype === "dual_monitor" || it.id?.includes("prop_1") || it.id?.includes("monitor"));
+  const hasArcade = propItems.some((it) => it.archetype === "arcade_cabinet" || it.id?.includes("arcade"));
+  const hasOscilloscope = propItems.some((it) => it.archetype === "lab_oscilloscope" || it.id?.includes("oscilloscope"));
 
   let coffeeSteam = null;
   if (hasEspresso) {
@@ -517,16 +547,81 @@ export function createDesk({
     root.addChild(holoProj);
   }
 
+  if (hasDualMonitor) {
+    const sideMon = new Container();
+    sideMon.x = 4;
+    sideMon.y = 10;
+    const smGfx = new Graphics();
+    smGfx.roundRect(0, 0, 14, 24, 2).fill(vgrad(0x1e293b, 0x0f172a));
+    smGfx.roundRect(0, 0, 14, 24, 2).stroke({ width: 1, color: 0x38bdf8, alpha: 0.7 });
+    smGfx.roundRect(2, 2, 10, 20, 1).fill({ color: 0x020617 });
+    // Code lines on side monitor
+    for (let l = 0; l < 4; l++) {
+      smGfx.roundRect(3, 4 + l * 4.5, 5 + (l % 2) * 3, 1.2, 0.5).fill({ color: l % 2 ? 0x22c55e : 0x00f0ff, alpha: 0.8 });
+    }
+    sideMon.addChild(smGfx);
+    root.addChild(sideMon);
+  }
+
+  if (hasArcade) {
+    const arc = new Container();
+    arc.x = W - 24;
+    arc.y = 6;
+    const arcGfx = new Graphics();
+    arcGfx.roundRect(0, 0, 16, 30, 2).fill(vgrad(0x4c1d95, 0x1e1b4b));
+    arcGfx.roundRect(0, 0, 16, 30, 2).stroke({ width: 1, color: 0xa855f7 });
+    arcGfx.roundRect(2, 2, 12, 6, 1).fill({ color: 0xf43f5e }); // Marquee
+    arcGfx.roundRect(2, 10, 12, 11, 1).fill({ color: 0x060814 }); // Screen
+    arcGfx.circle(5, 24, 1.5).fill({ color: 0xf59e0b }); // Joystick
+    arc.addChild(arcGfx);
+    root.addChild(arc);
+  }
+
+  let oscWave = null;
+  if (hasOscilloscope) {
+    const osc = new Container();
+    osc.x = 6;
+    osc.y = 12;
+    const oscGfx = new Graphics();
+    oscGfx.roundRect(0, 0, 18, 18, 2).fill({ color: 0x1e293b });
+    oscGfx.roundRect(0, 0, 18, 18, 2).stroke({ width: 1, color: 0x10b981 });
+    oscGfx.circle(9, 9, 6.5).fill({ color: 0x022c22 });
+    osc.addChild(oscGfx);
+    oscWave = new Graphics();
+    osc.addChild(oscWave);
+    root.addChild(osc);
+  }
+
   if (trophy && trophy !== "none") {
     const trophyItem = typeof trophy === "string" ? getItemById(trophy) : null;
     const trophyCol = trophyItem?.color ? parseHexColor(trophyItem.color, 0xf59e0b) : 0xf59e0b;
+    const trArchetype = trophyItem?.archetype || "quantum_crystal";
     const trophyCont = new Container();
     trophyCont.x = W - 14;
     trophyCont.y = 16;
     const trGfx = new Graphics();
-    trGfx.roundRect(-5, 8, 10, 4, 1).fill({ color: 0x1e293b });
-    trGfx.poly([0, -4, 5, 6, -5, 6]).fill({ color: trophyCol });
-    trGfx.circle(0, 0, 1.5).fill({ color: 0xffffff });
+    trGfx.roundRect(-6, 8, 12, 4, 1).fill({ color: 0x0f172a }); // Obsidian base
+    trGfx.roundRect(-6, 8, 12, 4, 1).stroke({ width: 0.8, color: trophyCol, alpha: 0.6 });
+
+    if (trArchetype === "golden_key") {
+      trGfx.circle(0, -2, 4).stroke({ width: 1.5, color: trophyCol });
+      trGfx.moveTo(0, 2).lineTo(0, 8).stroke({ width: 1.5, color: trophyCol });
+      trGfx.moveTo(0, 5).lineTo(2.5, 5).stroke({ width: 1.2, color: trophyCol });
+    } else if (trArchetype === "silicon_wafer") {
+      trGfx.circle(0, 0, 5.5).fill({ color: 0x1e293b });
+      trGfx.circle(0, 0, 5.5).stroke({ width: 1.2, color: trophyCol });
+      trGfx.moveTo(-4, 0).lineTo(4, 0).stroke({ width: 0.8, color: 0x38bdf8, alpha: 0.8 });
+      trGfx.moveTo(0, -4).lineTo(0, 4).stroke({ width: 0.8, color: 0xec4899, alpha: 0.8 });
+    } else if (trArchetype === "diamond_bug") {
+      trGfx.ellipse(0, 0, 4.5, 5.5).fill({ color: trophyCol });
+      trGfx.circle(0, -3.5, 2.5).fill({ color: 0xffffff });
+      trGfx.moveTo(-4, -1).lineTo(-6, -3).stroke({ width: 1, color: trophyCol });
+      trGfx.moveTo(4, -1).lineTo(6, -3).stroke({ width: 1, color: trophyCol });
+    } else {
+      trGfx.poly([0, -6, 5, 2, -5, 2]).fill({ color: trophyCol });
+      trGfx.poly([0, -6, 5, 2, 0, 6, -5, 2]).stroke({ width: 1, color: 0xffffff, alpha: 0.8 });
+      trGfx.circle(0, 0, 1.5).fill({ color: 0xffffff });
+    }
     trophyCont.addChild(trGfx);
     root.addChild(trophyCont);
   }
@@ -633,6 +728,15 @@ export function createDesk({
       }
       if (holoCube) {
         holoCube.rotation = t * 0.002;
+      }
+      if (oscWave) {
+        oscWave.clear();
+        oscWave.moveTo(3, 9);
+        for (let ox = 3; ox <= 15; ox += 1.5) {
+          const oy = 9 + Math.sin(t * 0.01 + ox * 0.8) * 3;
+          oscWave.lineTo(ox, oy);
+        }
+        oscWave.stroke({ width: 1.2, color: 0x34d399, alpha: 0.9 });
       }
       if (petContainer) {
         if (petArchetype === "hover_drone") {

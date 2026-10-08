@@ -14,9 +14,12 @@ import {
   Bot,
   AppWindow,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import SessionChatView from "../chat/SessionChatView.js";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
+import { getItemById } from "@/lib/catalog/index.js";
+import { getSupporterState } from "@/lib/supporterStore.js";
 
 export default function RightSidebar({
   selectedAgent = null,
@@ -308,6 +311,125 @@ export default function RightSidebar({
                     </div>
                   )}
                 </div>
+
+                {/* Equipped Cosmetics & Gear Card */}
+                {(() => {
+                  const supporterState = getSupporterState();
+                  const effectiveSkin = selectedAgent?.skin || supporterState?.equippedSkin;
+                  const effectiveAura = selectedAgent?.aura || supporterState?.equippedAura;
+                  const effectivePet = selectedAgent?.pet || supporterState?.equippedPet;
+                  const effectiveProps = (selectedAgent?.props && selectedAgent.props.length > 0)
+                    ? selectedAgent.props
+                    : (supporterState?.equippedProps || []);
+                  const effectiveTrophy = selectedAgent?.trophy || supporterState?.equippedTrophy;
+
+                  const skinItem = effectiveSkin && effectiveSkin !== "classic" && effectiveSkin !== "none" ? getItemById(effectiveSkin) : null;
+                  const auraItem = effectiveAura && effectiveAura !== "none" ? getItemById(effectiveAura) : null;
+                  const petItem = effectivePet && effectivePet !== "none" ? getItemById(effectivePet) : null;
+                  const trophyItem = effectiveTrophy && effectiveTrophy !== "none" ? getItemById(effectiveTrophy) : null;
+
+                  return (
+                    <div className="bg-[#252526] border border-[#333333] rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="w-3 h-3 text-cyan-400" />
+                          <span>EQUIPPED COSMETICS</span>
+                        </span>
+                        {(skinItem || auraItem || petItem || trophyItem || effectiveProps.length > 0) && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-mono font-bold">
+                            ACTIVE GEAR
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 text-[11px]">
+                        {/* Skin */}
+                        <div className="flex items-center justify-between py-1 border-b border-[#2d2d30]">
+                          <span className="text-slate-400 text-[10px]">Chassis Skin:</span>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {skinItem ? (
+                              <>
+                                <span className="w-2 h-2 rounded-full inline-block border border-white/20" style={{ backgroundColor: skinItem.color }} />
+                                <span className="text-emerald-400 font-semibold truncate max-w-[120px]">{skinItem.name}</span>
+                                <span className="text-[8px] font-mono px-1 rounded bg-slate-800 text-slate-400 border border-slate-700">{skinItem.archetype}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">Classic Chassis</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Aura */}
+                        <div className="flex items-center justify-between py-1 border-b border-[#2d2d30]">
+                          <span className="text-slate-400 text-[10px]">Particle Aura:</span>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {auraItem ? (
+                              <>
+                                <span className="text-purple-400 font-semibold truncate max-w-[120px]">{auraItem.name}</span>
+                                <span className="text-[8px] font-mono px-1 rounded bg-purple-950/60 text-purple-300 border border-purple-800/40">{auraItem.archetype}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-500 text-[10px]">None</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tech Props */}
+                        <div className="py-1 border-b border-[#2d2d30]">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-slate-400 text-[10px]">Tech Desk Props:</span>
+                            <span className="text-[9px] text-slate-500 font-mono">({effectiveProps.length})</span>
+                          </div>
+                          {effectiveProps.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {effectiveProps.map((p, idx) => {
+                                const pItem = getItemById(p);
+                                return (
+                                  <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40 font-mono flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: pItem?.color || "#38bdf8" }} />
+                                    <span>{pItem?.name || p}</span>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 text-[10px]">Standard Workstation</span>
+                          )}
+                        </div>
+
+                        {/* Pet */}
+                        <div className="flex items-center justify-between py-1 border-b border-[#2d2d30]">
+                          <span className="text-slate-400 text-[10px]">Companion Pet:</span>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {petItem ? (
+                              <>
+                                <span className="text-amber-400 font-semibold truncate max-w-[120px]">{petItem.name}</span>
+                                <span className="text-[8px] font-mono px-1 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">{petItem.archetype}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-500 text-[10px]">None</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Trophy */}
+                        <div className="flex items-center justify-between py-1">
+                          <span className="text-slate-400 text-[10px]">Desk Trophy:</span>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {trophyItem ? (
+                              <>
+                                <span className="text-yellow-400 font-semibold truncate max-w-[120px]">{trophyItem.name}</span>
+                                <span className="text-[8px] font-mono px-1 rounded bg-yellow-950/60 text-yellow-300 border border-yellow-800/40">{trophyItem.archetype}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-500 text-[10px]">None</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Token Metrics */}
                 <div className="bg-[#252526] border border-[#333333] rounded-lg p-3 space-y-2">

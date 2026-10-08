@@ -466,8 +466,8 @@ export async function getAggregatedTokenReport(options = {}) {
         output: 0,
         cached: 0,
         total: 0,
-        cost: 0,
-        savings: 0,
+        cost: null,
+        savings: null,
         sessions: 0,
       };
     }
@@ -475,8 +475,10 @@ export async function getAggregatedTokenReport(options = {}) {
     byModel[m].output += s.tokens.output;
     byModel[m].cached += s.tokens.cached;
     byModel[m].total += s.tokens.total;
-    byModel[m].cost += s.cost ?? 0;
-    byModel[m].savings += s.savings ?? 0;
+    if (Number.isFinite(s.cost)) {
+      byModel[m].cost = (byModel[m].cost ?? 0) + s.cost;
+      byModel[m].savings = (byModel[m].savings ?? 0) + (s.savings ?? 0);
+    }
     byModel[m].sessions++;
 
     // By Provider
@@ -489,7 +491,7 @@ export async function getAggregatedTokenReport(options = {}) {
         output: 0,
         cached: 0,
         total: 0,
-        cost: 0,
+        cost: null,
         sessions: 0,
       };
     }
@@ -497,7 +499,7 @@ export async function getAggregatedTokenReport(options = {}) {
     byProvider[p].output += s.tokens.output;
     byProvider[p].cached += s.tokens.cached;
     byProvider[p].total += s.tokens.total;
-    byProvider[p].cost += s.cost ?? 0;
+    if (Number.isFinite(s.cost)) byProvider[p].cost = (byProvider[p].cost ?? 0) + s.cost;
     byProvider[p].sessions++;
 
     // By Project
@@ -509,7 +511,7 @@ export async function getAggregatedTokenReport(options = {}) {
         output: 0,
         cached: 0,
         total: 0,
-        cost: 0,
+        cost: null,
         sessions: 0,
       };
     }
@@ -517,7 +519,7 @@ export async function getAggregatedTokenReport(options = {}) {
     byProject[proj].output += s.tokens.output;
     byProject[proj].cached += s.tokens.cached;
     byProject[proj].total += s.tokens.total;
-    byProject[proj].cost += s.cost ?? 0;
+    if (Number.isFinite(s.cost)) byProject[proj].cost = (byProject[proj].cost ?? 0) + s.cost;
     byProject[proj].sessions++;
 
     // By Tools

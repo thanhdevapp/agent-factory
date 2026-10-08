@@ -34,6 +34,7 @@ export async function GET(request) {
             count: presetConfig.agents,
             errorRatio: presetConfig.errorRatio,
             cases: !!presetConfig.cases,
+            preset: mockPreset,
             seed: 42,
           });
           const providers = mockProviderDescriptors(traces);

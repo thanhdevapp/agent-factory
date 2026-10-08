@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGMon - Character Sprite & Animation Specification Report</title>
+  <style>
+    :root {
+      --bg-main: #141416;
+      --bg-card: #1c1c20;
+      --bg-surface: #24242a;
+      --border-subtle: #2d2d38;
+      --border-highlight: #3b3b4a;
+      --accent-blue: #007acc;
+      --accent-cyan: #00f0ff;
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #007acc, #00f0ff);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      margin-left: 8px;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card Panels */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Hero Canvas Stage */
+    .stage-wrapper {
+      position: relative;
+      background: radial-gradient(circle at 50% 60%, #1c2333 0%, #0d1017 80%);
+      border-radius: 10px;
+      border: 1px solid #232d3f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 380px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+    }
+
+    .stage-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Controls */
+    .control-group {
+      margin-bottom: 14px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--border-highlight);
+      border-color: #555566;
+    }
+
+    .btn.active {
+      background: rgba(0, 122, 204, 0.25);
+      border-color: var(--accent-blue);
+      color: #60a5fa;
+      box-shadow: 0 0 8px rgba(0, 122, 204, 0.4);
+    }
+
+    .btn.active.happy {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: var(--accent-emerald);
+      color: #34d399;
+    }
+
+    .btn.active.sleeping {
+      background: rgba(168, 85, 247, 0.25);
+      border-color: var(--accent-purple);
+      color: #c084fc;
+    }
+
+    .btn.active.error {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: var(--accent-rose);
+      color: #fb7185;
+    }
+
+    .btn.active.looping {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--accent-amber);
+      color: #fbbf24;
+    }
+
+    /* Sliders */
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #2b2b36;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+
+    /* Live Telemetry Bar */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: #121216;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .telemetry-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .telemetry-key {
+      color: var(--text-muted);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    .telemetry-val {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* Modes Matrix Grid */
+    .poses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .pose-card {
+      background: #17171c;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .pose-card:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .pose-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+      color: var(--text-main);
+    }
+
+    .pose-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .pose-canvas {
+      width: 140px;
+      height: 120px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Anatomy Breakdown */
+    .anatomy-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .spec-table th, .spec-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .spec-table th {
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .spec-table td code {
+      background: #121218;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    /* Code Snippet Box */
+    .code-box {
+      background: #101014;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #cbd5e1;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .highlight {
+      color: var(--accent-cyan);
+    }
+
+    .comment {
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">AGMon Vector Sprite & Animation Engine</h1>
+        <p style="font-size: 12px; color: var(--text-muted);">Procedural Vector Animation Specification & Interactive Showcase</p>
+      </div>
+      <span class="brand-badge">NO SPRITE SHEETS · 100% CODE DRIVEN</span>
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+      FPS: <span id="fpsCounter" style="color: var(--accent-emerald); font-weight: 700;">60</span> · TICKER: LIVE
+    </div>
+  </header>
+
+  <!-- Interactive Hero Grid -->
+  <div class="dashboard-grid">
+    <!-- Left Column: Live Stage & Controller -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+          Live Interactive Stage
+        </span>
+        <span id="activeBadge" class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+          STREAMING (ACTIVE)
+        </span>
+      </div>
+
+      <!-- Canvas Stage -->
+      <div class="stage-wrapper">
+        <canvas id="heroCanvas" class="stage-canvas" width="600" height="500"></canvas>
+      </div>
+
+      <!-- Controls -->
+      <div class="control-group">
+        <div class="control-label">
+          <span>Agent Mode (Pose State)</span>
+          <span id="modeLabel" style="color: var(--accent-cyan);">streaming</span>
+        </div>
+        <div class="btn-row" id="modeButtons">
+          <button class="btn active" data-mode="streaming">Streaming</button>
+          <button class="btn" data-mode="happy">Happy</button>
+          <button class="btn" data-mode="sleeping">Sleeping</button>
+          <button class="btn" data-mode="error">Error</button>
+          <button class="btn" data-mode="looping">Looping</button>
+          <button class="btn" data-mode="pending">Pending</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Work Intensity (Busy Rate)</span>
+          <span id="intensityVal">0.75</span>
+        </div>
+        <input type="range" id="intensitySlider" min="0" max="1" step="0.05" value="0.75" />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Skin Archetype</span>
+          <span id="skinLabel" style="color: var(--accent-purple);">cyber_cat</span>
+        </div>
+        <div class="btn-row" id="skinButtons">
+          <button class="btn" data-skin="classic">Classic</button>
+          <button class="btn active" data-skin="cat">Cyber Cat</button>
+          <button class="btn" data-skin="ninja">Ninja</button>
+          <button class="btn" data-skin="pilot">Mecha Pilot</button>
+          <button class="btn" data-skin="hacker">Hacker</button>
+          <button class="btn" data-skin="celestial">Celestial</button>
+          <button class="btn" data-skin="suit">Cyber Suit</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Aura Energy Effect</span>
+          <span id="auraLabel" style="color: var(--accent-cyan);">matrix_rain</span>
+        </div>
+        <div class="btn-row" id="auraButtons">
+          <button class="btn" data-aura="none">None</button>
+          <button class="btn active" data-aura="matrix_rain">Matrix Rain</button>
+          <button class="btn" data-aura="plasma_ring">Plasma Ring</button>
+          <button class="btn" data-aura="quantum_mist">Quantum Mist</button>
+          <button class="btn" data-aura="glitch_halo">Glitch Halo</button>
+        </div>
+      </div>
+
+      <!-- Real-time Telemetry -->
+      <div class="telemetry-grid">
+        <div class="telemetry-item">
+          <span class="telemetry-key">Bob (Y)</span>
+          <span class="telemetry-val" id="telBob">0.00px</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Shake (X)</span>
+          <span class="telemetry-val" id="telShake">0.00px</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Arm L/R</span>
+          <span class="telemetry-val" id="telArms">0.00 / 0.00</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-key">Blink State</span>
+          <span class="telemetry-val" id="telBlink" style="color: var(--accent-emerald);">OPEN</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Simultaneous Poses Matrix -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Simultaneous Poses Matrix (All 6 States Running Live)
+        </span>
+        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">60 FPS MATHEMATICAL SINE CYCLES</span>
+      </div>
+
+      <div class="poses-grid">
+        <div class="pose-card">
+          <canvas id="poseCanvas_streaming" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">1. STREAMING</div>
+          <div class="pose-desc">Alternating typing arms, CRT scanline eyes, active head bobbing.</div>
+        </div>
+
+        <div class="pose-card">
+          <canvas id="poseCanvas_happy" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">2. HAPPY</div>
+          <div class="pose-desc">Inverted-sine celebratory bounce, raised V-arms, smiling ^ ^ eyes.</div>
+        </div>
+
+        <div class="pose-card">
+          <canvas id="poseCanvas_sleeping" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">3. SLEEPING</div>
+          <div class="pose-desc">Slow breathing rhythm, tilted head, closed - - eyes, drifting Z particles.</div>
+        </div>
+
+        <div class="pose-card">
+          <canvas id="poseCanvas_error" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">4. ERROR</div>
+          <div class="pose-desc">High-frequency horizontal shake, hands on head, X X eyes, smoke puffs.</div>
+        </div>
+
+        <div class="pose-card">
+          <canvas id="poseCanvas_looping" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">5. LOOPING</div>
+          <div class="pose-desc">Runaway alert: dizzy spiral eyes, chaotic wobble, panic arm waving.</div>
+        </div>
+
+        <div class="pose-card">
+          <canvas id="poseCanvas_pending" class="pose-canvas" width="280" height="240"></canvas>
+          <div class="pose-title">6. PENDING</div>
+          <div class="pose-desc">One arm waving high for attention, waiting for user confirmation.</div>
+        </div>
+      </div>
+
+      <!-- Scenegraph Exploded Layers -->
+      <div style="margin-top: 24px;">
+        <div class="card-header">
+          <span class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            Scenegraph Hierarchy (6 Z-Layers)
+          </span>
+        </div>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Component</th>
+              <th>Pivot / Origin</th>
+              <th>Transform & Motion Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Z-0</code></td>
+              <td>Aura Rings & Energy</td>
+              <td><code>(0, -42)</code></td>
+              <td>Drawn behind character; expands with <code>sin(t * 0.006)</code> pulse.</td>
+            </tr>
+            <tr>
+              <td><code>Z-1</code></td>
+              <td>Torso & Arc Reactor</td>
+              <td><code>(0, 0)</code> Base</td>
+              <td>Vertical gradient 3D shell; carries client trim color & reactor core.</td>
+            </tr>
+            <tr>
+              <td><code>Z-2</code></td>
+              <td>Shoulder Arms (L/R)</td>
+              <td><code>(x + 4, -26)</code></td>
+              <td><strong>Fixed shoulder pivot</strong>; rotates <code>±0.14 rad</code> for typing, <code>2.5 rad</code> for waving.</td>
+            </tr>
+            <tr>
+              <td><code>Z-3</code></td>
+              <td>Helmet & Comm Pods</td>
+              <td><code>(0, -56)</code></td>
+              <td>Spherical volume with 3D bevel shading + custom skin accessories.</td>
+            </tr>
+            <tr>
+              <td><code>Z-4</code></td>
+              <td>CRT Visor & Eyes</td>
+              <td><code>(±8, -57)</code></td>
+              <td>Cleared every frame; procedural blinking (<code>h: 4.4 → 0.8</code>) & scanlines.</td>
+            </tr>
+            <tr>
+              <td><code>Z-5</code></td>
+              <td>Particle FX</td>
+              <td><code>(sx, sy)</code> Top</td>
+              <td>Modulo time cycles generating drifting Z's or expanding smoke puffs.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mathematical Specification & Implementation Code -->
+  <div class="anatomy-section">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Mathematical Formula Reference</span>
+      </div>
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Motion</th>
+            <th>Formula</th>
+            <th>Frequency / Amplitude</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Body Bob</td>
+            <td><code>sin(t * 0.004 + bx) * (0.8 + I * 1.4)</code></td>
+            <td>~0.6 Hz, 0.8px – 2.2px</td>
+          </tr>
+          <tr>
+            <td>Celebration</td>
+            <td><code>-|sin(t * 0.005 + bx)| * 3.2</code></td>
+            <td>Inverted absolute, 3.2px jump</td>
+          </tr>
+          <tr>
+            <td>Error Shake</td>
+            <td><code>sin(t * 0.09) * 1.8</code></td>
+            <td>~14.3 Hz high-frequency jitter</td>
+          </tr>
+          <tr>
+            <td>Typing Arms</td>
+            <td><code>±sin(phase) * 0.14 * (0.3 + I)</code></td>
+            <td>Out-of-phase L vs R (+1.3 rad)</td>
+          </tr>
+          <tr>
+            <td>Eye Blink</td>
+            <td><code>sin(t * 0.0013 + seed) > 0.985</code></td>
+            <td>Random interval ~3-4 seconds</td>
+          </tr>
+          <tr>
+            <td>CRT Flicker</td>
+            <td><code>0.85 + sin(t * 0.01) * 0.15</code></td>
+            <td>±15% emission fluctuation</td>
+          </tr>
+          <tr>
+            <td>Smoke Puff</td>
+            <td><code>p = (t * 0.0008 + k/5) % 1</code></td>
+            <td>Radius: <code>2.5 + p * 7</code>, Alpha: <code>1 - p</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Architecture Benefits vs Sprite Sheets</span>
+      </div>
+      <ul style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 20px;">
+        <li><strong style="color: #fff;">0 KB Asset Load</strong>: No 50MB texture atlas downloads; boots up instantaneously.</li>
+        <li><strong style="color: #fff;">Unlimited Resolution</strong>: Sharp at 100%, 200%, 4K or ultra-wide Retina displays.</li>
+        <li><strong style="color: #fff;">Live Data Synchronization</strong>: Typing speed and particle emission directly scale with real-time token throughput (<code>intensity</code>).</li>
+        <li><strong style="color: #fff;">Infinite Tinting</strong>: 1,010 catalog items (Skins, Auras, Props) render via dynamic hex colors and gradients without duplicating image assets.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --------------------------------------------------------------------------
+  // STANDALONE PROCEDURAL VECTOR ENGINE (Canvas 2D mirroring characters.js)
+  // --------------------------------------------------------------------------
+
+  const heroCanvas = document.getElementById("heroCanvas");
+  const heroCtx = heroCanvas.getContext("2d");
+
+  // State
+  let currentMode = "streaming";
+  let currentIntensity = 0.75;
+  let currentSkin = "cat";
+  let currentAura = "matrix_rain";
+  let clientType = "cli"; // "cli" or "app"
+
+  // Skin color presets
+  const SKIN_COLORS = {
+    classic: "#00f0ff",
+    cat: "#f472b6",
+    ninja: "#38bdf8",
+    pilot: "#f59e0b",
+    hacker: "#10b981",
+    celestial: "#eab308",
+    suit: "#a855f7"
+  };
+
+  function drawAgent(ctx, cx, cy, scale, t, mode, intensity, skin, aura, seed = 1) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+
+    const skinColor = SKIN_COLORS[skin] || "#00f0ff";
+    const trimColor = clientType === "app" ? "#8b5cf6" : "#10b981";
+    const SHELL = "#1e2430";
+    const SHADE = "#111622";
+    const phase = t * 0.012 + seed;
+
+    // 1. Calculate body physics per mode
+    let bob = Math.sin(t * 0.004 + seed * 0.5) * (0.8 + intensity * 1.4);
+    let shake = 0;
+    let tilt = 0;
+
+    if (mode === "happy") bob = -Math.abs(Math.sin(t * 0.005 + seed)) * 4.2;
+    if (mode === "sleeping") {
+      bob = Math.sin(t * 0.0016 + seed) * 1.1 + 2.2;
+      tilt = 0.12 + Math.sin(t * 0.0016 + seed) * 0.02;
+    }
+    if (mode === "error") shake = Math.sin(t * 0.09) * 2.2;
+    if (mode === "looping") {
+      shake = Math.sin(t * 0.08) * 2.5;
+      bob = Math.sin(t * 0.015) * 1.8;
+      tilt = Math.sin(t * 0.02) * 0.18;
+    }
+
+    // Apply root body position
+    ctx.translate(shake, bob);
+    ctx.rotate(tilt);
+
+    // ------------------------------------------------------------------------
+    // Z-0: AURA RING
+    // ------------------------------------------------------------------------
+    if (aura !== "none") {
+      ctx.save();
+      const pulse = 1 + Math.sin(t * 0.006) * 0.12;
+      const auraAlpha = mode === "happy" ? 0.95 : mode === "error" ? 0.4 : mode === "sleeping" ? 0.25 : 0.65;
+
+      if (aura === "matrix_rain") {
+        ctx.strokeStyle = skinColor;
+        ctx.fillStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        for (let col = -3; col <= 3; col++) {
+          const rx = col * 9;
+          const dropP = ((t * 0.002 + col * 0.33 + seed * 0.2) % 1);
+          const ry = -70 + dropP * 50;
+          ctx.globalAlpha = auraAlpha * 0.7;
+          ctx.beginPath();
+          ctx.moveTo(rx, ry - 8);
+          ctx.lineTo(rx, ry);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(rx, ry, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (aura === "plasma_ring") {
+        ctx.strokeStyle = skinColor;
+        ctx.lineWidth = 2.2;
+        ctx.globalAlpha = auraAlpha;
+        ctx.beginPath();
+        ctx.ellipse(0, -42, 34 * pulse, 13 * pulse, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(0, -42, 26 * pulse, 9 * pulse, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (aura === "quantum_mist") {
+        ctx.strokeStyle = skinColor;
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = auraAlpha * 0.5;
+        for (let p = 0; p < 4; p++) {
+          const ang = t * 0.003 + (p * Math.PI) / 2;
+          const rx = 30 * pulse + Math.sin(ang) * 4;
+          const ry = 14 * pulse + Math.cos(ang) * 3;
+          ctx.beginPath();
+          ctx.ellipse(0, -42, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else if (aura === "glitch_halo") {
+        const jx = Math.sin(t * 0.09) * 2;
+        ctx.strokeStyle = skinColor;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = auraAlpha;
+        ctx.strokeRect(-30 * pulse + jx, -54 * pulse, 60 * pulse, 24 * pulse);
+      }
+      ctx.restore();
+    }
+
+    // ------------------------------------------------------------------------
+    // Z-1: TORSO & CHEST
+    // ------------------------------------------------------------------------
+    // Body gradient
+    const bGrad = ctx.createLinearGradient(0, -30, 0, 0);
+    bGrad.addColorStop(0, "#ffffff");
+    bGrad.addColorStop(0.5, SHELL);
+    bGrad.addColorStop(1, SHADE);
+    ctx.fillStyle = bGrad;
+    ctx.beginPath();
+    ctx.roundRect(-17, -30, 34, 22, 11);
+    ctx.fill();
+
+    // Chest trim
+    ctx.fillStyle = trimColor;
+    ctx.fillRect(-14, -12, 28, 6);
+
+    // Arc reactor
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath();
+    ctx.arc(0, -18, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = skinColor;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    ctx.arc(0, -18, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ------------------------------------------------------------------------
+    // Z-2: ARMS (Pivot at shoulder)
+    // ------------------------------------------------------------------------
+    let rotL = 0;
+    let rotR = 0;
+
+    if (mode === "streaming") {
+      rotL = Math.sin(phase) * 0.14 * (0.3 + intensity);
+      rotR = -Math.sin(phase + 1.3) * 0.14 * (0.3 + intensity);
+    } else if (mode === "pending") {
+      rotL = 2.5 + Math.sin(t * 0.012) * 0.35; // waving arm
+      rotR = -Math.sin(phase + 1.3) * 0.06;
+    } else if (mode === "happy") {
+      rotL = 2.2 + Math.sin(t * 0.01) * 0.2;
+      rotR = -2.2 - Math.sin(t * 0.01 + 1) * 0.2;
+    } else if (mode === "error") {
+      rotL = 2.7 + Math.sin(t * 0.08) * 0.1;
+      rotR = -2.7 - Math.sin(t * 0.08) * 0.1;
+    } else if (mode === "looping") {
+      rotL = 2.4 + Math.sin(t * 0.02) * 0.4;
+      rotR = -2.4 - Math.sin(t * 0.02 + 1) * 0.4;
+    }
+
+    // Left Arm
+    ctx.save();
+    ctx.translate(-22, -26); // Shoulder pivot L
+    ctx.rotate(rotL);
+    ctx.fillStyle = SHELL;
+    ctx.beginPath();
+    ctx.roundRect(-4, 0, 8, 24, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // Right Arm
+    ctx.save();
+    ctx.translate(22, -26); // Shoulder pivot R
+    ctx.rotate(rotR);
+    ctx.fillStyle = SHELL;
+    ctx.beginPath();
+    ctx.roundRect(-4, 0, 8, 24, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // ------------------------------------------------------------------------
+    // Z-3: HEAD & COMM PODS
+    // ------------------------------------------------------------------------
+    // Comm pods
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    ctx.arc(-27, -56, 8, 0, Math.PI * 2);
+    ctx.arc(27, -56, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Helmet
+    const hGrad = ctx.createLinearGradient(0, -80, 0, -32);
+    hGrad.addColorStop(0, "#2d3748");
+    hGrad.addColorStop(0.6, SHELL);
+    hGrad.addColorStop(1, SHADE);
+    ctx.fillStyle = hGrad;
+    ctx.strokeStyle = skinColor;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.ellipse(0, -56, 26, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Visor cavity
+    ctx.fillStyle = "#0f141c";
+    ctx.beginPath();
+    ctx.ellipse(0, -53, 20, 15.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Skin Head Accessories
+    if (skin === "cat") {
+      // Cat Ears
+      ctx.fillStyle = SHELL;
+      ctx.beginPath();
+      ctx.moveTo(-22, -72); ctx.lineTo(-14, -86); ctx.lineTo(-6, -76); ctx.closePath();
+      ctx.moveTo(6, -76); ctx.lineTo(14, -86); ctx.lineTo(22, -72); ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#f472b6";
+      ctx.beginPath();
+      ctx.moveTo(-20, -73); ctx.lineTo(-14, -83); ctx.lineTo(-8, -76); ctx.closePath();
+      ctx.moveTo(8, -76); ctx.lineTo(14, -83); ctx.lineTo(20, -73); ctx.closePath();
+      ctx.fill();
+    } else if (skin === "ninja") {
+      // Ninja headband
+      ctx.fillStyle = "#1e1b4b";
+      ctx.strokeStyle = skinColor;
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(-24, -66, 48, 8);
+      ctx.strokeRect(-24, -66, 48, 8);
+      ctx.fillStyle = "#38bdf8";
+      ctx.beginPath();
+      ctx.arc(0, -62, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (skin === "pilot") {
+      // Antennas
+      ctx.fillStyle = skinColor;
+      ctx.fillRect(-20, -88, 3, 20);
+      ctx.fillRect(17, -88, 3, 20);
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(-18.5, -88, 3, 0, Math.PI * 2);
+      ctx.arc(18.5, -88, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (skin === "celestial") {
+      // Halo
+      ctx.strokeStyle = skinColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, -64, 30, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // ------------------------------------------------------------------------
+    // Z-4: CRT VISOR & EYES
+    // ------------------------------------------------------------------------
+    const blinking = Math.sin(t * 0.0013 + seed * 2.1) > 0.985;
+    const flicker = 0.85 + Math.sin(t * 0.01 + seed) * 0.15;
+    ctx.strokeStyle = skinColor;
+    ctx.fillStyle = skinColor;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = flicker;
+
+    const drawEye = (ex, ey, kind) => {
+      ctx.save();
+      if (kind === "happy") {
+        ctx.beginPath();
+        ctx.arc(ex, ey + 2, 4.6, Math.PI, 0);
+        ctx.stroke();
+      } else if (kind === "sleep") {
+        ctx.beginPath();
+        ctx.arc(ex, ey, 4.6, 0, Math.PI);
+        ctx.stroke();
+      } else if (kind === "x") {
+        ctx.beginPath();
+        ctx.moveTo(ex - 4, ey - 4); ctx.lineTo(ex + 4, ey + 4);
+        ctx.moveTo(ex + 4, ey - 4); ctx.lineTo(ex - 4, ey + 4);
+        ctx.stroke();
+      } else if (kind === "looping") {
+        ctx.beginPath();
+        ctx.arc(ex, ey, 4.2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(ex, ey, 2.0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // Normal CRT Scanline Eye
+        const eh = blinking ? 0.8 : 4.4;
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, 4.8, eh, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (!blinking) {
+          ctx.fillStyle = "#0f141c";
+          for (let sy = ey - eh + 1; sy < ey + eh; sy += 2.4) {
+            ctx.fillRect(ex - 6, sy, 12, 1);
+          }
+        }
+      }
+      ctx.restore();
+    };
+
+    const eyeKind = mode === "happy" ? "happy" : mode === "sleeping" ? "sleep" : mode === "error" ? "x" : mode === "looping" ? "looping" : "scan";
+    drawEye(-8, -57, eyeKind);
+    drawEye(8, -57, eyeKind);
+
+    // Mouth
+    if (mode === "happy") {
+      ctx.beginPath();
+      ctx.arc(0, -48, 6, 0, Math.PI);
+      ctx.stroke();
+    } else if (mode === "sleeping") {
+      ctx.beginPath();
+      ctx.arc(0, -45, 1.8, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (mode === "error") {
+      ctx.beginPath();
+      ctx.moveTo(-7, -45); ctx.lineTo(-3.5, -48); ctx.lineTo(0, -45); ctx.lineTo(3.5, -48); ctx.lineTo(7, -45);
+      ctx.stroke();
+    } else if (mode === "looping") {
+      ctx.beginPath();
+      ctx.arc(0, -46, 3.2, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      const mw = 5 + intensity * 3;
+      ctx.beginPath();
+      ctx.ellipse(0, -46, mw, 2.4 + intensity * 1.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ------------------------------------------------------------------------
+    // Z-5: PARTICLE FX (Z's or Smoke)
+    // ------------------------------------------------------------------------
+    if (mode === "sleeping") {
+      for (let k = 0; k < 3; k++) {
+        const p = ((t * 0.0004 + k / 3 + seed * 0.13) % 1);
+        const zx = 20 + p * 16;
+        const zy = -78 - p * 30;
+        const s = 3 + p * 4;
+        ctx.strokeStyle = "#a5b4cc";
+        ctx.globalAlpha = 1 - p;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(zx, zy); ctx.lineTo(zx + s, zy); ctx.lineTo(zx, zy + s); ctx.lineTo(zx + s, zy + s);
+        ctx.stroke();
+      }
+    } else if (mode === "error" || mode === "looping") {
+      for (let k = 0; k < 5; k++) {
+        const p = ((t * 0.0008 + k / 5 + seed * 0.12) % 1);
+        const sx = Math.sin(p * 8 + k * 1.3) * 7 + (k - 2) * 3.5;
+        const sy = -76 - p * 38;
+        const r = 2.5 + p * 7;
+        ctx.fillStyle = "#4b5563";
+        ctx.globalAlpha = 0.65 * (1 - p);
+        ctx.beginPath();
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+
+    return { bob, shake, rotL, rotR, blinking };
+  }
+
+  // Draw Desk and Environment on Hero Canvas
+  function drawDeskEnvironment(ctx, cx, cy, t, intensity, mode) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const W = 220;
+    const H = 130;
+
+    // Soft Desk Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(0, H / 2 + 10, W * 0.6, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Desk Slab
+    const dGrad = ctx.createLinearGradient(0, -30, 0, H - 30);
+    dGrad.addColorStop(0, "#2b3443");
+    dGrad.addColorStop(1, "#181d26");
+    ctx.fillStyle = dGrad;
+    ctx.beginPath();
+    ctx.roundRect(-W / 2, 0, W, H, 10);
+    ctx.fill();
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Desk Top Lip Highlight
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.fillRect(-W / 2, 0, W, 4);
+
+    // Glowing Latency Bar
+    const barW = W - 40;
+    ctx.fillStyle = "#0f141c";
+    ctx.fillRect(-barW / 2, H - 14, barW, 6);
+    ctx.fillStyle = mode === "error" ? "#f43f5e" : intensity > 0.8 ? "#f59e0b" : "#10b981";
+    ctx.fillRect(-barW / 2, H - 14, barW * (0.3 + intensity * 0.7), 6);
+
+    // Monitor Screen
+    ctx.fillStyle = "#0b0e13";
+    ctx.fillRect(-45, -45, 90, 48);
+    ctx.fillStyle = mode === "error" ? "rgba(244,63,94,0.3)" : "rgba(0,240,255,0.25)";
+    ctx.fillRect(-42, -42, 84, 42);
+
+    // Screen Code Lines
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 4; i++) {
+      ctx.globalAlpha = 0.4 + Math.sin(t * 0.01 + i) * 0.2;
+      ctx.fillRect(-38, -38 + i * 9, 20 + ((i * 19) % 36), 3);
+    }
+    ctx.globalAlpha = 1;
+
+    // Monitor Badge
+    ctx.fillStyle = clientType === "app" ? "#3b0764" : "#064e3b";
+    ctx.fillRect(-42, -42, 28, 12);
+    ctx.fillStyle = clientType === "app" ? "#d8b4fe" : "#6ee7b7";
+    ctx.font = "bold 8px monospace";
+    ctx.fillText(clientType === "app" ? "APP" : "CLI", -38, -33);
+
+    // Spinning Hologram Cube
+    ctx.save();
+    ctx.translate(65, -15);
+    ctx.rotate(t * 0.002);
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(-10, -10, 20, 20);
+    ctx.restore();
+
+    // Steaming Coffee Mug
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillRect(-80, 10, 14, 16);
+    if (intensity > 0) {
+      for (let i = 0; i < 3; i++) {
+        const p = ((t * 0.001 + i / 3) % 1);
+        const sx = -73 + Math.sin(p * 5 + i) * 3;
+        const sy = 8 - p * 14;
+        ctx.fillStyle = "rgba(255,255,255," + (0.4 * (1 - p)) + ")";
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1 + p * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // --------------------------------------------------------------------------
+  // MAIN ANIMATION LOOP (Ticker)
+  // --------------------------------------------------------------------------
+  let lastTime = performance.now();
+  let frameCount = 0;
+  let fpsTimer = 0;
+
+  function render(now) {
+    const dt = now - lastTime;
+    lastTime = now;
+
+    // FPS Counter
+    frameCount++;
+    fpsTimer += dt;
+    if (fpsTimer >= 1000) {
+      document.getElementById("fpsCounter").innerText = frameCount;
+      frameCount = 0;
+      fpsTimer = 0;
+    }
+
+    // 1. Render Hero Stage
+    heroCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+    const heroX = heroCanvas.width / 2;
+    const heroY = heroCanvas.height / 2 + 50;
+
+    // Draw Agent behind desk
+    const tel = drawAgent(heroCtx, heroX, heroY - 45, 1.9, now, currentMode, currentIntensity, currentSkin, currentAura);
+
+    // Draw Desk in front of agent
+    drawDeskEnvironment(heroCtx, heroX, heroY, now, currentIntensity, currentMode);
+
+    // Update Telemetry Display
+    document.getElementById("telBob").innerText = tel.bob.toFixed(2) + "px";
+    document.getElementById("telShake").innerText = tel.shake.toFixed(2) + "px";
+    document.getElementById("telArms").innerText = tel.rotL.toFixed(2) + " / " + tel.rotR.toFixed(2);
+    document.getElementById("telBlink").innerText = tel.blinking ? "BLINK" : "OPEN";
+    document.getElementById("telBlink").style.color = tel.blinking ? "var(--accent-cyan)" : "var(--accent-emerald)";
+
+    // 2. Render Simultaneous Pose Cards
+    const poses = ["streaming", "happy", "sleeping", "error", "looping", "pending"];
+    poses.forEach(p => {
+      const c = document.getElementById("poseCanvas_" + p);
+      if (!c) return;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0, 0, c.width, c.height);
+      drawAgent(ctx, c.width / 2, c.height / 2 + 28, 1.1, now, p, p === "streaming" ? 0.8 : 0.4, currentSkin, "none", p.length);
+    });
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+
+  // --------------------------------------------------------------------------
+  // CONTROLLER EVENT LISTENERS
+  // --------------------------------------------------------------------------
+  const modeButtons = document.getElementById("modeButtons");
+  modeButtons.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    modeButtons.querySelectorAll("button").forEach(b => b.className = "btn");
+    const m = btn.dataset.mode;
+    btn.className = "btn active " + m;
+    currentMode = m;
+    document.getElementById("modeLabel").innerText = m;
+    document.getElementById("activeBadge").innerText = m.toUpperCase() + " (ACTIVE)";
+  });
+
+  const intensitySlider = document.getElementById("intensitySlider");
+  intensitySlider.addEventListener("input", e => {
+    currentIntensity = parseFloat(e.target.value);
+    document.getElementById("intensityVal").innerText = currentIntensity.toFixed(2);
+  });
+
+  const skinButtons = document.getElementById("skinButtons");
+  skinButtons.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    skinButtons.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentSkin = btn.dataset.skin;
+    document.getElementById("skinLabel").innerText = currentSkin;
+  });
+
+  const auraButtons = document.getElementById("auraButtons");
+  auraButtons.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    auraButtons.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentAura = btn.dataset.aura;
+    document.getElementById("auraLabel").innerText = currentAura;
+  });
+</script>
+
+</body>
+</html>

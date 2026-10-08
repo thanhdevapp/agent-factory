@@ -88,7 +88,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
 
     const cfg = MOCK_PRESETS[preset] || MOCK_PRESETS.cases;
     const updateMock = () => {
-      const next = generateMockTraces({ count: cfg.agents, cases: !!cfg.cases, errorRatio: cfg.errorRatio });
+      const next = generateMockTraces({ count: cfg.agents, cases: !!cfg.cases, errorRatio: cfg.errorRatio, preset });
       setTraces(next);
       triggerSoundEffects(next);
       setProviders(mockProviderDescriptors(next));

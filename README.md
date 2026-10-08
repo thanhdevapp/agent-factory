@@ -74,8 +74,13 @@ AGMon is fully PWA-compliant with offline shell caching, standalone window frame
   - Dynamic tool badges cycling over agents in real time.
   - Token streams running from agent desks into provider pods (Gemini, Claude, OpenAI, Minimax, DeepSeek).
   - Fallback courier drones re-routing requests between providers.
-- **Inspector Panel**: Click on any desk to inspect latency, model, tokens (input/output/cached), cost, and currently executing command/file.
-- **Demo Presets**: Includes offline presets (`cases`, `storm`, `busy`, `idle`, `errors`) for demonstrations and development.
+  - Support for 1,010 3D cosmetic items across 6 categories (Skins, Props, Pets, Auras, Trophies, Themes).
+- **Inspector Panel & Active Gear**: Click on any desk to inspect latency, model, tokens (input/output/cached), cost, executing command, and live Equipped Cosmetics breakdown.
+- **Rich Mock Presets & 1-Click Showcase**:
+  - `showcase`: 24-agent layout covering 100% 24 visual archetypes across all categories.
+  - `cases`: 17 edge-case conditions with personality-matched items and gear.
+  - Category presets: `showcase_skins`, `showcase_props`, `showcase_pets`, `showcase_auras`, `showcase_trophies`.
+  - Offline presets: `storm` (30 agents), `busy` (8 agents), `idle` (2 agents), `errors` (10 agents).
 
 ---
 

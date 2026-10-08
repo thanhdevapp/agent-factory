@@ -86,6 +86,12 @@ export function buildOffice(traces = []) {
         pendingCount: 0,
         isLooping: false,
         logs: [],
+        skin: trace.skin || null,
+        aura: trace.aura || null,
+        pet: trace.pet || null,
+        props: trace.props || [],
+        trophy: trace.trophy || null,
+        theme: trace.theme || null,
         sessionTitle: trace.sessionTitle || trace.account || "agent-factory",
         lastText: null,
         lastTextRole: null,
@@ -93,6 +99,12 @@ export function buildOffice(traces = []) {
       byAccount.set(trace.connectionId, entry);
     }
     entry.traces.push(trace);
+    if (trace.skin && !entry.skin) entry.skin = trace.skin;
+    if (trace.aura && !entry.aura) entry.aura = trace.aura;
+    if (trace.pet && !entry.pet) entry.pet = trace.pet;
+    if (trace.props?.length && (!entry.props || !entry.props.length)) entry.props = trace.props;
+    if (trace.trophy && !entry.trophy) entry.trophy = trace.trophy;
+    if (trace.theme && !entry.theme) entry.theme = trace.theme;
     if (trace.isLooping) entry.isLooping = true;
     if (Array.isArray(trace.logs) && trace.logs.length > 0) entry.logs = trace.logs;
     if (trace.currentCommand && !entry.currentCommand) entry.currentCommand = trace.currentCommand;

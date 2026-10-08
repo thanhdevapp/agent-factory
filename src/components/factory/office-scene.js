@@ -79,6 +79,9 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   world.addChild(floorLayer, laneLayer, streams.container, deskLayer, actorLayer, toolLayer, hudLayer);
   app.stage.addChild(world);
 
+  // Declared before drawFloor(): the floor theme reads the first trace's theme.
+  let currentTraces = traces;
+
   // ---- floor -------------------------------------------------------------
   const floor = new Graphics();
   function drawFloor(w = FLOOR_BASE_W, h = FLOOR_BASE_H) {
@@ -87,7 +90,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     floor.clear();
 
     const supporter = getSupporterState();
-    const equippedThemeId = supporter?.equippedOfficeTheme || "theme_default";
+    const equippedThemeId = currentTraces?.[0]?.theme || supporter?.equippedOfficeTheme || "theme_default";
     const themeObj =
       (COSMETIC_CATALOG.officeThemes || []).find((t) => t.id === equippedThemeId) ||
       COSMETIC_CATALOG.officeThemes?.[0];
@@ -179,7 +182,6 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   let couriers = [];
   let rackActive = false;
   let lastTracesSignature = "";
-  let currentTraces = traces;
 
   function refreshSelection() {
     for (const e of deskEntries) e.desk.setSelected(e.ws.connectionId === selectedId);
@@ -204,7 +206,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     for (let i = 0; i < list.length; i++) {
       const t = list[i];
       if (!t) continue;
-      sig += `${t.connectionId || t.id || i}_${t.state || ""}_${t.mode || ""}_${t.isLooping ? 1 : 0}_${t.cost || 0}_${t.elapsedMs || 0}_${t.tokens?.input || 0}_${t.tokens?.output || 0}_${t.tools?.length || 0}_${t.error || ""}|`;
+      sig += `${t.connectionId || t.id || i}_${t.state || ""}_${t.mode || ""}_${t.isLooping ? 1 : 0}_${t.skin || ""}_${t.aura || ""}_${t.pet || ""}_${t.trophy || ""}_${Array.isArray(t.props) ? t.props.join(",") : (t.props || "")}_${t.cost || 0}_${t.elapsedMs || 0}_${t.tokens?.input || 0}_${t.tokens?.output || 0}_${t.tools?.length || 0}_${t.error || ""}|`;
     }
     return sig;
   }
@@ -255,9 +257,9 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         queued: ws.queued,
         depth: ws.depth,
         isLooping,
-        pet: supporter.equippedPet || "none",
-        props: supporter.equippedProps || [],
-        trophy: supporter.equippedTrophy || "none",
+        pet: ws.pet || supporter.equippedPet || "none",
+        props: (ws.props && ws.props.length > 0) ? ws.props : (supporter.equippedProps || []),
+        trophy: ws.trophy || supporter.equippedTrophy || "none",
       });
       desk.root.x = ws.x;
       desk.root.y = ws.y;
@@ -274,8 +276,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         seed: i,
         mode: ws.mode,
         clientType,
-        skin: supporter.equippedSkin || "classic",
-        aura: supporter.equippedAura || "none",
+        skin: ws.skin || supporter.equippedSkin || "classic",
+        aura: ws.aura || supporter.equippedAura || "none",
       });
       character.root.x = ws.x + 108;
       character.root.baseX = ws.x + 108;
