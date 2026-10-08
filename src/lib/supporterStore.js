@@ -111,7 +111,7 @@ const DEFAULT_STATE = {
   unlockedItems: ["classic", "none"],
 };
 
-// Đọc trạng thái từ localStorage
+// Read state from localStorage
 export function getSupporterState() {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {

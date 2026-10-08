@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Copy,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 import { Modal, Button, Input, Badge } from "@/components/ui";
 import {
@@ -36,11 +37,12 @@ import {
   SUPPORTER_CHANGE_EVENT,
 } from "@/lib/supporterStore";
 import { startAmbient, stopAmbient, setAmbientVolume } from "@/lib/ambientAudio";
+import { SkinPreview, PetPreview, PropPreview } from "./ItemPreviewArt";
 
 // VietQR donation recipient info
 const VIETQR_CONFIG = {
   bankId: "MB", // MB Bank
-  bankName: "MB Bank (Ngân hàng Quân đội)",
+  bankName: "MB Bank (Military Commercial Joint Stock Bank)",
   accountNo: "0968868862", // Configured recipient account number
   template: "compact2",
 };
@@ -113,6 +115,19 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
     navigator.clipboard?.writeText(VIETQR_CONFIG.accountNo);
     setCopiedBank(true);
     setTimeout(() => setCopiedBank(false), 2000);
+  };
+
+  // Jump to donation tab with specific tier selected
+  const handleUnlockTier = (tierId) => {
+    const mapped =
+      tierId === "lunch" || tierId === "meal"
+        ? "lunch"
+        : tierId === "vip"
+        ? "vip"
+        : "coffee";
+    const tier = DONATE_TIERS.find((t) => t.id === mapped) || DONATE_TIERS[0];
+    setSelectedTier(tier);
+    setActiveTab("donate");
   };
 
   // VietQR image generator URL
@@ -379,29 +394,37 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                 storeState.isSupporter ||
                 storeState.unlockedItems.includes(skin.id);
 
+              const unlockTier = skin.tier === "meal" ? "lunch" : skin.tier === "vip" ? "vip" : "coffee";
+              const unlockPrice = skin.tier === "meal" ? "50k ₫" : skin.tier === "vip" ? "100k ₫" : "20k ₫";
+
               return (
                 <div
                   key={skin.id}
-                  className={`p-3.5 rounded-xl border flex flex-col justify-between transition-all ${
+                  className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                     isEquipped
                       ? "bg-[#007acc]/15 border-[#007acc] shadow-sm shadow-[#007acc]/10"
-                      : "bg-[#252526] border-[#333333]"
+                      : "bg-[#252526] border-[#333333] hover:border-slate-600"
                   }`}
                 >
-                  <div className="space-y-2">
+                  {/* Visual Artwork Preview */}
+                  <div className="mb-2.5">
+                    <SkinPreview skinId={skin.id} />
+                  </div>
+
+                  <div className="space-y-1 flex-1">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <span
-                          className="w-3.5 h-3.5 rounded-full inline-block"
+                          className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
                           style={{ backgroundColor: skin.previewColor }}
                         />
-                        <span className="font-bold text-white text-sm">{skin.name}</span>
+                        <span className="font-bold text-white text-xs">{skin.name}</span>
                       </div>
                       <Badge
-                        variant={skin.tier === "free" ? "secondary" : "warning"}
+                        variant={skin.tier === "free" ? "secondary" : skin.tier === "vip" ? "danger" : "warning"}
                         badgeSize="xs"
                       >
-                        {skin.tier === "free" ? "Default" : "Supporter"}
+                        {skin.tier === "free" ? "Default" : skin.tier === "vip" ? "VIP (100k)" : skin.tier === "meal" ? "Lunch (50k)" : "Coffee (20k)"}
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-[11px] leading-relaxed">
@@ -409,24 +432,34 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-2.5 border-t border-[#333333] flex items-center justify-between">
+                  <div className="mt-3 pt-2.5 border-t border-[#333333] flex items-center justify-between">
                     <span className="text-[10px] text-slate-500 uppercase font-mono">
                       {isEquipped ? "In Use" : isUnlocked ? "Unlocked" : "Locked"}
                     </span>
-                    <button
-                      type="button"
-                      disabled={!isUnlocked || isEquipped}
-                      onClick={() => equipSkin(skin.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                        isEquipped
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default"
-                          : isUnlocked
-                          ? "bg-[#007acc] hover:bg-[#0062a3] text-white"
-                          : "bg-[#333333] text-slate-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {isEquipped ? "Equipped" : isUnlocked ? "Equip" : "Locked"}
-                    </button>
+                    {isUnlocked ? (
+                      <button
+                        type="button"
+                        disabled={isEquipped}
+                        onClick={() => equipSkin(skin.id)}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          isEquipped
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default"
+                            : "bg-[#007acc] hover:bg-[#0062a3] text-white"
+                        }`}
+                      >
+                        {isEquipped ? "Equipped" : "Equip"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleUnlockTier(unlockTier)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
+                        title={`Donate ${unlockPrice} to unlock ${skin.name}`}
+                      >
+                        <Lock className="w-3 h-3" />
+                        <span>Unlock ({unlockPrice})</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -447,40 +480,58 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                 {COSMETIC_CATALOG.props.map((prop) => {
                   const isEquipped = storeState.equippedProps?.includes(prop.id);
                   const isUnlocked = storeState.isSupporter || storeState.unlockedItems.includes(prop.id);
+                  const unlockTier = prop.tier === "meal" ? "lunch" : "coffee";
+                  const unlockPrice = prop.tier === "meal" ? "50k ₫" : "20k ₫";
+
                   return (
                     <div
                       key={prop.id}
-                      className={`p-3 rounded-xl border flex flex-col justify-between ${
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                         isEquipped
                           ? "bg-[#007acc]/15 border-[#007acc]"
-                          : "bg-[#252526] border-[#333333]"
+                          : "bg-[#252526] border-[#333333] hover:border-slate-600"
                       }`}
                     >
-                      <div className="space-y-1.5">
+                      <div className="mb-2">
+                        <PropPreview propId={prop.id} />
+                      </div>
+                      <div className="space-y-1 flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-white text-xs">{prop.name}</span>
-                          {prop.id === "coffee_machine" && <Flame className="w-3.5 h-3.5 text-amber-400" />}
-                          {prop.id === "bonsai" && <Sprout className="w-3.5 h-3.5 text-emerald-400" />}
-                          {prop.id === "rgb_keyboard" && <Sparkles className="w-3.5 h-3.5 text-purple-400" />}
+                          <Badge variant={prop.tier === "meal" ? "primary" : "warning"} badgeSize="xs">
+                            {prop.tier === "meal" ? "50k" : "20k"}
+                          </Badge>
                         </div>
-                        <p className="text-[11px] text-slate-400">{prop.description}</p>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">{prop.description}</p>
                       </div>
 
-                      <div className="mt-3 pt-2 border-t border-[#333333] flex items-center justify-end">
-                        <button
-                          type="button"
-                          disabled={!isUnlocked}
-                          onClick={() => toggleProp(prop.id)}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                            isEquipped
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                              : isUnlocked
-                              ? "bg-[#333333] hover:bg-[#3e3e42] text-slate-300"
-                              : "bg-[#222222] text-slate-600 cursor-not-allowed"
-                          }`}
-                        >
-                          {isEquipped ? "Enabled" : isUnlocked ? "Enable" : "Locked"}
-                        </button>
+                      <div className="mt-3 pt-2 border-t border-[#333333] flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono">
+                          {isUnlocked ? (isEquipped ? "Active" : "Ready") : "Locked"}
+                        </span>
+                        {isUnlocked ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleProp(prop.id)}
+                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                              isEquipped
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                : "bg-[#333333] hover:bg-[#3e3e42] text-slate-300"
+                            }`}
+                          >
+                            {isEquipped ? "Enabled" : "Enable"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleUnlockTier(unlockTier)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
+                            title={`Donate ${unlockPrice} to unlock ${prop.name}`}
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Unlock ({unlockPrice})</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -501,43 +552,62 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                     pet.tier === "free" ||
                     storeState.isSupporter ||
                     storeState.unlockedItems.includes(pet.id);
+                  const unlockTier = pet.tier === "meal" ? "lunch" : "coffee";
+                  const unlockPrice = pet.tier === "meal" ? "50k ₫" : "20k ₫";
+
                   return (
                     <div
                       key={pet.id}
-                      className={`p-3 rounded-xl border flex flex-col justify-between ${
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                         isEquipped
                           ? "bg-[#007acc]/15 border-[#007acc]"
-                          : "bg-[#252526] border-[#333333]"
+                          : "bg-[#252526] border-[#333333] hover:border-slate-600"
                       }`}
                     >
-                      <div className="space-y-1.5">
+                      <div className="mb-2">
+                        <PetPreview petId={pet.id} />
+                      </div>
+                      <div className="space-y-1 flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-white text-xs">{pet.name}</span>
                           <Badge
                             variant={pet.tier === "free" ? "secondary" : "primary"}
                             badgeSize="xs"
                           >
-                            {pet.tier === "free" ? "Default" : "Supporter"}
+                            {pet.tier === "free" ? "Default" : pet.tier === "meal" ? "50k" : "20k"}
                           </Badge>
                         </div>
-                        <p className="text-[11px] text-slate-400">{pet.description}</p>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">{pet.description}</p>
                       </div>
 
-                      <div className="mt-3 pt-2 border-t border-[#333333] flex items-center justify-end">
-                        <button
-                          type="button"
-                          disabled={!isUnlocked || isEquipped}
-                          onClick={() => equipPet(pet.id)}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                            isEquipped
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default"
-                              : isUnlocked
-                              ? "bg-[#007acc] hover:bg-[#0062a3] text-white"
-                              : "bg-[#222222] text-slate-600 cursor-not-allowed"
-                          }`}
-                        >
-                          {isEquipped ? "Active" : isUnlocked ? "Select" : "Locked"}
-                        </button>
+                      <div className="mt-3 pt-2 border-t border-[#333333] flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono">
+                          {isUnlocked ? (isEquipped ? "Active" : "Ready") : "Locked"}
+                        </span>
+                        {isUnlocked ? (
+                          <button
+                            type="button"
+                            disabled={isEquipped}
+                            onClick={() => equipPet(pet.id)}
+                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                              isEquipped
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-default"
+                                : "bg-[#007acc] hover:bg-[#0062a3] text-white"
+                            }`}
+                          >
+                            {isEquipped ? "Active" : "Select"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleUnlockTier(unlockTier)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
+                            title={`Donate ${unlockPrice} to unlock ${pet.name}`}
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Unlock ({unlockPrice})</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
