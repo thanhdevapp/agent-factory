@@ -21,6 +21,8 @@ function vgrad(...stops) {
   });
 }
 
+const stroke = (w, c, a = 1) => ({ width: w, color: c, alpha: a, cap: "round", join: "round" });
+
 // A chibi robot (big round helmet, oval visor with scanline eyes, coloured ear
 // pods, tiny body) drawn from primitives — no sprite sheet, so every colour and
 // pose is controllable from live data. Origin = base of the torso (hidden
@@ -102,8 +104,6 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
 
   let currentMode = mode;
   let faceColor = color;
-
-  const stroke = (w, c, a = 1) => ({ width: w, color: c, alpha: a, cap: "round", join: "round" });
 
   const eye = (cx, cy, w, h, a, kind) => {
     if (kind === "happy") {
