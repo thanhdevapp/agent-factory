@@ -66,6 +66,20 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
 
   const rawNodes = [];
   const rawEdges = [];
+  const seenNodeIds = new Set();
+  const seenEdgeIds = new Set();
+
+  const addNodeSafe = (node) => {
+    if (!node || !node.id || seenNodeIds.has(node.id)) return;
+    seenNodeIds.add(node.id);
+    rawNodes.push(node);
+  };
+
+  const addEdgeSafe = (edge) => {
+    if (!edge || !edge.id || seenEdgeIds.has(edge.id)) return;
+    seenEdgeIds.add(edge.id);
+    rawEdges.push(edge);
+  };
 
   // Tạo node cho root session được focus (hoặc tất cả các root)
   const isSingleRootFocus = subagentsFromTranscript.length > 0;
@@ -74,7 +88,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
   // 1. Level 0: Root Orchestrators
   activeRoots.forEach((trace) => {
     const traceId = trace.traceId || trace.connectionId;
-    rawNodes.push({
+    addNodeSafe({
       id: traceId,
       level: 0,
       label: trace.account || trace.connectionId || "Orchestrator Agent",
@@ -94,7 +108,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
   // 2. Level 1: Subagents trích xuất từ transcript hoặc các session con
   if (subagentsFromTranscript.length > 0) {
     subagentsFromTranscript.forEach((sub) => {
-      rawNodes.push({
+      addNodeSafe({
         id: sub.id,
         level: 1,
         parentId: sub.parentId,
@@ -111,7 +125,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
         isRoot: false,
       });
 
-      rawEdges.push({
+      addEdgeSafe({
         id: `edge-${sub.parentId}-${sub.id}`,
         fromId: sub.parentId,
         toId: sub.id,
@@ -124,12 +138,12 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     const targetWs = (targetTrace.cwd || targetTrace.workspace || "").toLowerCase();
     const relatedTraces = traces.filter(t => (t.traceId || t.connectionId) !== (targetTrace.traceId || targetTrace.connectionId));
 
-    relatedTraces.slice(0, 6).forEach((trace, idx) => {
+    relatedTraces.slice(0, 6).forEach((trace) => {
       const traceId = trace.traceId || trace.connectionId;
       const isPeer = (trace.cwd || "").toLowerCase() === targetWs;
       const level = isPeer ? 1 : 1;
 
-      rawNodes.push({
+      addNodeSafe({
         id: traceId,
         level: level,
         parentId: targetTrace.traceId || targetTrace.connectionId,
@@ -146,7 +160,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
         traceRef: trace,
       });
 
-      rawEdges.push({
+      addEdgeSafe({
         id: `edge-${targetTrace.traceId || targetTrace.connectionId}-${traceId}`,
         fromId: targetTrace.traceId || targetTrace.connectionId,
         toId: traceId,

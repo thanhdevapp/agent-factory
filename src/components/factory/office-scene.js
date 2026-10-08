@@ -49,6 +49,23 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     autoDensity: true,
   });
 
+  // Safely wrap loseContext on the renderer context system to never throw INVALID_OPERATION
+  const loseExt = app.renderer?.context?.extensions?.loseContext;
+  if (loseExt && typeof loseExt.loseContext === "function") {
+    const origLose = loseExt.loseContext.bind(loseExt);
+    loseExt.loseContext = () => {
+      try {
+        const gl = app.renderer?.gl;
+        if (gl && typeof gl.isContextLost === "function" && gl.isContextLost()) {
+          return;
+        }
+        origLose();
+      } catch (e) {
+        // Silently absorb loseContext errors if browser already revoked context
+      }
+    };
+  }
+
   const world = new Container();
   const floorLayer = new Container();
   const laneLayer = new Container();
@@ -510,19 +527,24 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     fit();
   };
 
+  let restoreTimer = null;
   const onContextLost = (e) => {
     e.preventDefault(); // Crucial: prevents browser from permanently discarding the WebGL context
     console.warn("[OfficeScene] WebGL context lost - browser reclaimed GPU memory");
   };
 
   const onContextRestored = () => {
-    console.info("[OfficeScene] WebGL context restored - re-rendering office scene");
-    try {
-      rebuild(currentTraces, true);
-      app.render();
-    } catch (err) {
-      console.warn("[OfficeScene] Error restoring scene:", err);
-    }
+    console.info("[OfficeScene] WebGL context restored by browser");
+    // PixiJS v8 runner restores internal GL textures & pipelines automatically.
+    // Never call app.render() synchronously here to prevent INVALID_ENUM: texParameter.
+    if (restoreTimer) clearTimeout(restoreTimer);
+    restoreTimer = setTimeout(() => {
+      try {
+        rebuild(currentTraces, true);
+      } catch (err) {
+        console.warn("[OfficeScene] Soft rebuild after context restore:", err);
+      }
+    }, 200);
   };
 
   canvas.addEventListener("pointerdown", onPointerDown);
@@ -695,6 +717,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       onSelect = fn;
     },
     destroy: () => {
+      if (restoreTimer) clearTimeout(restoreTimer);
       try {
         canvas.removeEventListener("pointerdown", onPointerDown);
         window.removeEventListener("pointermove", onPointerMove);
@@ -712,19 +735,12 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
       try {
         // Safe WebGL loseContext handling:
-        // If context is already lost, prevent Pixi v8 from calling WEBGL_lose_context.loseContext()
+        // In PixiJS v8 GlContextSystem, loseContext is called from this.extensions.loseContext?.loseContext()
+        // If the context is already lost, explicitly null out extensions.loseContext so Pixi v8 doesn't invoke it
         const gl = app.renderer?.gl;
-        if (gl) {
-          const isLost = typeof gl.isContextLost === "function" && gl.isContextLost();
-          if (isLost) {
-            const origGetExt = gl.getExtension?.bind(gl);
-            if (origGetExt) {
-              gl.getExtension = (name) => {
-                if (name === "WEBGL_lose_context") return null;
-                return origGetExt(name);
-              };
-            }
-          }
+        const isLost = !gl || (typeof gl.isContextLost === "function" && gl.isContextLost());
+        if (isLost && app.renderer?.context?.extensions) {
+          app.renderer.context.extensions.loseContext = null;
         }
         app.destroy(false, { children: true });
       } catch (err) {
