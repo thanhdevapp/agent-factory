@@ -597,6 +597,11 @@ export default function VSCodeWorkbench({
                         ) : (
                           <OfficeCanvas
                             traces={effectiveTraces}
+                            totalCount={totalCount}
+                            top={top}
+                            onTopChange={onTopChange}
+                            timeframe={timeframe}
+                            onTimeframeChange={onTimeframeChange}
                             selectedId={selectedId}
                             onSelect={(id) => handleSelectAgent(id)}
                             isZenFullscreen={isZenFullscreen}
@@ -621,6 +626,11 @@ export default function VSCodeWorkbench({
                       >
                         <OfficeCanvas
                           traces={effectiveTraces}
+                          totalCount={totalCount}
+                          top={top}
+                          onTopChange={onTopChange}
+                          timeframe={timeframe}
+                          onTimeframeChange={onTimeframeChange}
                           selectedId={selectedId}
                           onSelect={(id) => handleSelectAgent(id)}
                           isZenFullscreen={isZenFullscreen}

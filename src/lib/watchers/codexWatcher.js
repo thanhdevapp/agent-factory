@@ -120,20 +120,59 @@ function extractWorkspace(cwd) {
   return cwd ? path.basename(cwd) : null;
 }
 
-/** Date directories that could hold a session newer than `maxAgeMs`. */
-function recentDayKeys(maxAgeMs, now) {
-  const dayMs = 86_400_000;
-  const span = Math.min(Math.ceil(maxAgeMs / dayMs) + 1, 400);
-  const keys = [];
-  for (let back = 0; back <= span; back++) {
-    const d = new Date(now - back * dayMs);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    if (back > 0 && now - new Date(y, d.getMonth(), d.getDate()).getTime() >= maxAgeMs) break;
-    keys.push({ dir: path.join(String(y), m, day), y: String(y), m, day });
+/** Scans ~/.codex/sessions/<YYYY>/<MM>/<DD> directories for .jsonl rollout files within maxAgeMs */
+async function scanCodexRolloutFiles(sessionsRoot, maxAgeMs, now) {
+  const files = [];
+  let years;
+  try {
+    years = await fs.readdir(sessionsRoot, { withFileTypes: true });
+  } catch {
+    return files;
   }
-  return keys;
+
+  const yearDirs = years.filter((d) => d.isDirectory()).map((d) => d.name).sort().reverse();
+  for (const year of yearDirs) {
+    const yearPath = path.join(sessionsRoot, year);
+    let months;
+    try {
+      months = await fs.readdir(yearPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    const monthDirs = months.filter((d) => d.isDirectory()).map((d) => d.name).sort().reverse();
+
+    for (const month of monthDirs) {
+      const monthPath = path.join(yearPath, month);
+      let days;
+      try {
+        days = await fs.readdir(monthPath, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      const dayDirs = days.filter((d) => d.isDirectory()).map((d) => d.name).sort().reverse();
+
+      for (const day of dayDirs) {
+        if (Number.isFinite(maxAgeMs)) {
+          const dayDate = new Date(`${year}-${month}-${day}T23:59:59Z`).getTime();
+          if (now - dayDate > maxAgeMs) continue;
+        }
+
+        const dayPath = path.join(monthPath, day);
+        let entries;
+        try {
+          entries = await fs.readdir(dayPath);
+        } catch {
+          continue;
+        }
+
+        for (const name of entries) {
+          if (name.endsWith(".jsonl")) files.push(path.join(dayPath, name));
+        }
+      }
+    }
+  }
+
+  return files;
 }
 
 async function getRunningCodexProcesses() {
@@ -184,24 +223,26 @@ export async function parseCodexRollout(filePath) {
     const ts = entry.timestamp ? new Date(entry.timestamp).getTime() : null;
     if (ts && (!result.lastTimestamp || ts > result.lastTimestamp)) result.lastTimestamp = ts;
 
-    const payload = entry.payload;
+    const payload = entry.payload || (entry.type === "message" || entry.role ? entry : null);
     if (!payload) continue;
 
-    if (entry.type === "session_meta") {
+    const entryType = entry.type || payload.type;
+
+    if (entryType === "session_meta") {
       result.meta = payload;
       result.cwd = payload.cwd || null;
       result.startedAt = payload.timestamp ? new Date(payload.timestamp).getTime() : null;
       continue;
     }
 
-    if (entry.type === "turn_context") {
+    if (entryType === "turn_context") {
       if (payload.model) result.model = payload.model;
       if (payload.cwd && !result.cwd) result.cwd = payload.cwd;
       continue;
     }
 
-    if (entry.type === "response_item") {
-      const type = payload.type;
+    if (entryType === "response_item" || entryType === "message") {
+      const type = payload.type || (payload.role ? "message" : null);
 
       if (type === "message") {
         const role = payload.role;
@@ -213,6 +254,11 @@ export async function parseCodexRollout(filePath) {
 
         const text = textFromContent(payload.content);
         if (!text) continue;
+
+        if (!result.cwd) {
+          const mCwd = text.match(/<cwd>(.*?)<\/cwd>/);
+          if (mCwd) result.cwd = mCwd[1];
+        }
         if (role === "user" && /^(# AGENTS\.md instructions|<INSTRUCTIONS>|<permissions instructions>|<model_switch>)/i.test(text)) continue;
 
         if (role === "user") {
@@ -344,39 +390,34 @@ export async function getCodexTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
     return traces;
   }
 
-  const existingYears = new Set(yearDirs.filter((d) => d.isDirectory()).map((d) => d.name));
-
-  const files = [];
-  for (const key of recentDayKeys(maxAgeMs, now)) {
-    if (!existingYears.has(key.y)) continue;
-    const dayPath = path.join(sessionsRoot, key.dir);
-
-    let entries;
-    try {
-      entries = await fs.readdir(dayPath);
-    } catch {
-      continue;
-    }
-    for (const name of entries) {
-      if (name.endsWith(".jsonl")) files.push(path.join(dayPath, name));
-    }
-  }
-
+  const candidateFiles = await scanCodexRolloutFiles(sessionsRoot, maxAgeMs, now);
   const runningProcs = await getRunningCodexProcesses();
   const hasRunningCodex = runningProcs.length > 0;
 
-  for (const filePath of files) {
+  // Stat candidate files and sort by mtime descending (most recent first)
+  const candidateStats = [];
+  for (const filePath of candidateFiles) {
     try {
       const stat = await fs.stat(filePath);
       const ageMs = now - stat.mtimeMs;
       if (ageMs > maxAgeMs) continue;
+      candidateStats.push({ filePath, stat, ageMs, mtime: stat.mtimeMs });
+    } catch {}
+  }
 
+  candidateStats.sort((a, b) => b.mtime - a.mtime);
+  const toProcess = candidateStats.slice(0, 100);
+
+  for (const { filePath, stat, ageMs } of toProcess) {
+    try {
       const parsed = await parseCodexRollout(filePath);
-      // Legacy rollouts predate `session_meta` and carry no cwd/model/usage.
-      if (!parsed.meta) continue;
+      // Skip files that carry no cwd, model, tokens, or title
+      if (!parsed.cwd && !parsed.model && !parsed.tokens && !parsed.sessionTitle) continue;
 
-      const sessionId = parsed.meta.session_id || parsed.meta.id || path.basename(filePath, ".jsonl");
-      const { clientType, label } = classifyCodexSession(parsed.meta.originator, parsed.meta.source);
+      const rawBase = path.basename(filePath, ".jsonl");
+      const cleanBase = rawBase.replace(/^rollout-[\d-T]+-/, "");
+      const sessionId = parsed.meta?.session_id || parsed.meta?.id || cleanBase;
+      const { clientType, label } = classifyCodexSession(parsed.meta?.originator, parsed.meta?.source);
       const workspace = extractWorkspace(parsed.cwd) || label;
 
       let state = "done";

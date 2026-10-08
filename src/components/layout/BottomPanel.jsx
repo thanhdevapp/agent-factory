@@ -53,12 +53,12 @@ export default function BottomPanel({
       return new Date().toLocaleTimeString();
     };
 
-    traces.forEach((t) => {
+    traces.forEach((t, tIdx) => {
       const account = t.account || "Agent";
       const model = t.model || "gemini-3.8-flash";
       const clientType = t.clientType || (t.provider?.includes("app") ? "app" : "cli");
       const provider = t.provider || "gemini";
-      const connId = t.connectionId || t.traceId || "agent";
+      const traceUniqueId = t.traceId || t.connectionId || `trace-${tIdx}`;
 
       // 1. Incorporate actual real-time event logs if present
       if (Array.isArray(t.logs) && t.logs.length > 0) {
@@ -66,7 +66,7 @@ export default function BottomPanel({
           const rawType = (logItem.type || "").toUpperCase();
           const level = rawType.includes("ERR") ? "ERROR" : rawType.includes("TOOL") ? "TOOL" : "STREAM";
           list.push({
-            id: `${connId}-${logItem.timestamp || lIdx}-${lIdx}`,
+            id: `${traceUniqueId}-${logItem.timestamp || lIdx}-${lIdx}`,
             time: formatLogTime(logItem.timestamp),
             level,
             provider,
@@ -81,7 +81,7 @@ export default function BottomPanel({
         // Fallback to trace state snapshot with stable IDs
         if (t.activeTool) {
           list.push({
-            id: `${connId}-tool-${t.activeTool}`,
+            id: `${traceUniqueId}-tool-${t.activeTool}`,
             time: formatLogTime(t.timestamp),
             level: "TOOL",
             provider,
@@ -95,7 +95,7 @@ export default function BottomPanel({
 
         if (t.state === "streaming" || t.state === "busy") {
           list.push({
-            id: `${connId}-stream`,
+            id: `${traceUniqueId}-stream`,
             time: formatLogTime(t.timestamp),
             level: "STREAM",
             provider,
@@ -108,7 +108,7 @@ export default function BottomPanel({
 
         if (t.state === "error") {
           list.push({
-            id: `${connId}-err`,
+            id: `${traceUniqueId}-err`,
             time: formatLogTime(t.timestamp),
             level: "ERROR",
             provider,

@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, Sparkles, Volume2, VolumeX, Maximize } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, Sparkles, Volume2, VolumeX, Maximize, ListFilter, Clock } from "lucide-react";
 import { mountOfficeScene } from "./office-scene";
 import { SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
 
 export default function OfficeCanvas({
   traces = [],
+  totalCount = 0,
+  top = 20,
+  onTopChange = null,
+  timeframe = "24h",
+  onTimeframeChange = null,
   onStats,
   onSelect,
   selectedId = null,
@@ -168,6 +173,32 @@ export default function OfficeCanvas({
       {error && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-rose-400">
           {error}
+        </div>
+      )}
+
+      {/* Floating Canvas Filter Badge (Top-left) */}
+      {!isZenFullscreen && (
+        <div
+          data-testid="canvas-filter-pill"
+          className="absolute top-3 left-3 z-10 hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-800/80 bg-slate-950/80 backdrop-blur-md shadow-xl text-slate-300 text-xs select-none pointer-events-none"
+        >
+          <ListFilter className="w-3 h-3 text-cyan-400 shrink-0" />
+          <span className="font-semibold text-[11px] text-slate-200">
+            {top === "all" ? "All Desks" : `Top ${top}`}
+          </span>
+          <span className="text-slate-600">·</span>
+          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+          <span className="text-[11px] text-slate-300">
+            {timeframe === "all" ? "All time" : timeframe}
+          </span>
+          {totalCount > 0 && traces.length > 0 && traces.length < totalCount && (
+            <span
+              title={`Showing ${traces.length} of ${totalCount} recorded conversations`}
+              className="ml-0.5 px-1.5 py-0.2 rounded text-[10px] font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-800/40"
+            >
+              {traces.length}/{totalCount}
+            </span>
+          )}
         </div>
       )}
 

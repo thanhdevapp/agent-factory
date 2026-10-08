@@ -15,6 +15,8 @@ import {
   Coffee,
   Palette,
   Sparkles,
+  ListFilter,
+  Clock,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
 
@@ -34,6 +36,12 @@ const PRESETS = [
 
 export default function TitleBar({
   stats = {},
+  traces = [],
+  totalCount = 0,
+  top = 20,
+  onTopChange,
+  timeframe = "24h",
+  onTimeframeChange,
   mode = "live",
   mockPreset = "cases",
   onModeChange,
@@ -103,13 +111,75 @@ export default function TitleBar({
           className="hidden xl:flex items-center gap-1.5 bg-[#252526] hover:bg-[#2d2d2e] border border-[#333333] hover:border-[#007acc] px-2 py-0.5 rounded text-[11px] cursor-pointer transition-colors"
         >
           <span className="text-slate-400">Desks:</span>
-          <span className="font-bold text-slate-200">{stats?.agents ?? 0}</span>
+          <span className="font-bold text-slate-200">
+            {totalCount > 0 && traces.length > 0 && traces.length < totalCount
+              ? `${traces.length}/${totalCount}`
+              : (stats?.agents ?? traces.length ?? 0)}
+          </span>
           <span className="text-slate-600">|</span>
           <span className="text-slate-400">Active:</span>
           <span className="font-bold text-cyan-400">{stats?.busy ?? 0}</span>
           <span className="text-slate-600">|</span>
           <span className="text-slate-400">Tokens:</span>
           <span className="font-bold text-emerald-400">{stats?.tokensLabel ?? "0k"}</span>
+        </div>
+
+        {/* Filter Controls: Top N & Timeframe */}
+        <div
+          data-testid="telemetry-filter-controls"
+          title="Filter active conversations by quantity and time range"
+          className="flex items-center rounded bg-[#252526] border border-[#333333] px-1.5 py-0.5 text-[11px] text-slate-300 gap-1.5 shadow-sm"
+        >
+          <div className="flex items-center gap-1 text-slate-400">
+            <ListFilter className="w-3 h-3 text-cyan-400 shrink-0" />
+            <span className="hidden 2xl:inline text-[10px] uppercase font-bold tracking-wider text-slate-400">Filter</span>
+          </div>
+
+          {/* Top N Dropdown */}
+          <select
+            data-testid="filter-top-select"
+            aria-label="Filter Top Conversations"
+            value={top}
+            onChange={(e) => onTopChange?.(e.target.value === "all" ? "all" : Number(e.target.value))}
+            className="bg-transparent text-[11px] text-slate-200 outline-none cursor-pointer hover:text-white font-medium pr-0.5"
+          >
+            <option value={10} className="bg-[#1e1e1e] text-slate-200">Top 10</option>
+            <option value={20} className="bg-[#1e1e1e] text-slate-200">Top 20</option>
+            <option value={30} className="bg-[#1e1e1e] text-slate-200">Top 30</option>
+            <option value={50} className="bg-[#1e1e1e] text-slate-200">Top 50</option>
+            <option value="all" className="bg-[#1e1e1e] text-slate-200">All Desks</option>
+          </select>
+
+          <span className="text-slate-600">|</span>
+
+          {/* Timeframe Dropdown */}
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+            <select
+              data-testid="filter-timeframe-select"
+              aria-label="Filter Time Range"
+              value={timeframe}
+              onChange={(e) => onTimeframeChange?.(e.target.value)}
+              className="bg-transparent text-[11px] text-slate-200 outline-none cursor-pointer hover:text-white font-medium"
+            >
+              <option value="1h" className="bg-[#1e1e1e] text-slate-200">1h</option>
+              <option value="6h" className="bg-[#1e1e1e] text-slate-200">6h</option>
+              <option value="24h" className="bg-[#1e1e1e] text-slate-200">24h</option>
+              <option value="3d" className="bg-[#1e1e1e] text-slate-200">3d</option>
+              <option value="7d" className="bg-[#1e1e1e] text-slate-200">7d</option>
+              <option value="all" className="bg-[#1e1e1e] text-slate-200">All time</option>
+            </select>
+          </div>
+
+          {/* Filtered badge */}
+          {totalCount > 0 && traces.length > 0 && traces.length < totalCount && (
+            <span
+              title={`Showing ${traces.length} of ${totalCount} recorded conversations`}
+              className="hidden lg:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-800/50"
+            >
+              {traces.length}/{totalCount}
+            </span>
+          )}
         </div>
 
         {/* Quick Reports Button */}

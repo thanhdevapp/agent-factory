@@ -39,6 +39,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
         <script
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var raw=localStorage.getItem("agmon_theme_settings");var t="dark-plus";var fz="13";var uf="";var cf="";if(raw){var s=JSON.parse(raw);if(s.theme)t=s.theme;if(s.fontSize)fz=s.fontSize;if(s.uiFont)uf=s.uiFont;if(s.codeFont)cf=s.codeFont;}document.documentElement.setAttribute("data-theme",t);if(t==="light-plus"){document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");}else{document.documentElement.classList.remove("light");document.documentElement.classList.add("dark");}document.documentElement.style.setProperty("--font-size-ui",fz+"px");document.documentElement.style.setProperty("--font-size-base",fz+"px");}catch(e){}})();`,
           }}
