@@ -313,7 +313,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           name ||
           workspaceName;
 
-        const model = parsed.model || "claude-3-7-sonnet";
+        const model = parsed.model || null;
         const connectionId = isExtension
           ? `Claude Extension (${name || pid || (sessionId ? sessionId.slice(0, 6) : "ext")})`
           : `Claude (${name || pid || (sessionId ? sessionId.slice(0, 6) : "cli")})`;
@@ -383,7 +383,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
 
           const isRecent = (now - mtime) < 90 * 1000;
           const isPending = (now - mtime) < 15 * 60 * 1000;
-          const state = isRecent ? "streaming" : isPending ? "pending" : "done";
+          const state = isRecent ? "streaming" : isPending ? "idle" : "done";
 
           const isExtension =
             parsed.entrypoint === "claude-vscode" ||
