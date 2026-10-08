@@ -26,7 +26,14 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
-import DarkDateRangePicker from "./DarkDateRangePicker";
+import {
+  Button,
+  Input,
+  Select,
+  Badge,
+  Modal,
+  DateRangePicker,
+} from "@/components/ui";
 
 export default function TokenReportView({ onClose }) {
   // Time filters
@@ -273,29 +280,32 @@ export default function TokenReportView({ onClose }) {
 
           {/* Export & Refresh */}
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="secondary"
+              size="icon-sm"
               onClick={fetchData}
               title="Làm mới dữ liệu"
-              className="flex items-center justify-center w-8 h-8 rounded bg-[#252526] border border-[#3e3e42] text-slate-400 hover:text-white hover:border-[#555555] transition-colors"
             >
               <RotateCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-emerald-400" : ""}`} />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleExportCsv}
               title="Xuất file CSV"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#252526] hover:bg-[#2e2e30] border border-[#3e3e42] text-slate-200 text-xs font-medium transition-colors"
+              leftIcon={<Download className="w-3.5 h-3.5 text-cyan-400" />}
             >
-              <Download className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Xuất CSV</span>
-            </button>
-            <button
+              Xuất CSV
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleExportJson}
               title="Xuất dữ liệu thô JSON"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#252526] hover:bg-[#2e2e30] border border-[#3e3e42] text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
+              leftIcon={<FileCode className="w-3.5 h-3.5 text-purple-400" />}
             >
-              <FileCode className="w-3.5 h-3.5 text-purple-400" />
               <span className="hidden sm:inline">JSON</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -333,7 +343,7 @@ export default function TokenReportView({ onClose }) {
 
             {/* Custom Dark Date Range Picker (Radix UI Popover) */}
             <div className="flex items-center gap-1.5 pl-1.5 border-l border-[#3e3e42]">
-              <DarkDateRangePicker
+              <DateRangePicker
                 startDate={startDate}
                 endDate={endDate}
                 isActive={timeRange === "custom"}
@@ -399,22 +409,24 @@ export default function TokenReportView({ onClose }) {
           </span>
 
           {/* Provider Filter */}
-          <select
+          <Select
+            selectSize="sm"
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="bg-[#252526] border border-[#3e3e42] text-xs text-slate-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-[#007acc]"
+            wrapperClassName="w-auto"
           >
             <option value="all">Tất cả Provider</option>
             <option value="gemini (cli)">Gemini (CLI)</option>
             <option value="gemini (app)">Gemini (App)</option>
             <option value="claude">Claude Code</option>
-          </select>
+          </Select>
 
           {/* Model Filter */}
-          <select
+          <Select
+            selectSize="sm"
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
-            className="bg-[#252526] border border-[#3e3e42] text-xs text-slate-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-[#007acc]"
+            wrapperClassName="w-auto"
           >
             <option value="all">Tất cả Model</option>
             {meta.availableModels?.map((m) => (
@@ -422,13 +434,14 @@ export default function TokenReportView({ onClose }) {
                 {m}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* Project / Workspace Filter */}
-          <select
+          <Select
+            selectSize="sm"
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className="bg-[#252526] border border-[#3e3e42] text-xs text-slate-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-[#007acc] max-w-[180px] truncate"
+            wrapperClassName="w-auto max-w-[180px]"
           >
             <option value="all">Tất cả Dự Án</option>
             {meta.availableProjects?.map((p) => (
@@ -436,13 +449,14 @@ export default function TokenReportView({ onClose }) {
                 {p}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* AI Tool Filter */}
-          <select
+          <Select
+            selectSize="sm"
             value={toolFilter}
             onChange={(e) => setToolFilter(e.target.value)}
-            className="bg-[#252526] border border-[#3e3e42] text-xs text-slate-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-[#007acc]"
+            wrapperClassName="w-auto"
           >
             <option value="all">Tất cả Công cụ (Tools)</option>
             {meta.availableTools?.map((t) => (
@@ -450,22 +464,25 @@ export default function TokenReportView({ onClose }) {
                 {t}
               </option>
             ))}
-          </select>
+          </Select>
 
           {/* Error state filter */}
-          <select
+          <Select
+            selectSize="sm"
             value={hasErrorFilter}
             onChange={(e) => setHasErrorFilter(e.target.value)}
-            className="bg-[#252526] border border-[#3e3e42] text-xs text-slate-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-[#007acc]"
+            wrapperClassName="w-auto"
           >
             <option value="all">Tất cả Trạng thái</option>
             <option value="false">Chỉ phiên Thành Công</option>
             <option value="true">Chỉ phiên Có Lỗi</option>
-          </select>
+          </Select>
 
           {/* Reset filters button if any is active */}
           {(providerFilter !== "all" || modelFilter !== "all" || projectFilter !== "all" || toolFilter !== "all" || hasErrorFilter !== "all") && (
-            <button
+            <Button
+              variant="danger"
+              size="xs"
               onClick={() => {
                 setProviderFilter("all");
                 setModelFilter("all");
@@ -473,10 +490,10 @@ export default function TokenReportView({ onClose }) {
                 setToolFilter("all");
                 setHasErrorFilter("all");
               }}
-              className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-500/30"
+              leftIcon={<X className="w-3 h-3" />}
             >
-              <X className="w-3 h-3" /> Đặt lại bộ lọc
-            </button>
+              Đặt lại bộ lọc
+            </Button>
           )}
         </div>
       </div>
@@ -876,16 +893,16 @@ export default function TokenReportView({ onClose }) {
               </div>
 
               {/* Table Search */}
-              <div className="flex items-center gap-2 bg-[#1e1e1e] border border-[#3e3e42] rounded-lg px-2.5 py-1 text-xs">
-                <Search className="w-3.5 h-3.5 text-slate-500" />
-                <input
-                  type="text"
-                  value={searchTable}
-                  onChange={(e) => setSearchTable(e.target.value)}
-                  placeholder="Tìm theo ID, model, tool, project..."
-                  className="bg-transparent text-slate-200 outline-none w-48 sm:w-64 placeholder:text-slate-500"
-                />
-              </div>
+              <Input
+                inputSize="sm"
+                leftIcon={<Search className="w-3.5 h-3.5 text-slate-500" />}
+                clearable
+                value={searchTable}
+                onChange={(e) => setSearchTable(e.target.value)}
+                onClear={() => setSearchTable("")}
+                placeholder="Tìm theo ID, model, tool, project..."
+                wrapperClassName="w-48 sm:w-64"
+              />
             </div>
 
             {/* Table */}
@@ -954,17 +971,12 @@ export default function TokenReportView({ onClose }) {
                             <div className="text-[10px] font-mono text-slate-500 truncate">{s.id.slice(0, 12)}...</div>
                           </td>
                           <td className="py-2.5 px-4 whitespace-nowrap">
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                isApp
-                                  ? "bg-purple-950/80 text-purple-300 border border-purple-500/40"
-                                  : isClaude
-                                  ? "bg-amber-950/80 text-amber-300 border border-amber-500/40"
-                                  : "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40"
-                              }`}
+                            <Badge
+                              variant={isApp ? "primary" : isClaude ? "warning" : "success"}
+                              badgeSize="xs"
                             >
                               {isApp ? "APP" : isClaude ? "CLAUDE" : "CLI"}
-                            </span>
+                            </Badge>
                           </td>
                           <td className="py-2.5 px-4 font-mono text-[11px] text-slate-300 whitespace-nowrap">
                             {s.model}
@@ -995,27 +1007,25 @@ export default function TokenReportView({ onClose }) {
         )}
 
         {/* Modal: Session Detail Popup */}
-        {selectedSessionDetail && (
-          <div
-            onClick={() => setSelectedSessionDetail(null)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-[#252526] border border-[#3e3e42] rounded-xl p-5 shadow-2xl space-y-4"
+        {/* Modal: Session Detail Popup */}
+        <Modal
+          isOpen={Boolean(selectedSessionDetail)}
+          onClose={() => setSelectedSessionDetail(null)}
+          title={`Chi Tiết Phiên: ${selectedSessionDetail?.project || ""}`}
+          description={selectedSessionDetail ? `Session ID: ${selectedSessionDetail.id}` : undefined}
+          size="md"
+          footer={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedSessionDetail(null)}
             >
-              <div className="flex items-center justify-between border-b border-[#333333] pb-3">
-                <h3 className="font-bold text-white text-sm">
-                  Chi Tiết Phiên: {selectedSessionDetail.project}
-                </h3>
-                <button
-                  onClick={() => setSelectedSessionDetail(null)}
-                  className="p-1 rounded text-slate-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
+              Đóng
+            </Button>
+          }
+        >
+          {selectedSessionDetail && (
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
                   <span className="text-slate-500 text-[10px] block">SESSION ID</span>
@@ -1071,8 +1081,8 @@ export default function TokenReportView({ onClose }) {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </Modal>
       </div>
     </div>
   );

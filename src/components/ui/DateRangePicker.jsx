@@ -9,12 +9,12 @@ import {
   ChevronRight,
   Check,
   RotateCcw,
-  X,
   ArrowRight,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
- * Helper to format Date object into YYYY-MM-DD (local timezone)
+ * Format Date object into YYYY-MM-DD (local timezone)
  */
 function formatDate(d) {
   if (!d || isNaN(d.getTime())) return "";
@@ -25,7 +25,7 @@ function formatDate(d) {
 }
 
 /**
- * Helper to parse YYYY-MM-DD string into local Date object
+ * Parse YYYY-MM-DD string into local Date object
  */
 function parseDate(str) {
   if (!str || typeof str !== "string") return null;
@@ -108,7 +108,7 @@ const PRESETS = [
 
 const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
-export default function DarkDateRangePicker({
+export function DateRangePicker({
   startDate = "",
   endDate = "",
   isActive = false,
@@ -150,7 +150,6 @@ export default function DarkDateRangePicker({
   // Generate calendar grid
   const calendarDays = useMemo(() => {
     const firstDayOfMonth = new Date(year, month, 1);
-    // Sunday is 0, Monday is 1... Adjust so Monday is 0, Sunday is 6
     let startDayOfWeek = firstDayOfMonth.getDay() - 1;
     if (startDayOfWeek === -1) startDayOfWeek = 6;
 
@@ -180,7 +179,7 @@ export default function DarkDateRangePicker({
       });
     }
 
-    // Next month padding days to complete grid (42 days or 35 days)
+    // Next month padding days to complete grid
     const totalSlots = days.length > 35 ? 42 : 35;
     const remainingSlots = totalSlots - days.length;
     for (let d = 1; d <= remainingSlots; d++) {
@@ -197,11 +196,9 @@ export default function DarkDateRangePicker({
 
   const handleDayClick = (dateStr) => {
     if (!tempStart || (tempStart && tempEnd)) {
-      // Start a fresh selection
       setTempStart(dateStr);
       setTempEnd("");
     } else {
-      // We already have a tempStart, pick end date
       if (dateStr < tempStart) {
         setTempEnd(tempStart);
         setTempStart(dateStr);
@@ -237,20 +234,28 @@ export default function DarkDateRangePicker({
     setOpen(false);
   };
 
-  const effectiveEnd = tempEnd || (hoverDate && tempStart && hoverDate > tempStart ? hoverDate : "");
+  const effectiveEnd =
+    tempEnd || (hoverDate && tempStart && hoverDate > tempStart ? hoverDate : "");
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
           type="button"
-          className={`flex items-center gap-2 px-2.5 py-1 ${
+          className={cn(
+            "flex items-center gap-2 px-2.5 py-1 border rounded text-xs transition-colors shadow-sm focus:outline-none focus:ring-1 focus:ring-[#007acc] cursor-pointer",
             isActive
               ? "bg-[#0e639c]/30 border-[#007acc] text-white ring-1 ring-[#007acc]/40"
-              : "bg-[#1e1e1e] hover:bg-[#2a2d2e] border-[#3e3e42] hover:border-[#007acc] text-slate-200"
-          } border rounded text-xs transition-colors shadow-sm focus:outline-none ${className}`}
+              : "bg-[#1e1e1e] hover:bg-[#2a2d2e] border-[#3e3e42] hover:border-[#007acc] text-slate-200",
+            className
+          )}
         >
-          <Calendar className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-cyan-400" : "text-[#007acc]"}`} />
+          <Calendar
+            className={cn(
+              "w-3.5 h-3.5 shrink-0",
+              isActive ? "text-cyan-400" : "text-[#007acc]"
+            )}
+          />
           <div className="flex items-center gap-1.5 font-mono text-[11px]">
             {startDate ? (
               <span className="text-slate-100 font-medium">{startDate}</span>
@@ -285,7 +290,7 @@ export default function DarkDateRangePicker({
                   key={preset.label}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  className="text-left px-2 py-1.5 rounded text-xs text-slate-300 hover:text-white hover:bg-[#094771] transition-colors"
+                  className="text-left px-2 py-1.5 rounded text-xs text-slate-300 hover:text-white hover:bg-[#094771] transition-colors cursor-pointer"
                 >
                   {preset.label}
                 </button>
@@ -304,7 +309,7 @@ export default function DarkDateRangePicker({
                   <button
                     type="button"
                     onClick={handlePrevMonth}
-                    className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors"
+                    className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
                     title="Tháng trước"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -312,7 +317,7 @@ export default function DarkDateRangePicker({
                   <button
                     type="button"
                     onClick={handleNextMonth}
-                    className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors"
+                    className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
                     title="Tháng sau"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -344,7 +349,7 @@ export default function DarkDateRangePicker({
                     item.dateStr < effectiveEnd;
 
                   let cellClass =
-                    "h-7 text-xs flex items-center justify-center transition-colors rounded relative ";
+                    "h-7 text-xs flex items-center justify-center transition-colors rounded relative cursor-pointer ";
 
                   if (isStart && isEnd) {
                     cellClass += "bg-[#007acc] text-white font-bold rounded ";
@@ -355,8 +360,7 @@ export default function DarkDateRangePicker({
                     cellClass +=
                       "bg-[#007acc] text-white font-bold rounded-r rounded-l-none ";
                   } else if (inRange) {
-                    cellClass +=
-                      "bg-[#0e639c]/30 text-white rounded-none ";
+                    cellClass += "bg-[#0e639c]/30 text-white rounded-none ";
                   } else if (!item.isCurrentMonth) {
                     cellClass += "text-slate-600 hover:bg-[#2a2d2e]/50 ";
                   } else {
@@ -406,7 +410,7 @@ export default function DarkDateRangePicker({
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="flex items-center gap-1 px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" /> Đặt lại
                 </button>
@@ -414,14 +418,14 @@ export default function DarkDateRangePicker({
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors"
+                    className="px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors cursor-pointer"
                   >
                     Đóng
                   </button>
                   <button
                     type="button"
                     onClick={handleApply}
-                    className="flex items-center gap-1 px-3 py-1 bg-[#007acc] hover:bg-[#0098ff] text-white text-xs font-medium rounded transition-colors shadow-sm"
+                    className="flex items-center gap-1 px-3 py-1 bg-[#007acc] hover:bg-[#0098ff] text-white text-xs font-medium rounded transition-colors shadow-sm cursor-pointer"
                   >
                     <Check className="w-3 h-3" /> Áp dụng
                   </button>
@@ -434,3 +438,5 @@ export default function DarkDateRangePicker({
     </Popover.Root>
   );
 }
+
+export default DateRangePicker;
