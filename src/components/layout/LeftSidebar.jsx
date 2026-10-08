@@ -156,7 +156,7 @@ export default function LeftSidebar({
                 onStartReplay(agent.connectionId);
               }}
               className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#3e3e42] text-slate-400 hover:text-cyan-400 transition-all cursor-pointer"
-              title="Tua lại hành trình AI phiên này (Time-Machine Replay)"
+              title="Time-Machine: Replay this session"
             >
               <RotateCcw className="w-3 h-3" />
             </button>
@@ -182,7 +182,7 @@ export default function LeftSidebar({
         <div className="flex items-center gap-1">
           <button
             onClick={onRefresh}
-            title="Làm mới danh sách"
+            title="Refresh list"
             className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
           >
             <RotateCw className="w-3 h-3" />
@@ -198,7 +198,7 @@ export default function LeftSidebar({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Lọc agents theo tên, model..."
+            placeholder="Filter agents by name, model..."
             className="w-full bg-transparent text-[11px] text-slate-200 outline-none placeholder:text-slate-500"
           />
         </div>
@@ -234,7 +234,7 @@ export default function LeftSidebar({
             <div className="py-1">
               {filteredWorkstations.length === 0 ? (
                 <div className="px-4 py-3 text-center text-xs text-slate-500 italic">
-                  Không có agent nào đang hoạt động
+                  No active agents found
                 </div>
               ) : (
                 <>

@@ -12,6 +12,7 @@ import {
   Radio,
   Cpu,
   BarChart3,
+  Coffee,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
 
@@ -37,6 +38,8 @@ export default function TitleBar({
   onToggleNotif,
   onOpenCommandPalette,
   onOpenReports,
+  onOpenStore,
+  isSupporter = false,
   layout,
   onToggleLeftSidebar,
   onToggleBottomPanel,
@@ -66,13 +69,13 @@ export default function TitleBar({
       {/* Center: Search / Command Palette Trigger */}
       <div
         onClick={onOpenCommandPalette}
-        title="Tìm kiếm phiên làm việc hoặc chạy lệnh (Cmd+Shift+P / Ctrl+Shift+P)"
+        title="Search sessions or run commands (Cmd+Shift+P / Ctrl+Shift+P)"
         className="flex items-center justify-between w-[320px] max-w-[35vw] h-6 bg-[#252526] border border-[#3e3e42] hover:border-[#007acc] rounded px-2 cursor-pointer transition-colors text-slate-400 group"
       >
         <div className="flex items-center gap-2 overflow-hidden">
           <Search className="w-3 h-3 text-slate-500 group-hover:text-slate-300 shrink-0" />
           <span className="text-[11px] truncate">
-            Tìm agent, logs, lệnh...
+            Search agents, logs, commands...
           </span>
         </div>
         <kbd className="hidden sm:inline-block text-[9px] font-mono bg-[#1e1e1e] border border-[#3e3e42] rounded px-1 text-slate-400">
@@ -85,7 +88,7 @@ export default function TitleBar({
         {/* Quick Counters */}
         <div
           onClick={onOpenReports}
-          title="Bấm để xem Báo Cáo Phân Tích Token & Chi Phí chi tiết"
+          title="Click to view detailed Token & Cost Analytics"
           className="hidden xl:flex items-center gap-1.5 bg-[#252526] hover:bg-[#2d2d2e] border border-[#333333] hover:border-[#007acc] px-2 py-0.5 rounded text-[11px] cursor-pointer transition-colors"
         >
           <span className="text-slate-400">Desks:</span>
@@ -101,18 +104,34 @@ export default function TitleBar({
         {/* Quick Reports Button */}
         <button
           onClick={onOpenReports}
-          title="Mở Báo Cáo Token & Chi Phí AI"
+          title="Open Token & Cost Analytics"
           className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#252526] hover:bg-[#2e2e30] border border-[#333333] hover:border-[#007acc] text-slate-300 hover:text-white text-[11px] transition-colors"
         >
           <BarChart3 className="w-3 h-3 text-amber-400" />
-          <span className="hidden md:inline font-medium">Báo Cáo</span>
+          <span className="hidden md:inline font-medium">Reports</span>
+        </button>
+
+        {/* Supporter Store Button */}
+        <button
+          onClick={onOpenStore}
+          title="Coffee Shop & Supporter Vault (Support Author)"
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] transition-all cursor-pointer ${
+            isSupporter
+              ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
+              : "bg-[#252526] hover:bg-[#2e2e30] border-[#333333] hover:border-[#007acc] text-slate-300 hover:text-white"
+          }`}
+        >
+          <Coffee className="w-3 h-3 text-amber-400" />
+          <span className="hidden md:inline font-medium">
+            {isSupporter ? "Supporter VIP" : "Support"}
+          </span>
         </button>
 
         {/* Live / Mock Mode Selector */}
         <div className="flex items-center rounded bg-[#252526] border border-[#333333] p-0.5 text-[11px]">
           <button
             onClick={() => onModeChange?.("live")}
-            title="Kết nối trực tiếp watcher log ~/.gemini và ~/.claude"
+            title="Connect live log watchers ~/.gemini and ~/.claude"
             className={`flex items-center gap-1 rounded px-2 py-0.5 font-medium transition-colors ${
               mode === "live"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
@@ -124,7 +143,7 @@ export default function TitleBar({
           </button>
           <button
             onClick={() => onModeChange?.("mock")}
-            title="Dữ liệu giả lập mô phỏng nhiều agent"
+            title="Simulated multi-agent mock telemetry"
             className={`flex items-center gap-1 rounded px-2 py-0.5 font-medium transition-colors ${
               mode === "mock"
                 ? "bg-[#333333] text-slate-200"
@@ -151,7 +170,7 @@ export default function TitleBar({
         {/* Refresh Button */}
         <button
           onClick={onRefresh}
-          title="Làm mới kết nối & dữ liệu ngay lập tức"
+          title="Force refresh connections & data"
           className="flex h-6 w-6 items-center justify-center rounded border border-[#333333] bg-[#252526] text-slate-400 hover:text-slate-200 hover:border-[#444444] transition-colors"
         >
           <RotateCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`} />
@@ -160,7 +179,7 @@ export default function TitleBar({
         {/* Sound FX Toggle */}
         <button
           onClick={onToggleSound}
-          title={soundEnabled ? "Âm thanh 8-bit đang BẬT" : "Âm thanh 8-bit đang TẮT"}
+          title={soundEnabled ? "Sound effects: ON" : "Sound effects: OFF"}
           className={`flex h-6 w-6 items-center justify-center rounded border transition-colors ${
             soundEnabled
               ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
@@ -173,7 +192,7 @@ export default function TitleBar({
         {/* Notifications Toggle */}
         <button
           onClick={onToggleNotif}
-          title={notifEnabled ? "Thông báo hệ thống đang BẬT" : "Thông báo hệ thống đang TẮT"}
+          title={notifEnabled ? "Desktop notifications: ON" : "Desktop notifications: OFF"}
           className={`flex h-6 w-6 items-center justify-center rounded border transition-colors ${
             notifEnabled
               ? "border-amber-500/50 bg-amber-500/20 text-amber-300"

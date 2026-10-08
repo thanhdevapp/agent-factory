@@ -24,11 +24,11 @@ import { buildAgentHierarchy, NODE_WIDTH, NODE_HEIGHT } from "../../lib/parsers/
 
 /**
  * AgentGraphView Component
- * Trực quan hóa mạng lưới quan hệ đa tác nhân (Multi-Agent DAG Network)
+ * Multi-Agent DAG Network Visualization
  * - Native SVG/HTML Engine (0 dependency)
- * - Đường cong Bezier đa sắc với hiệu ứng xung nhịp dữ liệu (Pulse glow)
- * - Kéo chuột (Pan), Thu phóng (Zoom), Tự động căn giữa (Fit to screen)
- * - 1-Click mở xem chi tiết và transcript của từng agent con
+ * - Multicolor Bezier curves with data pulse glow
+ * - Interactive Pan, Zoom, and Auto-Fit to screen
+ * - 1-Click to view subagent transcript and details
  */
 export default function AgentGraphView({
   traces = [],
@@ -39,7 +39,7 @@ export default function AgentGraphView({
 }) {
   const containerRef = useRef(null);
 
-  // State điều khiển Pan & Zoom
+  // Pan & Zoom controls state
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 100, y: 50 });
   const scaleRef = useRef(scale);
@@ -49,10 +49,10 @@ export default function AgentGraphView({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  // State chọn session để focus cây đồ thị
+  // Selected session state to focus graph tree
   const [focusedId, setFocusedId] = useState(selectedTraceId || traces[0]?.traceId || traces[0]?.connectionId);
 
-  // Danh sách các session duy nhất cho dropdown switcher
+  // Unique session list for dropdown switcher
   const uniqueSessionOptions = useMemo(() => {
     const seen = new Set();
     const result = [];
@@ -76,7 +76,7 @@ export default function AgentGraphView({
     }
   }, [selectedTraceId, traces, focusedId]);
 
-  // Xây dựng DAG model từ traces và turns
+  // Build DAG model from traces and turns
   const { nodes, edges, bounds } = useMemo(() => {
     return buildAgentHierarchy(traces, focusedId, activeTurns);
   }, [traces, focusedId, activeTurns]);
@@ -86,7 +86,7 @@ export default function AgentGraphView({
   const nodesCountRef = useRef(nodes.length);
   nodesCountRef.current = nodes.length;
 
-  // Tự động căn giữa toàn bộ đồ thị (Fit to Screen)
+  // Auto-center entire graph (Fit to Screen)
   const fitView = useCallback(() => {
     if (!containerRef.current || nodesCountRef.current === 0) return;
     const { clientWidth, clientHeight } = containerRef.current;
@@ -110,7 +110,7 @@ export default function AgentGraphView({
     setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
   }, []);
 
-  // Tự động fit DUY NHẤT một lần khi đổi session hoặc khởi động lần đầu
+  // Auto-fit strictly once per session switch or initial load
   const lastFittedIdRef = useRef(null);
   useEffect(() => {
     if (focusedId && focusedId !== lastFittedIdRef.current && nodes.length > 0) {
@@ -122,9 +122,9 @@ export default function AgentGraphView({
     }
   }, [focusedId, nodes.length, fitView]);
 
-  // Xử lý kéo chuột để Pan
+  // Mouse pan handlers
   const handleMouseDown = (e) => {
-    // Không pan khi click trực tiếp vào nút bấm hoặc node card
+    // Do not pan if clicking buttons, node cards or select elements
     if (e.target.closest("button") || e.target.closest(".agent-node-card") || e.target.closest("select")) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - panRef.current.x, y: e.clientY - panRef.current.y });
@@ -142,20 +142,20 @@ export default function AgentGraphView({
     setIsDragging(false);
   };
 
-  // Double-click vào vùng trống để tự động fit
+  // Double-click empty canvas to auto-fit
   const handleDoubleClick = (e) => {
     if (e.target.closest("button") || e.target.closest(".agent-node-card") || e.target.closest("select")) return;
     fitView();
   };
 
-  // Đảm bảo dừng kéo chuột nếu nhả chuột bên ngoài container
+  // Ensure dragging stops if mouseup occurs outside container
   useEffect(() => {
     const onGlobalMouseUp = () => setIsDragging(false);
     window.addEventListener("mouseup", onGlobalMouseUp);
     return () => window.removeEventListener("mouseup", onGlobalMouseUp);
   }, []);
 
-  // Zoom In / Zoom Out điều khiển từ nút bấm (căn giữa màn hình)
+  // Zoom In / Zoom Out button controls (centered on viewport)
   const handleZoomIn = () => {
     const currentScale = scaleRef.current;
     const currentPan = panRef.current;
@@ -188,7 +188,7 @@ export default function AgentGraphView({
     setScale(nextScale);
   };
 
-  // Lắng nghe sự kiện con lăn chuột không passive để zoom mượt mà theo con trỏ chuột
+  // Wheel listener with passive: false to zoom smoothly toward cursor
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -325,14 +325,14 @@ export default function AgentGraphView({
             style={{ width: 1, height: 1 }}
           >
             <defs>
-              {/* Linear gradient cho đường nối active */}
+              {/* Linear gradient for active edge */}
               <linearGradient id="edge-pulse-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#38bdf8" />
                 <stop offset="50%" stopColor="#818cf8" />
                 <stop offset="100%" stopColor="#c084fc" />
               </linearGradient>
 
-              {/* Marker mũi tên */}
+              {/* Arrow marker */}
               <marker
                 id="dag-arrow"
                 viewBox="0 0 10 10"
@@ -346,12 +346,12 @@ export default function AgentGraphView({
               </marker>
             </defs>
 
-            {/* Render từng đường nối Edges */}
+            {/* Render Edges */}
             {edges.map((edge) => {
               const isActive = edge.active;
               return (
                 <g key={edge.id}>
-                  {/* Đường bóng mờ nền */}
+                  {/* Background shadow stroke */}
                   <path
                     d={edge.pathData}
                     fill="none"
@@ -360,7 +360,7 @@ export default function AgentGraphView({
                     strokeLinecap="round"
                   />
 
-                  {/* Đường chính */}
+                  {/* Primary stroke */}
                   <path
                     d={edge.pathData}
                     fill="none"
@@ -371,7 +371,7 @@ export default function AgentGraphView({
                     className={isActive ? "animate-pulse" : ""}
                   />
 
-                  {/* Vòng tròn đích đến (Target connector dot) */}
+                  {/* Target connector dot */}
                   <circle
                     cx={edge.toPos.x}
                     cy={edge.toPos.y}
@@ -380,7 +380,7 @@ export default function AgentGraphView({
                     className={isActive ? "animate-ping" : ""}
                   />
 
-                  {/* Label badge giữa đường nối */}
+                  {/* Center label badge */}
                   {edge.label && (
                     <g transform={`translate(${(edge.fromPos.x + edge.toPos.x) / 2}, ${(edge.fromPos.y + edge.toPos.y) / 2})`}>
                       <rect
@@ -527,7 +527,7 @@ export default function AgentGraphView({
                           if (node.traceRef) onSelectTrace?.(node.traceRef);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition-opacity"
-                        title="Xem phiên chat của Agent này"
+                        title="View chat session for this agent"
                       >
                         <ExternalLink className="w-3 h-3" />
                       </button>

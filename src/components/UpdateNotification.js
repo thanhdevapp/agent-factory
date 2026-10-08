@@ -61,13 +61,13 @@ export default function UpdateNotification() {
       <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
       <span className="text-xs text-slate-200 flex items-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-        <span>Đã có phiên bản mới {newVersion ? `(${newVersion})` : ""}</span>
+        <span>New version available {newVersion ? `(${newVersion})` : ""}</span>
       </span>
       <button
         onClick={handleApplyUpdate}
         className="rounded-full bg-emerald-500 hover:bg-emerald-400 px-3 py-1 text-xs font-semibold text-slate-950 transition-colors shadow-sm"
       >
-        Cập nhật ngay
+        Update now
       </button>
       <button
         onClick={() => setUpdateAvailable(false)}

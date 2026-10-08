@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, ExternalLink } from "lucide-react";
+import { MessageSquare, ExternalLink, AppWindow } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
+import { openChatInNewWindow } from "../../lib/windowManager.js";
 import TitleBar from "./TitleBar";
 import ActivityBar from "./ActivityBar";
 import LeftSidebar from "./LeftSidebar";
@@ -15,6 +16,9 @@ import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
 import SessionChatModal from "../chat/SessionChatModal";
 import TokenReportView from "../reports/TokenReportView";
+import SupporterStoreModal from "../store/SupporterStoreModal";
+import { getSupporterState, SUPPORTER_CHANGE_EVENT } from "../../lib/supporterStore";
+import { initAmbientSync } from "../../lib/ambientAudio";
 import { useSessionReplay } from "../../lib/useSessionReplay";
 import { synthesizeTraceFromKeyframe } from "../../lib/parsers/replayParser";
 import { buildOffice } from "../factory/scene/office-layout";
@@ -48,6 +52,22 @@ export default function VSCodeWorkbench({
   const [activeTabId, setActiveTabId] = useState("canvas");
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [isSupporter, setIsSupporter] = useState(false);
+
+  // Initialize and synchronize supporter store and ambient audio
+  useEffect(() => {
+    const s = getSupporterState();
+    setIsSupporter(Boolean(s.isSupporter));
+    initAmbientSync(s);
+
+    const onStoreChange = (e) => {
+      const next = e.detail || getSupporterState();
+      setIsSupporter(Boolean(next.isSupporter));
+    };
+    window.addEventListener(SUPPORTER_CHANGE_EVENT, onStoreChange);
+    return () => window.removeEventListener(SUPPORTER_CHANGE_EVENT, onStoreChange);
+  }, []);
 
   // Time-Machine Replay State
   const [replaySessionId, setReplaySessionId] = useState(null);
@@ -262,6 +282,8 @@ export default function VSCodeWorkbench({
         onToggleNotif={onToggleNotif}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onOpenReports={handleOpenReports}
+        onOpenStore={() => setIsStoreModalOpen(true)}
+        isSupporter={isSupporter}
         layout={layout}
         onToggleLeftSidebar={() =>
           setLayout((p) => ({ ...p, isLeftSidebarVisible: !p.isLeftSidebarVisible }))
@@ -281,6 +303,7 @@ export default function VSCodeWorkbench({
           activeView={layout.activeActivityView}
           isRightSidebarVisible={layout.isRightSidebarVisible}
           activeRightSidebarTab={layout.activeRightSidebarTab || "chat"}
+          onOpenStore={() => setIsStoreModalOpen(true)}
           onViewChange={(view) => {
             if (view === "chat") {
               setLayout((p) => {
@@ -471,9 +494,18 @@ export default function VSCodeWorkbench({
                                     setIsChatModalOpen(true);
                                   }}
                                   className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-300 hover:text-white rounded text-xs cursor-pointer"
-                                  title="Open in Popup Window"
+                                  title="Mở dạng Popup nổi"
                                 >
                                   <ExternalLink className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    openChatInNewWindow(activeTab.agentData?.connectionId);
+                                  }}
+                                  className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-400 hover:text-white rounded text-xs cursor-pointer"
+                                  title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+                                >
+                                  <AppWindow className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -613,6 +645,7 @@ export default function VSCodeWorkbench({
         onSetMode={onModeChange}
         onSelectPreset={onPresetChange}
         onOpenReports={handleOpenReports}
+        onOpenStore={() => setIsStoreModalOpen(true)}
         onStartReplay={handleStartReplay}
       />
 
@@ -635,6 +668,12 @@ export default function VSCodeWorkbench({
           onStartReplay={handleStartReplay}
         />
       )}
+
+      {/* Supporter Store & Character Customization Modal */}
+      <SupporterStoreModal
+        isOpen={isStoreModalOpen}
+        onClose={() => setIsStoreModalOpen(false)}
+      />
     </div>
   );
 }

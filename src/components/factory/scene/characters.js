@@ -30,7 +30,7 @@ function vgrad(...stops) {
 //   streaming  typing, scanline eyes          pending   one arm waving, waiting
 //   happy      ^ ^ eyes, smile, bounce        sleeping  closed eyes, drifting z's
 //   error      X eyes, shaking, smoke, arms up
-export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming", clientType = "cli" }) {
+export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming", clientType = "cli", skin = "classic" }) {
   const root = new Container();
   const isApp = clientType === "app";
   const defaultTrim = isApp ? 0x8b5cf6 : 0x10b981; // purple for app, emerald for cli
@@ -74,6 +74,25 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   head.ellipse(0, -53, 22, 17).fill({ color: SHADE });
   head.ellipse(0, -53, 20, 15.5).fill({ color: 0x0f141c });
   head.ellipse(-5, -58, 11, 5).fill({ color: 0xffffff, alpha: 0.06 });
+
+  // Custom Skin Accessories on Head
+  if (skin === "cat") {
+    // Cute Cat Ears
+    head.poly([-22, -72, -14, -86, -6, -76]).fill({ color: SHELL });
+    head.poly([-20, -73, -14, -83, -8, -76]).fill({ color: 0xf472b6, alpha: 0.8 }); // pink inner ear
+    head.poly([6, -76, 14, -86, 22, -72]).fill({ color: SHELL });
+    head.poly([8, -76, 14, -83, 20, -73]).fill({ color: 0xf472b6, alpha: 0.8 });
+  } else if (skin === "ninja") {
+    // Ninja Headband & Laser Visor
+    head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b });
+    head.roundRect(-24, -66, 48, 8, 3).stroke({ width: 1.5, color: 0xa855f7 });
+    head.circle(0, -62, 3).fill({ color: 0x38bdf8 });
+    head.poly([24, -62, 38, -56, 32, -50, 22, -56]).fill({ color: 0xa855f7, alpha: 0.9 });
+  } else if (skin === "hacker") {
+    // Hacker Matrix Hoodie Cowl
+    head.roundRect(-27, -78, 54, 48, 16).fill({ color: 0x111827 });
+    head.roundRect(-27, -78, 54, 48, 16).stroke({ width: 1.6, color: 0x22c55e });
+  }
 
   const face = new Graphics();
   const fx = new Graphics(); // smoke / z's, drawn in front of everything
@@ -181,6 +200,15 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
         face.ellipse(0, -46, mw, 2.4 + intensity * 1.2).fill({ color: faceColor, alpha: 0.75 * flicker });
       }
 
+      // Cat skin face whiskers and nose
+      if (skin === "cat") {
+        face.moveTo(-12, -47).lineTo(-22, -49).stroke(stroke(1.2, 0xffffff, 0.7));
+        face.moveTo(-12, -44).lineTo(-21, -43).stroke(stroke(1.2, 0xffffff, 0.7));
+        face.moveTo(12, -47).lineTo(22, -49).stroke(stroke(1.2, 0xffffff, 0.7));
+        face.moveTo(12, -44).lineTo(21, -43).stroke(stroke(1.2, 0xffffff, 0.7));
+        face.poly([-2, -48, 0, -46, 2, -48]).fill({ color: 0xf472b6 });
+      }
+
       // Effects: drifting z's while asleep, smoke while failing or looping.
       fx.clear();
       if (m === "sleeping") {
@@ -226,6 +254,8 @@ export function createDesk({
   queued = 1,
   depth = 1,
   isLooping = false,
+  pet = "none",
+  props = [],
 }) {
   const root = new Container();
   const W = 150;
@@ -340,6 +370,64 @@ export function createDesk({
 
   root.addChild(name, sub, stats);
 
+  // Cosmetic Props & Pets
+  let coffeeSteam = null;
+  if (Array.isArray(props) && props.includes("coffee_machine")) {
+    const coffeeMachine = new Container();
+    coffeeMachine.x = W - 32;
+    coffeeMachine.y = 12;
+    const cmBody = new Graphics();
+    cmBody.roundRect(0, 0, 16, 20, 3).fill(vgrad(0x475569, 0x1e293b));
+    cmBody.roundRect(2, 2, 12, 5, 1.5).fill({ color: 0x0f172a });
+    cmBody.roundRect(3, 3, 3, 3, 1).fill({ color: 0x38bdf8 });
+    cmBody.roundRect(2, 9, 12, 9, 1).fill({ color: 0x0f172a });
+    cmBody.roundRect(4, 11, 7, 7, 2).fill({ color: 0xf8fafc }); // cup
+    cmBody.roundRect(5, 12, 5, 2, 1).fill({ color: 0x78350f }); // coffee
+    coffeeMachine.addChild(cmBody);
+    coffeeSteam = new Graphics();
+    coffeeMachine.addChild(coffeeSteam);
+    root.addChild(coffeeMachine);
+  }
+
+  if (Array.isArray(props) && props.includes("bonsai")) {
+    const bonsai = new Container();
+    bonsai.x = 4;
+    bonsai.y = 14;
+    const bPot = new Graphics();
+    bPot.roundRect(0, 10, 14, 7, 2).fill({ color: 0x7c2d12 });
+    bPot.ellipse(7, 6, 7, 5).fill({ color: 0x15803d });
+    bPot.circle(4, 4, 3.8).fill({ color: 0x22c55e });
+    bPot.circle(10, 4, 3.8).fill({ color: 0x16a34a });
+    bonsai.addChild(bPot);
+    root.addChild(bonsai);
+  }
+
+  let petContainer = null;
+  if (pet === "cat" || pet === "shiba") {
+    petContainer = new Container();
+    petContainer.x = 24;
+    petContainer.y = H - 16;
+    const petGfx = new Graphics();
+    if (pet === "cat") {
+      petGfx.ellipse(0, 0, 11, 7).fill({ color: 0xf472b6 }); // cute pink cat
+      petGfx.circle(-7, -2, 5.5).fill({ color: 0xf472b6 });
+      petGfx.poly([-11, -7, -8, -11, -5, -7]).fill({ color: 0xf43f5e });
+      petGfx.poly([-7, -7, -4, -11, -1, -7]).fill({ color: 0xf43f5e });
+      petGfx.moveTo(-9, -1).arc(-7, -1, 2, 0, Math.PI).stroke(stroke(1, 0x881337));
+      petGfx.ellipse(7, 2, 5, 2.5).fill({ color: 0xf472b6 });
+    } else if (pet === "shiba") {
+      petGfx.ellipse(0, 0, 13, 8).fill({ color: 0xd97706 }); // shiba
+      petGfx.ellipse(2, 2, 9, 4).fill({ color: 0xfef3c7 });
+      petGfx.circle(-8, -2, 6).fill({ color: 0xd97706 });
+      petGfx.poly([-12, -7, -9, -12, -6, -7]).fill({ color: 0xb45309 });
+      petGfx.poly([-7, -7, -4, -12, -1, -7]).fill({ color: 0xb45309 });
+      petGfx.moveTo(-10, -1).arc(-8, -1, 2, 0, Math.PI).stroke(stroke(1, 0x78350f));
+      petGfx.circle(9, -2, 4).fill({ color: 0xd97706 });
+    }
+    petContainer.addChild(petGfx);
+    root.addChild(petContainer);
+  }
+
   // Selection ring (toggled from outside) + click target.
   const ring = new Graphics();
   ring.roundRect(-12, -76, W + 24, H + 84, 14).stroke({ width: 2.5, color: 0xfde047, alpha: 0.9 });
@@ -375,6 +463,20 @@ export function createDesk({
       glow.alpha = 0.3 + intensity * 0.5 + Math.sin(t * 0.004 + root.x) * 0.08;
       if (hazard.visible) {
         hazard.alpha = 0.45 + Math.sin(t * 0.008) * 0.45;
+      }
+      if (coffeeSteam && intensity > 0) {
+        coffeeSteam.clear();
+        for (let i = 0; i < 3; i++) {
+          const p = ((t * 0.001 + i / 3) % 1);
+          const sx = 7 + Math.sin(p * 5 + i) * 3;
+          const sy = 8 - p * 12;
+          coffeeSteam.circle(sx, sy, 1 + p * 1.8).fill({ color: 0xffffff, alpha: 0.45 * (1 - p) });
+        }
+      } else if (coffeeSteam) {
+        coffeeSteam.clear();
+      }
+      if (petContainer) {
+        petContainer.scale.y = 1 + Math.sin(t * 0.003) * 0.06;
       }
     },
   };

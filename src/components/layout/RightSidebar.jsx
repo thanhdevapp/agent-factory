@@ -13,8 +13,10 @@ import {
   ExternalLink,
   ChevronRight,
   Bot,
+  AppWindow,
 } from "lucide-react";
 import SessionChatView from "../chat/SessionChatView.js";
+import { openChatInNewWindow } from "../../lib/windowManager.js";
 
 export default function RightSidebar({
   selectedAgent = null,
@@ -74,7 +76,7 @@ export default function RightSidebar({
                 ? "bg-[#1e1e1e] text-cyan-400 border border-[#3e3e42]"
                 : "text-slate-400 hover:text-slate-200 hover:bg-[#2d2d2d]"
             }`}
-            title="Xem Live Chat & Transcript hội thoại của Agent"
+            title="View Agent Live Chat & Conversation Transcript"
           >
             <div className="relative">
               <MessageSquare className="w-3.5 h-3.5" />
@@ -97,7 +99,7 @@ export default function RightSidebar({
                 ? "bg-[#1e1e1e] text-cyan-400 border border-[#3e3e42]"
                 : "text-slate-400 hover:text-slate-200 hover:bg-[#2d2d2d]"
             }`}
-            title="Xem thông số kỹ thuật, trạng thái và token của Agent"
+            title="View Agent specs, telemetry, and token usage"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Inspector</span>
@@ -106,11 +108,22 @@ export default function RightSidebar({
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-1">
+          {/* Open in Standalone Detached Window (VS Code style) */}
+          {currentTab === "chat" && selectedAgent && (
+            <button
+              onClick={() => openChatInNewWindow(selectedAgent.connectionId || selectedAgent.traceId)}
+              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+              className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+            >
+              <AppWindow className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           {/* Pop-out to Modal button when in Live Chat tab */}
           {currentTab === "chat" && selectedAgent && onOpenChatModal && (
             <button
               onClick={onOpenChatModal}
-              title="Mở Live Chat dạng Popup (Cửa sổ riêng)"
+              title="Mở Live Chat dạng Popup nổi"
               className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -120,7 +133,7 @@ export default function RightSidebar({
           {/* Close Sidebar button */}
           <button
             onClick={onClose}
-            title="Đóng thanh bên phụ (Cmd+Alt+B)"
+            title="Close Secondary Sidebar (Cmd+Alt+B)"
             className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
@@ -147,16 +160,16 @@ export default function RightSidebar({
                 <MessageSquare className="w-6 h-6" />
               </div>
               <div className="space-y-1.5 max-w-[280px]">
-                <h4 className="font-bold text-slate-300 text-xs">Chưa chọn Agent để xem Live Chat</h4>
+                <h4 className="font-bold text-slate-300 text-xs">No Agent Selected</h4>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Bấm vào bất kỳ bàn làm việc nào trên văn phòng ảo hoặc chọn một Agent bên dưới để theo dõi Live Chat:
+                  Click any workstation on the virtual office or select an active agent below to inspect live conversation:
                 </p>
               </div>
 
               {workstations.length > 0 && (
                 <div className="w-full max-w-[280px] space-y-1.5 pt-2 text-left">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block px-1">
-                    Danh Sách Agent Hiện Có ({workstations.length})
+                    Active Agents ({workstations.length})
                   </span>
                   <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                     {workstations.map((w, idx) => {
@@ -297,7 +310,7 @@ export default function RightSidebar({
                   </div>
                 </div>
 
-                {/* Actions: Support Both Sidebar View & Popup Modal */}
+                {/* Actions: Support Sidebar View, Popup Modal, and Detached Window */}
                 <div className="space-y-1.5 pt-1">
                   {/* Primary: Switch to Live Chat Sidebar Tab */}
                   <button
@@ -315,9 +328,18 @@ export default function RightSidebar({
                       className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-300 hover:text-white text-xs transition-colors border border-[#3e3e42] cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Mở Popup Riêng</span>
+                      <span>Mở Popup Nổi</span>
                     </button>
                   )}
+
+                  {/* Tertiary: Open Detached OS/Browser Window (VS Code style) */}
+                  <button
+                    onClick={() => openChatInNewWindow(selectedAgent.connectionId || selectedAgent.traceId)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-300 hover:text-white text-xs transition-colors border border-[#3e3e42] cursor-pointer"
+                  >
+                    <AppWindow className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Mở Cửa Sổ Rời (New Window)</span>
+                  </button>
 
                   {/* Copy Connection ID */}
                   <button
@@ -335,9 +357,9 @@ export default function RightSidebar({
                   <SlidersHorizontal className="w-5 h-5" />
                 </div>
                 <div className="space-y-1 px-4">
-                  <h4 className="font-bold text-slate-400 text-xs">Chưa chọn Agent</h4>
+                  <h4 className="font-bold text-slate-400 text-xs">No Agent Selected</h4>
                   <p className="text-[11px] leading-relaxed">
-                    Click vào bất kỳ bàn làm việc nào trên văn phòng ảo hoặc chọn từ danh sách Explorer bên trái để xem thông số chi tiết.
+                    Click any workstation on the virtual office or select from the Explorer list to inspect telemetry and details.
                   </p>
                 </div>
               </div>

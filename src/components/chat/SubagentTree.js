@@ -18,8 +18,8 @@ import {
 
 /**
  * SubagentTree Component
- * Trực quan hóa cấu trúc gọi subagents phân cấp (invoke_subagent / define_subagent)
- * Hiển thị Role, Model, Workspace mode, Prompt nhiệm vụ và trạng thái xử lý
+ * Visualizes hierarchical subagent delegations (invoke_subagent / define_subagent)
+ * Displays Role, Model, Workspace mode, Task prompt, and execution state
  */
 export default function SubagentTree({
   subagents = [],
@@ -27,9 +27,9 @@ export default function SubagentTree({
   onSelectSubagent,
   className = ""
 }) {
-  const [expandedIndex, setExpandedIndex] = useState(0); // Mở agent đầu tiên theo mặc định
+  const [expandedIndex, setExpandedIndex] = useState(0); // Expand first agent by default
 
-  // Chuẩn hóa subagents array từ args
+  // Normalize subagents array from args
   const items = Array.isArray(subagents) 
     ? subagents 
     : subagents?.Subagents 
@@ -62,7 +62,7 @@ export default function SubagentTree({
               </span>
             </div>
             <div className="text-[11px] text-slate-400">
-              Phân rã nhiệm vụ và thực thi song song
+              Task decomposition and parallel execution
             </div>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function SubagentTree({
                         className="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        <span>Mở Subagent Chat</span>
+                        <span>Open Subagent Chat</span>
                       </button>
                     )}
                   </div>

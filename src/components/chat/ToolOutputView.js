@@ -16,7 +16,7 @@ export default function ToolOutputView({ output = "", onImageClick }) {
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState("raw"); // "raw" | "json"
 
-  // Kiểm tra xem output có phải là JSON hợp lệ không
+  // Check if output is valid JSON
   const parsedJson = useMemo(() => {
     if (!output || typeof output !== "string") return null;
     const trimmed = output.trim();

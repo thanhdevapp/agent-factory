@@ -16,11 +16,11 @@ import {
 
 /**
  * ContextGauge Component
- * Hiển thị thước đo trực quan context window usage của AI Agent:
+ * Visual gauge for AI Agent context window usage:
  * - Stacked visual bar: Cache vs Prompt vs Output tokens
- * - % dung lượng ngữ cảnh đã tiêu thụ trên model limit (2M, 1M, 200k, 128k)
- * - Cache Hit Ratio & Hiệu quả tiết kiệm chi phí
- * - Hỗ trợ compact mode và expanded breakdown
+ * - % context capacity consumed against model limit (2M, 1M, 200k, 128k)
+ * - Cache Hit Ratio & Cost efficiency
+ * - Supports compact mode and expanded breakdown
  */
 export default function ContextGauge({
   inputTokens = 0,
@@ -33,7 +33,7 @@ export default function ContextGauge({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  // Xác định limit mặc định dựa theo model name nếu không truyền maxContextLimit
+  // Determine default limit based on model name if maxContextLimit is not provided
   const getModelLimit = () => {
     if (maxContextLimit && maxContextLimit > 0) return maxContextLimit;
     const m = (model || "").toLowerCase();
@@ -52,7 +52,7 @@ export default function ContextGauge({
     if (m.includes("deepseek") || m.includes("qwen")) {
       return 131072; // 128k tokens
     }
-    return 1048576; // Mặc định 1M tokens
+    return 1048576; // Default 1M tokens
   };
 
   const limit = getModelLimit();
@@ -133,7 +133,7 @@ export default function ContextGauge({
         <button
           onClick={() => setExpanded(!expanded)}
           className="p-1 text-slate-400 hover:text-slate-200 rounded hover:bg-slate-800/80 transition-colors"
-          title={expanded ? "Thu gọn chi tiết" : "Xem chi tiết phân bổ tokens"}
+          title={expanded ? "Collapse details" : "View token distribution details"}
         >
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
@@ -223,7 +223,7 @@ export default function ContextGauge({
 
           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 italic">
             <Info className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-            <span>Cache giúp AI đọc lại toàn bộ mã nguồn và lịch sử với chi phí và độ trễ cực thấp.</span>
+            <span>Prompt caching allows the model to recall codebase context and history with minimal latency and cost.</span>
           </div>
         </div>
       )}

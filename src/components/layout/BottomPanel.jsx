@@ -254,7 +254,7 @@ export default function BottomPanel({
           {/* Clear Logs */}
           <button
             onClick={() => setClearedAt(new Date().toLocaleTimeString())}
-            title="Xóa màn hình log"
+            title="Clear log console"
             className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
           >
             <Trash2 className="w-3 h-3" />
@@ -264,7 +264,7 @@ export default function BottomPanel({
           {onToggleMaximize && (
             <button
               onClick={onToggleMaximize}
-              title={isMaximized ? "Thu nhỏ bảng điều khiển" : "Phóng to bảng điều khiển"}
+              title={isMaximized ? "Restore panel size" : "Maximize panel"}
               className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
             >
               {isMaximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
@@ -274,7 +274,7 @@ export default function BottomPanel({
           {/* Close Panel */}
           <button
             onClick={onClose}
-            title="Đóng bảng điều khiển (Cmd+J / Ctrl+J)"
+            title="Close panel (Cmd+J / Ctrl+J)"
             className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
           >
             <X className="w-3 h-3" />
@@ -289,7 +289,7 @@ export default function BottomPanel({
       >
         {filteredLogs.length === 0 ? (
           <div className="text-slate-500 italic py-4 text-center">
-            Không có log nào phù hợp với bộ lọc
+            No logs match the current filters
           </div>
         ) : (
           filteredLogs.map((log) => {

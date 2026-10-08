@@ -1,25 +1,25 @@
 ---
 title: "Kế Hoạch Triển Khai: Supporter Store & Cosmetic Desk Customization"
 version: "v0.4.0"
-status: "pending"
+status: "completed"
 created_at: "2026-10-08"
 brainstorm_ref: "docs/brainstorm/2026-10-08-supporter-store-cosmetics.md"
 phases:
   - id: 1
     name: "Supporter Storage, Catalog & Offline Key Validator"
-    status: "pending"
+    status: "completed"
   - id: 2
     name: "Web Audio Ambient Soundscape Generator"
-    status: "pending"
+    status: "completed"
   - id: 3
     name: "Supporter Store Modal Component with VietQR"
-    status: "pending"
+    status: "completed"
   - id: 4
     name: "Virtual Office Canvas Rendering (Skins, Pets & Desk Props)"
-    status: "pending"
+    status: "completed"
   - id: 5
     name: "Workbench UI Integration & End-to-End Verification"
-    status: "pending"
+    status: "completed"
 ---
 
 # Kế Hoạch Triển Khai: Supporter Store & Cosmetic Customization (v0.4.0)
@@ -30,14 +30,14 @@ Tài liệu thiết kế gốc: [`docs/brainstorm/2026-10-08-supporter-store-cos
 
 ## Mục Tiêu & Tiêu Chí Chấp Nhận (Acceptance Criteria)
 
-- [ ] **VietQR & Kênh Donate**: Hiển thị mã QR ngân hàng Việt Nam tự động qua VietQR API cho các mức ủng hộ (20k, 50k, 100k) cùng các liên kết quốc tế (GitHub Sponsors, Buy Me a Coffee).
-- [ ] **Supporter Key Validator**: Người dùng nhập mã Supporter Key (ví dụ `AGMON-COFFEE-VIP`) để mở khóa ngay lập tức toàn bộ kho đồ, lưu vĩnh viễn trong `localStorage`.
-- [ ] **Kho Nhân Vật (Skins)**: Lựa chọn và trang bị 4 skin nhân vật khác nhau: Classic Robot, Pixel Cat Coder, Cyber Ninja, Retro Hacker.
-- [ ] **Thú Cưng Văn Phòng**: Hiển thị chú mèo con hoặc chú chó Shiba nằm ngủ thở nhẹ dưới chân bàn của Agent.
-- [ ] **Phụ Kiện Bàn Làm Việc**: Máy pha cà phê Espresso mini bốc khói thơm khi Agent đang xử lý task, chậu cây Bonsai thư giãn.
-- [ ] **Âm Thanh Không Gian (Ambient Audio)**: Phát tiếng mưa rơi nhẹ nhàng hoặc âm thanh quán cà phê Lo-Fi bằng Web Audio API thuần (0 byte MP3).
-- [ ] **Tích Hợp Workbench**: Nút bấm "Tiệm Cà Phê / Ủng Hộ" với icon `Coffee` trên TitleBar và ActivityBar.
-- [ ] **Quy Chuẩn UI**: Tuyệt đối không dùng symbol/emoji thô, 100% sử dụng icon SVG từ `lucide-react`.
+- [x] **VietQR & Kênh Donate**: Hiển thị mã QR ngân hàng Việt Nam tự động qua VietQR API cho các mức ủng hộ (20k, 50k, 100k) cùng các liên kết quốc tế (GitHub Sponsors, Buy Me a Coffee).
+- [x] **Supporter Key Validator**: Người dùng nhập mã Supporter Key (ví dụ `AGMON-COFFEE-VIP`) để mở khóa ngay lập tức toàn bộ kho đồ, lưu vĩnh viễn trong `localStorage`.
+- [x] **Kho Nhân Vật (Skins)**: Lựa chọn và trang bị 4 skin nhân vật khác nhau: Classic Robot, Pixel Cat Coder, Cyber Ninja, Retro Hacker.
+- [x] **Thú Cưng Văn Phòng**: Hiển thị chú mèo con hoặc chú chó Shiba nằm ngủ thở nhẹ dưới chân bàn của Agent.
+- [x] **Phụ Kiện Bàn Làm Việc**: Máy pha cà phê Espresso mini bốc khói thơm khi Agent đang xử lý task, chậu cây Bonsai thư giãn.
+- [x] **Âm Thanh Không Gian (Ambient Audio)**: Phát tiếng mưa rơi nhẹ nhàng hoặc âm thanh quán cà phê Lo-Fi bằng Web Audio API thuần (0 byte MP3).
+- [x] **Tích Hợp Workbench**: Nút bấm "Tiệm Cà Phê / Ủng Hộ" với icon `Coffee` trên TitleBar và ActivityBar.
+- [x] **Quy Chuẩn UI**: Tuyệt đối không dùng symbol/emoji thô, 100% sử dụng icon SVG từ `lucide-react`.
 
 ---
 

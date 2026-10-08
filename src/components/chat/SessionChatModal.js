@@ -6,7 +6,10 @@ import SessionChatView from "./SessionChatView.js";
 /**
  * SessionChatModal
  * Floating / Fullscreen popup dialog for reviewing AI agent live chat & transcript.
- * Supports 1-click docking into the sidebar tab ("Thu vào Sidebar").
+ * Supports:
+ * 1. True 100% Fullscreen (edge-to-edge, zero margin).
+ * 2. 1-click docking into sidebar tab ("Thu vào Sidebar").
+ * 3. 1-click pop-out to a completely separate OS/Browser window (VS Code style).
  */
 export default function SessionChatModal({
   sessionTrace,
@@ -23,10 +26,10 @@ export default function SessionChatModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Live Chat: ${sessionTrace.account || sessionTrace.connectionId || "Agent"}`}
-      className={`fixed z-50 transition-all duration-300 flex flex-col bg-slate-950/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-right-3 ${
+      className={`fixed transition-all duration-200 flex flex-col bg-[#181818] shadow-2xl backdrop-blur-xl animate-in fade-in ${
         isFullscreen
-          ? "inset-4 rounded-2xl"
-          : "right-4 top-4 bottom-4 w-full max-w-2xl rounded-2xl"
+          ? "inset-0 w-screen h-screen rounded-none z-[999] border-0"
+          : "inset-y-4 right-4 md:right-8 w-full max-w-3xl rounded-xl z-50 border border-slate-700/80 shadow-2xl"
       }`}
     >
       <SessionChatView

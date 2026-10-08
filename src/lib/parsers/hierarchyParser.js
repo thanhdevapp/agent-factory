@@ -1,7 +1,7 @@
 /**
  * Hierarchy Parser & DAG Layout Engine
- * Bóc tách cấu trúc phân rã công việc đa tác nhân (Multi-Agent DAG)
- * và tự động tính toán toạ độ (x, y) theo thuật toán Layered Hierarchical Layout
+ * Extracts multi-agent task delegation hierarchies (Multi-Agent DAG)
+ * and computes (x, y) coordinates via Layered Hierarchical Layout.
  */
 
 export const NODE_WIDTH = 260;
@@ -10,24 +10,24 @@ export const HORIZONTAL_GAP = 60;
 export const VERTICAL_GAP = 140;
 
 /**
- * Phân tích và xây dựng đồ thị DAG từ danh sách traces và transcript
- * @param {Array} traces - Danh sách các session trace từ useFactoryTraces
- * @param {string} focusedTraceId - ID trace đang được focus (hoặc null để xem toàn bộ)
- * @param {Array} focusedTurns - Danh sách conversation turns của trace đang focus (nếu có)
+ * Parse and build DAG graph from traces and transcript
+ * @param {Array} traces - List of session traces from useFactoryTraces
+ * @param {string} focusedTraceId - Currently focused trace ID (or null to view all)
+ * @param {Array} focusedTurns - Conversation turns for focused trace (if available)
  */
 export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedTurns = []) {
   if (!Array.isArray(traces) || traces.length === 0) {
     return { nodes: [], edges: [], bounds: { minX: 0, maxX: 800, minY: 0, maxY: 600 } };
   }
 
-  // Nếu có focusedTraceId, ưu tiên hiển thị Orchestrator và các Subagents của nó
+  // If focusedTraceId is provided, prioritize showing Orchestrator and its subagents
   const targetTrace = traces.find(t => 
     t.traceId === focusedTraceId || 
     t.traces?.[0]?.traceId === focusedTraceId ||
     t.connectionId === focusedTraceId
   ) || traces[0];
 
-  // Trích xuất các Subagents từ tool calls invoke_subagent trong transcript
+  // Extract subagents from invoke_subagent / define_subagent tool calls in transcript
   const subagentsFromTranscript = [];
   if (Array.isArray(focusedTurns)) {
     focusedTurns.forEach((turn, turnIdx) => {
@@ -60,7 +60,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     });
   }
 
-  // Danh sách các root sessions
+  // List of root sessions
   const rootTraces = traces.filter(t => !t.parentTraceId);
   const otherTraces = traces.filter(t => t.parentTraceId);
 
@@ -81,7 +81,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     rawEdges.push(edge);
   };
 
-  // Tạo node cho root session được focus (hoặc tất cả các root)
+  // Generate node for focused root session (or all roots)
   const isSingleRootFocus = subagentsFromTranscript.length > 0;
   const activeRoots = isSingleRootFocus ? [targetTrace] : (rootTraces.length > 0 ? rootTraces : traces);
 
@@ -105,7 +105,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     });
   });
 
-  // 2. Level 1: Subagents trích xuất từ transcript hoặc các session con
+  // 2. Level 1: Subagents extracted from transcript or child sessions
   if (subagentsFromTranscript.length > 0) {
     subagentsFromTranscript.forEach((sub) => {
       addNodeSafe({
@@ -134,7 +134,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
       });
     });
   } else {
-    // Nếu chưa có subagent từ transcript, tìm các traces khác cùng workspace để link làm Peer / Sub nodes
+    // If no subagent in transcript, link other workspace traces as Peer / Sub nodes
     const targetWs = (targetTrace.cwd || targetTrace.workspace || "").toLowerCase();
     const relatedTraces = traces.filter(t => (t.traceId || t.connectionId) !== (targetTrace.traceId || targetTrace.connectionId));
 
@@ -170,7 +170,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     });
   }
 
-  // 3. Tính toán vị trí (x, y) theo tầng (Hierarchical DAG Layout)
+  // 3. Compute (x, y) coordinates by layer (Hierarchical DAG Layout)
   const nodesByLevel = {};
   rawNodes.forEach(node => {
     if (!nodesByLevel[node.level]) nodesByLevel[node.level] = [];
@@ -212,7 +212,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     });
   });
 
-  // 4. Tính toán toạ độ đường nối (Edges Coordinates)
+  // 4. Compute edge coordinates (Cubic Bezier curves)
   const layoutedEdges = [];
   rawEdges.forEach(edge => {
     const fromNode = nodePositionMap[edge.fromId];
@@ -242,7 +242,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
     }
   });
 
-  // Tính toán bounds để fit view
+  // Compute bounding box for auto-fitting view
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   layoutedNodes.forEach(n => {
     if (n.x < minX) minX = n.x;

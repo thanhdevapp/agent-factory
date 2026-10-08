@@ -3,6 +3,7 @@ import { buildOffice, OFFICE, STATE_COLORS } from "./scene/office-layout";
 import { createCharacter, createDesk, createBadge } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
+import { getSupporterState, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
 
 const MAX_ZOOM = 1.0; // Strictly capped at 1.0: large screens display more area instead of enlarging elements!
 const MIN_ZOOM = 0.25;
@@ -212,6 +213,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
     // Back-to-front so nearer desks overlap further ones.
     const ordered = [...office.workstations].sort((a, b) => a.y - b.y || a.x - b.x);
+    const supporter = getSupporterState();
 
     for (const [i, ws] of ordered.entries()) {
       const isLooping = Boolean(ws.isLooping);
@@ -230,6 +232,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         queued: ws.queued,
         depth: ws.depth,
         isLooping,
+        pet: supporter.equippedPet || "none",
+        props: supporter.equippedProps || [],
       });
       desk.root.x = ws.x;
       desk.root.y = ws.y;
@@ -246,6 +250,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         seed: i,
         mode: ws.mode,
         clientType,
+        skin: supporter.equippedSkin || "classic",
       });
       character.root.x = ws.x + 108;
       character.root.baseX = ws.x + 108;
@@ -555,6 +560,11 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   canvas.addEventListener("webglcontextlost", onContextLost, false);
   canvas.addEventListener("webglcontextrestored", onContextRestored, false);
 
+  const onSupporterChange = () => {
+    rebuild(currentTraces, true);
+  };
+  window.addEventListener(SUPPORTER_CHANGE_EVENT, onSupporterChange);
+
   // ---- animation --------------------------------------------------------
   let t = 0;
   app.ticker.add((ticker) => {
@@ -726,6 +736,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         canvas.removeEventListener("dblclick", onDblClick);
         canvas.removeEventListener("webglcontextlost", onContextLost);
         canvas.removeEventListener("webglcontextrestored", onContextRestored);
+        window.removeEventListener(SUPPORTER_CHANGE_EVENT, onSupporterChange);
         app.renderer?.off?.("resize", fit);
       } catch {}
 

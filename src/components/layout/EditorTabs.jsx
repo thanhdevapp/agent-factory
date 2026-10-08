@@ -76,7 +76,7 @@ export default function EditorTabs({
                     e.stopPropagation();
                     onCloseTab?.(tab.id);
                   }}
-                  title="Đóng tab"
+                  title="Close tab"
                   className="p-0.5 rounded text-slate-500 hover:text-white hover:bg-[#333333] transition-colors opacity-70 group-hover:opacity-100"
                 >
                   <X className="w-3 h-3" />
@@ -95,7 +95,7 @@ export default function EditorTabs({
               containerRef.current.scrollBy({ left: -100, behavior: "smooth" });
             }
           }}
-          title="Cuộn sang trái"
+          title="Scroll left"
           className="p-1 rounded text-slate-500 hover:text-slate-200 transition-colors"
         >
           <ChevronLeft className="w-3 h-3" />
@@ -106,7 +106,7 @@ export default function EditorTabs({
               containerRef.current.scrollBy({ left: 100, behavior: "smooth" });
             }
           }}
-          title="Cuộn sang phải"
+          title="Scroll right"
           className="p-1 rounded text-slate-500 hover:text-slate-200 transition-colors"
         >
           <ChevronRight className="w-3 h-3" />

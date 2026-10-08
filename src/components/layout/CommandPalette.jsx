@@ -17,11 +17,15 @@ import {
   RotateCcw,
   MessageSquare,
   ExternalLink,
+  Coffee,
+  AppWindow,
 } from "lucide-react";
+import { openChatInNewWindow } from "../../lib/windowManager.js";
 
 export default function CommandPalette({
   isOpen = false,
   onClose,
+  onOpenStore,
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
@@ -90,7 +94,7 @@ export default function CommandPalette({
     },
     {
       id: "open-chat-sidebar",
-      title: "Chat: Xem Live Chat & Transcript trong Sidebar (Tab phụ)",
+      title: "Chat: View Live Chat & Transcript in Sidebar",
       icon: MessageSquare,
       action: () => {
         onOpenChatSidebar?.();
@@ -99,7 +103,7 @@ export default function CommandPalette({
     },
     {
       id: "open-chat-modal",
-      title: "Chat: Mở Live Chat & Transcript dạng Popup Modal (Cửa sổ riêng)",
+      title: "Chat: Open Live Chat in Popup Window",
       icon: ExternalLink,
       action: () => {
         onOpenChatModal?.();
@@ -107,8 +111,17 @@ export default function CommandPalette({
       },
     },
     {
+      id: "open-chat-new-window",
+      title: "Chat: Move into New Window (Mở Cửa sổ rời độc lập - VS Code style)",
+      icon: AppWindow,
+      action: () => {
+        openChatInNewWindow();
+        onClose();
+      },
+    },
+    {
       id: "open-reports",
-      title: "Reports: Open Token Usage & Analytics Report (Báo Cáo Token)",
+      title: "Reports: Open Token Usage & Analytics Report",
       icon: BarChart3,
       action: () => {
         onOpenReports?.();
@@ -116,8 +129,17 @@ export default function CommandPalette({
       },
     },
     {
+      id: "open-store",
+      title: "Store: Open Supporter Store & Character Customization (Buy Me a Coffee)",
+      icon: Coffee,
+      action: () => {
+        onOpenStore?.();
+        onClose();
+      },
+    },
+    {
       id: "start-replay",
-      title: "Time-Machine: Tua lại lịch sử phiên làm việc (Session Replay)",
+      title: "Time-Machine: Replay Session History",
       icon: RotateCcw,
       action: () => {
         onStartReplay?.();
@@ -204,7 +226,7 @@ export default function CommandPalette({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Gõ lệnh hoặc tìm kiếm thao tác..."
+            placeholder="Type a command or search actions..."
             className="w-full bg-transparent text-xs text-slate-100 outline-none placeholder:text-slate-500"
           />
           <kbd className="text-[10px] bg-[#2a2d2e] border border-[#3e3e42] rounded px-1.5 py-0.5 text-slate-400">
@@ -216,7 +238,7 @@ export default function CommandPalette({
         <div className="flex-1 overflow-y-auto divide-y divide-[#2d2d2d] py-1">
           {filteredCommands.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-500 italic">
-              Không tìm thấy lệnh nào phù hợp
+              No matching commands found
             </div>
           ) : (
             filteredCommands.map((cmd) => {

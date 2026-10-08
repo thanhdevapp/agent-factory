@@ -69,7 +69,7 @@ export default function StatusBar({
             <span>({selectedAgent.model || "gemini-3.8-flash"})</span>
           </div>
         ) : (
-          <span>Sẵn sàng · Giám sát tự động Antigravity CLI, App & Claude</span>
+          <span>Ready · Real-time monitoring Antigravity CLI, App & Claude</span>
         )}
       </div>
 
@@ -95,7 +95,7 @@ export default function StatusBar({
         <button
           type="button"
           onClick={onToggleBottom}
-          title={isBottomOpen ? "Ẩn Terminal (Cmd+J)" : "Hiện Terminal (Cmd+J)"}
+          title={isBottomOpen ? "Hide Terminal (Cmd+J)" : "Show Terminal (Cmd+J)"}
           className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
             isBottomOpen
               ? "bg-[#007acc]/20 text-[#4fc1ff]"

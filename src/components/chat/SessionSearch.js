@@ -5,11 +5,11 @@ import { Search, X, ChevronUp, ChevronDown, Filter } from "lucide-react";
 
 /**
  * SessionSearch Component
- * Hộp công cụ tìm kiếm từ khóa nội bộ trong toàn bộ transcript phiên chat AI Agent
- * - Hỗ trợ jump Next / Previous match
- * - Đếm số lượng kết quả
- * - Phím tắt Enter, Shift+Enter, Escape
- * - Tự động focus và trigger scroll đến step tương ứng
+ * Keyword search toolbar for AI Agent chat transcript
+ * - Supports jump Next / Previous match
+ * - Match counter
+ * - Keyboard shortcuts Enter, Shift+Enter, Escape
+ * - Auto-focus and scroll to matched step
  */
 export default function SessionSearch({
   isOpen = false,
@@ -19,11 +19,11 @@ export default function SessionSearch({
   className = ""
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [matches, setMatches] = useState([]); // mảng các stepIndex khớp
+  const [matches, setMatches] = useState([]); // array of matched step indices
   const [currentIndex, setCurrentIndex] = useState(-1);
   const inputRef = useRef(null);
 
-  // Focus khi modal search mở
+  // Focus when search bar opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -37,7 +37,7 @@ export default function SessionSearch({
     }
   }, [isOpen]);
 
-  // Tìm kiếm trong toàn bộ các field của steps
+  // Search across all fields of steps
   useEffect(() => {
     if (!searchTerm.trim()) {
       setMatches([]);
@@ -138,14 +138,14 @@ export default function SessionSearch({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Tìm trong đoạn chat (nội dung, code, tool)..."
+        placeholder="Search transcript (content, code, tools)..."
         className="bg-transparent border-none text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none w-56 md:w-64"
       />
 
       {/* Match Counter */}
       {searchTerm.trim() && (
         <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 shrink-0">
-          {matches.length > 0 ? `${currentIndex + 1}/${matches.length}` : "0 kết quả"}
+          {matches.length > 0 ? `${currentIndex + 1}/${matches.length}` : "0 matches"}
         </span>
       )}
 
@@ -155,7 +155,7 @@ export default function SessionSearch({
           onClick={handlePrev}
           disabled={matches.length <= 1}
           className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-          title="Kết quả trước (Shift+Enter)"
+          title="Previous match (Shift+Enter)"
         >
           <ChevronUp className="w-3.5 h-3.5" />
         </button>
@@ -163,7 +163,7 @@ export default function SessionSearch({
           onClick={handleNext}
           disabled={matches.length <= 1}
           className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-          title="Kết quả tiếp theo (Enter)"
+          title="Next match (Enter)"
         >
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
@@ -173,7 +173,7 @@ export default function SessionSearch({
       <button
         onClick={onClose}
         className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors ml-1"
-        title="Đóng tìm kiếm (Esc)"
+        title="Close search (Esc)"
       >
         <X className="w-3.5 h-3.5" />
       </button>

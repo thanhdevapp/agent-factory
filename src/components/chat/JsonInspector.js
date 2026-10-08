@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 
 /**
- * JsonNode Component - Render đệ quy từng node của JSON
+ * JsonNode Component - Recursively renders JSON tree nodes
  */
 function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTerm = "" }) {
   const isObject = value !== null && typeof value === "object";
   const isArray = Array.isArray(value);
 
-  // Mặc định mở nếu depth < initialExpandDepth
+  // Expand by default if depth < initialExpandDepth
   const [isExpanded, setIsExpanded] = useState(depth < initialExpandDepth);
   const [copied, setCopied] = useState(false);
 
@@ -41,13 +41,13 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
     }
   };
 
-  // Render kiểu dữ liệu nguyên thủy
+  // Render primitive data types
   const renderPrimitive = (val) => {
     if (val === null) return <span className="text-slate-500 italic">null</span>;
     if (typeof val === "boolean") return <span className="text-purple-400 font-semibold">{val ? "true" : "false"}</span>;
     if (typeof val === "number") return <span className="text-amber-400 font-mono">{val}</span>;
     if (typeof val === "string") {
-      // Cắt gọn nếu string quá dài
+      // Truncate if string is too long
       const displayStr = val.length > 300 && !isExpanded ? `${val.substring(0, 300)}...` : val;
       return (
         <span className="text-emerald-300 font-mono break-all">
@@ -57,7 +57,7 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
               onClick={() => setIsExpanded(!isExpanded)} 
               className="ml-1 text-[10px] text-indigo-400 underline hover:text-indigo-300"
             >
-              {isExpanded ? "rút gọn" : `+${val.length - 300} ký tự`}
+              {isExpanded ? "collapse" : `+${val.length - 300} chars`}
             </button>
           )}
         </span>
@@ -66,13 +66,13 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
     return <span className="text-slate-300">{String(val)}</span>;
   };
 
-  // Nếu là Object hoặc Array
+  // If Object or Array
   if (isObject) {
     const itemCount = isArray ? value.length : keys.length;
     const bracketOpen = isArray ? "[" : "{";
     const bracketClose = isArray ? "]" : "}";
 
-    // Kiểm tra search filter
+    // Check search filter
     const matchesSearch = searchTerm && (
       (keyName && keyName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (typeof value === "string" && value.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -111,7 +111,7 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
           <button
             onClick={handleCopy}
             className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-slate-200 rounded transition-opacity ml-1"
-            title="Sao chép nhánh này"
+            title="Copy this branch"
           >
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           </button>
@@ -151,7 +151,7 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
       <button
         onClick={handleCopy}
         className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-slate-200 rounded transition-opacity shrink-0 ml-1"
-        title="Sao chép giá trị"
+        title="Copy value"
       >
         {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       </button>
@@ -161,7 +161,7 @@ function JsonNode({ keyName, value, depth = 0, initialExpandDepth = 1, searchTer
 
 /**
  * JsonInspector Component
- * Tree explorer chuyên nghiệp cho dữ liệu JSON của Tool Call, MCP Response hoặc API payloads
+ * Professional JSON tree explorer for Tool Calls, MCP Responses, or API payloads
  */
 export default function JsonInspector({
   data,
@@ -216,7 +216,7 @@ export default function JsonInspector({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Lọc key..."
+              placeholder="Filter keys..."
               className="bg-slate-950 border border-slate-800 rounded-md pl-6 pr-2 py-0.5 text-[11px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-slate-700 w-28 md:w-36 font-sans"
             />
           </div>
@@ -225,7 +225,7 @@ export default function JsonInspector({
           <button
             onClick={() => setExpandAllKey((prev) => (prev > 5 ? 1 : 10))}
             className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-            title={expandAllKey > 5 ? "Thu gọn toàn bộ" : "Mở rộng toàn bộ"}
+            title={expandAllKey > 5 ? "Collapse all" : "Expand all"}
           >
             {expandAllKey > 5 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
@@ -234,12 +234,12 @@ export default function JsonInspector({
           <button
             onClick={handleCopyAll}
             className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-sans text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800 transition-colors"
-            title="Sao chép toàn bộ JSON"
+            title="Copy entire JSON"
           >
             {copiedAll ? (
               <>
                 <Check className="w-3 h-3 text-emerald-400" />
-                <span className="text-emerald-400">Đã copy</span>
+                <span className="text-emerald-400">Copied</span>
               </>
             ) : (
               <>

@@ -11,11 +11,13 @@ import {
   SlidersHorizontal,
   GitFork,
   MessageSquare,
+  Coffee,
 } from "lucide-react";
 
 export default function ActivityBar({
   activeView = "explorer",
   onViewChange,
+  onOpenStore,
   agentCount = 0,
   isRightSidebarVisible = false,
   activeRightSidebarTab = "chat",
@@ -47,13 +49,18 @@ export default function ActivityBar({
     },
     {
       id: "reports",
-      title: "Báo Cáo Token & Chi Phí AI (Analytics)",
+      title: "Token & AI Cost Analytics",
       icon: BarChart3,
     },
     {
       id: "telemetry",
       title: "Live Telemetry & Traces",
       icon: Activity,
+    },
+    {
+      id: "store",
+      title: "Coffee Shop & Supporter Vault (Support Author)",
+      icon: Coffee,
     },
   ];
 
@@ -73,7 +80,13 @@ export default function ActivityBar({
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange?.(item.id)}
+              onClick={() => {
+                if (item.id === "store") {
+                  onOpenStore?.();
+                } else {
+                  onViewChange?.(item.id);
+                }
+              }}
               title={item.title}
               className={`w-full py-2.5 flex justify-center items-center relative transition-colors ${
                 isActive
@@ -94,7 +107,7 @@ export default function ActivityBar({
         {/* Quick toggle bottom terminal from ActivityBar */}
         <button
           onClick={onToggleBottomPanel}
-          title={isBottomPanelVisible ? "Ẩn Terminal & Logs (Cmd+J)" : "Hiện Terminal & Logs (Cmd+J)"}
+          title={isBottomPanelVisible ? "Hide Terminal & Logs (Cmd+J)" : "Show Terminal & Logs (Cmd+J)"}
           className={`w-full py-2.5 flex justify-center items-center relative transition-colors ${
             isBottomPanelVisible
               ? "text-cyan-400 border-l-2 border-cyan-500/50"
@@ -109,7 +122,7 @@ export default function ActivityBar({
       <div className="flex flex-col gap-1 w-full items-center">
         <button
           onClick={onOpenSettings}
-          title="Cài đặt hệ thống & Watchers"
+          title="System Settings & Watchers"
           className="w-full py-2.5 flex justify-center items-center text-[#858585] hover:text-[#cccccc] transition-colors border-l-2 border-transparent"
         >
           <Settings className="w-5 h-5" />

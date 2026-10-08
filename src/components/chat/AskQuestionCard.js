@@ -16,8 +16,8 @@ import {
 
 /**
  * AskQuestionCard Component
- * Hiển thị thẻ Human-in-the-Loop (HITL) cho tool ask_question
- * Cho phép người dùng trực tiếp chọn các option, viết bổ sung và sao chép/gửi câu trả lời
+ * Human-in-the-Loop (HITL) card for tool ask_question
+ * Allows users to choose options, write feedback, and copy or submit decisions
  */
 export default function AskQuestionCard({
   args = {},
@@ -26,11 +26,11 @@ export default function AskQuestionCard({
 }) {
   const questions = Array.isArray(args.questions) ? args.questions : [];
   
-  // State lưu trữ các lựa chọn của từng câu hỏi { [questionIndex]: [selectedOptionStrings] }
+  // Selections state for each question { [questionIndex]: [selectedOptionStrings] }
   const [selections, setSelections] = useState(() => {
     const initial = {};
     questions.forEach((q, idx) => {
-      // Mặc định chọn recommended option đầu tiên nếu có
+      // Default to first recommended option if present
       const rec = q.options?.find(opt => opt.startsWith("(Recommended)"));
       if (rec) {
         initial[idx] = [rec];
@@ -41,7 +41,7 @@ export default function AskQuestionCard({
     return initial;
   });
 
-  // State lưu custom write-in text cho mỗi câu hỏi
+  // Custom write-in text for each question
   const [writeIns, setWriteIns] = useState({});
   const [copied, setCopied] = useState(false);
 
@@ -66,16 +66,16 @@ export default function AskQuestionCard({
     setWriteIns(prev => ({ ...prev, [qIdx]: text }));
   };
 
-  // Tạo formatted response text
+  // Generate formatted response text
   const formatAnswers = () => {
     return questions.map((q, idx) => {
       const sel = selections[idx] || [];
       const writeIn = writeIns[idx]?.trim();
       let ans = sel.join(", ");
       if (writeIn) {
-        ans = ans ? `${ans}; Thêm: ${writeIn}` : writeIn;
+        ans = ans ? `${ans}; Extra: ${writeIn}` : writeIn;
       }
-      return `Q${idx + 1}: ${q.question}\nA: ${ans || "Chưa chọn"}`;
+      return `Q${idx + 1}: ${q.question}\nA: ${ans || "None selected"}`;
     }).join("\n\n");
   };
 
@@ -111,7 +111,7 @@ export default function AskQuestionCard({
               </span>
             </div>
             <div className="text-[11px] text-slate-400">
-              Agent cần bạn làm rõ hoặc đưa ra quyết định để tiếp tục
+              Agent requires your clarification or decision to proceed
             </div>
           </div>
         </div>
@@ -119,10 +119,10 @@ export default function AskQuestionCard({
         <button
           onClick={handleCopyAnswers}
           className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors"
-          title="Sao chép các câu trả lời"
+          title="Copy answers to clipboard"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          <span>{copied ? "Đã copy" : "Copy phản hồi"}</span>
+          <span>{copied ? "Copied" : "Copy response"}</span>
         </button>
       </div>
 
@@ -143,7 +143,7 @@ export default function AskQuestionCard({
                   {q.question}
                   {isMulti && (
                     <span className="ml-2 text-[10px] text-indigo-400 font-normal italic">
-                      (Có thể chọn nhiều)
+                      (Multiple choice)
                     </span>
                   )}
                 </div>
@@ -182,7 +182,7 @@ export default function AskQuestionCard({
                           {isRecommended && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-sans px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">
                               <Sparkles className="w-3 h-3 text-amber-400" />
-                              Khuyến nghị
+                              Recommended
                             </span>
                           )}
                         </div>
@@ -198,7 +198,7 @@ export default function AskQuestionCard({
                     type="text"
                     value={writeIns[qIdx] || ""}
                     onChange={(e) => handleWriteInChange(qIdx, e.target.value)}
-                    placeholder="Ý kiến hoặc chỉ thị khác của bạn..."
+                    placeholder="Your custom input or feedback..."
                     className="bg-slate-950/80 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 flex-1 font-sans"
                   />
                 </div>
@@ -211,7 +211,7 @@ export default function AskQuestionCard({
       {/* Footer Submit Bar */}
       <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
         <div className="text-[11px] text-slate-400">
-          Chọn các phương án trên và ấn gửi phản hồi cho Agent.
+          Select options above and submit your response to the Agent.
         </div>
 
         <button
@@ -219,7 +219,7 @@ export default function AskQuestionCard({
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-500/20 transition-all active:scale-95"
         >
           <Send className="w-3.5 h-3.5" />
-          <span>Gửi quyết định</span>
+          <span>Submit Decision</span>
         </button>
       </div>
     </div>

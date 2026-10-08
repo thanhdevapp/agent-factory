@@ -25,8 +25,10 @@ import {
   RotateCcw,
   ExternalLink,
   PanelRightClose,
+  AppWindow,
 } from "lucide-react";
 import { useSessionTranscript } from "../../lib/useSessionTranscript.js";
+import { openChatInNewWindow } from "../../lib/windowManager.js";
 import ChatMessageItem from "./ChatMessageItem.js";
 import ImageLightboxModal from "./ImageLightboxModal.js";
 import SessionSearch from "./SessionSearch.js";
@@ -119,7 +121,7 @@ export default function SessionChatView({
     isAgentActive
   );
 
-  // Shortcut Ctrl/Cmd + F để mở nhanh thanh tìm kiếm transcript
+  // Shortcut Ctrl/Cmd + F to toggle transcript search bar
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
@@ -131,7 +133,7 @@ export default function SessionChatView({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Format searchable steps list cho SessionSearch
+  // Format searchable steps list for SessionSearch
   const searchableSteps = useMemo(() => {
     return turns.map((t) => ({
       id: t.id,
@@ -146,7 +148,7 @@ export default function SessionChatView({
     }));
   }, [turns]);
 
-  // Cuộn mượt và highlight turn khi người dùng jump tới kết quả tìm kiếm
+  // Smooth scroll and highlight turn when user jumps to search match
   const handleJumpToStep = (matchedIdx) => {
     const targetTurn = turns[matchedIdx];
     if (targetTurn) {
@@ -242,7 +244,7 @@ export default function SessionChatView({
                   ? "bg-cyan-950 border border-cyan-500/50 text-cyan-300"
                   : "text-slate-400 hover:text-white hover:bg-[#333333]"
               }`}
-              title="Tìm kiếm transcript (Ctrl+F)"
+              title="Search transcript (Ctrl+F)"
             >
               <Search className="w-3.5 h-3.5" />
             </button>
@@ -255,7 +257,7 @@ export default function SessionChatView({
                   ? "bg-cyan-950 border border-cyan-500/50 text-cyan-300"
                   : "text-slate-400 hover:text-white hover:bg-[#333333]"
               }`}
-              title="Chi tiết & Thông số Agent"
+              title="Agent Details & Specs"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
@@ -264,7 +266,7 @@ export default function SessionChatView({
             <button
               onClick={refresh}
               className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
-              title="Làm mới transcript"
+              title="Refresh transcript"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -274,7 +276,7 @@ export default function SessionChatView({
               <button
                 onClick={() => onStartReplay(sessionId || targetTraceId)}
                 className="p-1 rounded text-cyan-400 hover:text-cyan-200 hover:bg-[#333333] transition-colors cursor-pointer"
-                title="Tua lại hành trình Time-Machine Replay"
+                title="Time-Machine: Replay this session"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -284,9 +286,18 @@ export default function SessionChatView({
             <button
               onClick={exportMarkdown}
               className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
-              title="Xuất transcript thành Markdown"
+              title="Export transcript as Markdown"
             >
               <Download className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Open in Standalone Detached Window (VS Code style) */}
+            <button
+              onClick={() => openChatInNewWindow(sessionId || targetTraceId)}
+              className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+            >
+              <AppWindow className="w-3.5 h-3.5" />
             </button>
 
             {/* Pop-out to Modal */}
@@ -294,7 +305,7 @@ export default function SessionChatView({
               <button
                 onClick={onOpenModal}
                 className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
-                title="Mở dạng Popup modal (Cửa sổ riêng)"
+                title="Mở dạng Popup nổi"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -393,7 +404,7 @@ export default function SessionChatView({
                   ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10"
                   : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
               }`}
-              title="Tìm kiếm transcript (Ctrl+F)"
+              title="Search transcript (Ctrl+F)"
             >
               <Search className="w-3.5 h-3.5" />
             </button>
@@ -406,7 +417,7 @@ export default function SessionChatView({
                   ? "bg-cyan-950 border-cyan-500/50 text-cyan-300"
                   : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
               }`}
-              title="Chi tiết & Thông số Agent"
+              title="Agent Details & Specs"
             >
               <Info className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Details</span>
@@ -417,7 +428,7 @@ export default function SessionChatView({
             <button
               onClick={refresh}
               className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
-              title="Làm mới transcript"
+              title="Refresh transcript"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -430,7 +441,7 @@ export default function SessionChatView({
                   onClose?.();
                 }}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 text-xs font-semibold border border-cyan-500/40 transition-colors shadow-sm cursor-pointer"
-                title="Tua lại hành trình Time-Machine Replay"
+                title="Time-Machine: Replay this session"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Replay</span>
@@ -441,7 +452,7 @@ export default function SessionChatView({
             <button
               onClick={exportMarkdown}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-              title="Xuất transcript thành Markdown"
+              title="Export transcript as Markdown"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Export</span>
@@ -452,21 +463,39 @@ export default function SessionChatView({
               <button
                 onClick={() => onDockToSidebar(sessionTrace)}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-                title="Thu vào Sidebar (Ghim sang tab phụ bên phải)"
+                title="Thu vào Sidebar (Ghim sang thanh bên phụ)"
               >
                 <PanelRightClose className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Sidebar</span>
               </button>
             )}
 
+            {/* Open in Standalone Detached Window (VS Code style) */}
+            <button
+              onClick={() => {
+                openChatInNewWindow(sessionId || targetTraceId);
+                onClose?.();
+              }}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+            >
+              <AppWindow className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">New Window</span>
+            </button>
+
             {/* Fullscreen toggle */}
             {onToggleFullscreen && (
               <button
                 onClick={onToggleFullscreen}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
-                title={isFullscreen ? "Thu nhỏ cửa sổ" : "Phóng to toàn màn hình"}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                  isFullscreen
+                    ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10 font-semibold"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+                title={isFullscreen ? "Thu nhỏ về dạng popup" : "Toàn màn hình (100% Fullscreen)"}
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-cyan-300" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{isFullscreen ? "Thu nhỏ" : "Toàn màn hình"}</span>
               </button>
             )}
 
@@ -474,7 +503,7 @@ export default function SessionChatView({
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors cursor-pointer"
-              title="Đóng cửa sổ"
+              title="Close window"
             >
               <X className="w-4 h-4" />
             </button>

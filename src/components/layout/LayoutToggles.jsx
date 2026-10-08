@@ -30,7 +30,7 @@ export default function LayoutToggles({
       <button
         type="button"
         data-testid="toggle-left-sidebar"
-        title="Chuyển đổi thanh bên chính (Cmd+B / Ctrl+B)"
+        title="Toggle Primary Sidebar (Cmd+B / Ctrl+B)"
         onClick={onToggleLeftSidebar}
         className={getButtonClass(isLeftSidebarVisible)}
       >
@@ -40,7 +40,7 @@ export default function LayoutToggles({
       <button
         type="button"
         data-testid="toggle-bottom-panel"
-        title="Chuyển đổi bảng điều khiển phía dưới (Cmd+J / Ctrl+J)"
+        title="Toggle Bottom Panel (Cmd+J / Ctrl+J)"
         onClick={onToggleBottomPanel}
         className={getButtonClass(isBottomPanelVisible)}
       >
@@ -50,7 +50,7 @@ export default function LayoutToggles({
       <button
         type="button"
         data-testid="toggle-right-sidebar"
-        title="Chuyển đổi thanh bên phụ (Live Chat & Inspector - Cmd+Alt+B)"
+        title="Toggle Secondary Sidebar (Live Chat & Inspector - Cmd+Alt+B)"
         onClick={onToggleRightSidebar}
         className={getButtonClass(isRightSidebarVisible)}
       >
