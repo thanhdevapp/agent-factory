@@ -199,6 +199,12 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
     return num.toLocaleString();
   };
 
+  const formatCost = (amount, precision = 2) =>
+    Number.isFinite(amount) ? `$${amount.toFixed(precision)}` : "—";
+
+  const formatVnd = (amount) =>
+    Number.isFinite(amount) ? `~${amount.toLocaleString()} ₫` : "—";
+
   // Max value in timeseries for scaling chart bars
   const maxTimeseriesValue = useMemo(() => {
     if (!timeseries.length) return 1;
@@ -545,13 +551,13 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
             <div className="text-2xl font-extrabold text-cyan-300 tracking-tight mb-2 flex items-baseline gap-1.5">
               {summary.cacheRate}%
               <span className="text-xs font-semibold text-emerald-400">
-                (+${summary.totalSavings.toFixed(1)} saved)
+                ({formatCost(summary.totalSavings, 1)} saved)
               </span>
             </div>
             <div className="text-[11px] text-slate-400 border-t border-[#2b2b2b] pt-2 flex items-center justify-between">
               <span>Estimated Savings:</span>
               <strong className="text-emerald-400 font-mono">
-                ~{summary.totalSavingsVnd.toLocaleString()} ₫
+                {formatVnd(summary.totalSavingsVnd)}
               </strong>
             </div>
           </div>
@@ -563,17 +569,20 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
               <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
             <div className="text-2xl font-extrabold text-amber-300 tracking-tight mb-2">
-              ${summary.totalCost.toFixed(2)}
+              {formatCost(summary.totalCost)}
               <span className="text-xs font-normal text-slate-400 ml-2">
-                ({summary.totalCostVnd.toLocaleString()} ₫)
+                ({Number.isFinite(summary.totalCostVnd) ? `${summary.totalCostVnd.toLocaleString()} ₫` : "unpriced sessions present"})
               </span>
             </div>
             <div className="text-[11px] text-slate-400 border-t border-[#2b2b2b] pt-2 flex items-center justify-between">
-              <span>Monthly Run-rate:</span>
+              <span>30-day projection:</span>
               <strong className="text-slate-200 font-mono">
-                ${summary.projectedMonthlyCost.toFixed(1)}
+                {formatCost(summary.projectedMonthlyCost, 1)}
               </strong>
             </div>
+            <p className="text-[10px] text-slate-500">
+              Priced {summary.pricedSessionCount ?? 0} of {summary.sessionCount} sessions with known model pricing.
+            </p>
           </div>
 
           {/* Card 4: Session Metrics & Averages */}
@@ -684,8 +693,8 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                     let val = item.total;
                     let labelVal = formatTokens(item.total);
                     if (chartMetric === "cost") {
-                      val = item.cost;
-                      labelVal = `$${item.cost.toFixed(2)}`;
+                      val = item.cost ?? 0;
+                      labelVal = formatCost(item.cost);
                     } else if (chartMetric === "requests") {
                       val = item.sessions || 1;
                       labelVal = `${val} sessions`;
@@ -705,7 +714,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                           <span>Total Tokens: <strong className="text-cyan-400">{formatTokens(item.total)}</strong></span>
                           <span>Prompt Cache: <strong className="text-emerald-400">{formatTokens(item.cached)} ({cachedPercent}%)</strong></span>
                           <span>In: {formatTokens(item.input)} | Out: {formatTokens(item.output)}</span>
-                          <span>Cost: ${item.cost.toFixed(3)}</span>
+                          <span>Cost: {formatCost(item.cost, 3)}</span>
                           <span>Sessions: {item.sessions || 1}</span>
                         </div>
 
@@ -753,7 +762,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                   <div key={d.day} className="bg-[#252526] p-3 rounded-lg border border-[#333333] text-center space-y-1">
                     <span className="text-slate-400 text-xs font-semibold block">{d.day}</span>
                     <div className="text-sm font-bold text-white">{formatTokens(d.tokens)}</div>
-                    <div className="text-[10px] text-emerald-400 font-mono">${d.cost.toFixed(2)}</div>
+                    <div className="text-[10px] text-emerald-400 font-mono">{formatCost(d.cost)}</div>
                     <div className="text-[9px] text-slate-500">{d.sessions} sessions</div>
                   </div>
                 ))}
@@ -788,7 +797,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1 border-t border-[#2e2e30]">
                         <span>In: {formatTokens(m.input)} | Out: {formatTokens(m.output)}</span>
-                        <span className="text-amber-400 font-mono">Cost: ${m.cost.toFixed(2)} ({m.sessions} sessions)</span>
+                        <span className="text-amber-400 font-mono">Cost: {formatCost(m.cost)} ({m.sessions} sessions)</span>
                       </div>
                     </div>
                   );
@@ -836,7 +845,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1 border-t border-[#2e2e30]">
                         <span>Cache: {formatTokens(p.cached)}</span>
-                        <span className="text-amber-400 font-mono">Cost: ${p.cost.toFixed(2)} ({p.sessions} sessions)</span>
+                        <span className="text-amber-400 font-mono">Cost: {formatCost(p.cost)} ({p.sessions} sessions)</span>
                       </div>
                     </div>
                   );
@@ -864,7 +873,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-400 pt-1">
                         <span>{proj.sessions} sessions</span>
-                        <span className="text-amber-400">${proj.cost.toFixed(2)}</span>
+                        <span className="text-amber-400">{formatCost(proj.cost)}</span>
                       </div>
                     </div>
                   );
@@ -1014,7 +1023,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                             {s.tokens.total.toLocaleString()}
                           </td>
                           <td className="py-2.5 px-4 text-right font-mono text-amber-300 font-medium">
-                            ${s.cost.toFixed(3)}
+                            {formatCost(s.cost, 3)}
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
@@ -1219,7 +1228,7 @@ export default function TokenReportView({ onClose, onStartReplay, onViewConversa
                 </div>
                 <div className="flex justify-between text-amber-400 font-bold">
                   <span>Estimated Cost:</span>
-                  <span className="font-mono">${selectedSessionDetail.cost.toFixed(3)}</span>
+                  <span className="font-mono">{formatCost(selectedSessionDetail.cost, 3)}</span>
                 </div>
               </div>
 

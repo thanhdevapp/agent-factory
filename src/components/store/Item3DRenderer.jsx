@@ -366,7 +366,7 @@ function Render3DPet({ item, gradId }) {
     return (
       <g>
         <RenderChibiAgent3D x={32} y={18} scale={0.95} accentColor="#64748b" />
-        <text x="50" y="74" textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="sans-serif">
+        <text x="50" y="74" textAnchor="middle" fill="#94a3b8" fontSize="8" fontFamily="var(--font-family-ui, sans-serif)">
           No Pet Equipped
         </text>
       </g>

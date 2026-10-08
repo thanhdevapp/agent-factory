@@ -17,6 +17,13 @@ export default function FactoryPage() {
   useEffect(() => {
     setSoundEnabled(!isAudioMuted());
     setNotifEnabled(isNotificationsEnabled());
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const src = params.get("source") || params.get("mode");
+      if (src === "mock") setMode("mock");
+      const p = params.get("preset");
+      if (p) setMockPreset(p);
+    }
   }, []);
 
   const { traces, connected, live, isRefreshing, refresh } = useFactoryTraces({

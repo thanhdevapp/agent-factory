@@ -399,7 +399,7 @@ export default function AgentGraphView({
                         textAnchor="middle"
                         fill="#94a3b8"
                         fontSize="9"
-                        fontFamily="monospace"
+                        fontFamily="var(--font-family-mono, monospace)"
                         fontWeight="600"
                       >
                         {edge.label}

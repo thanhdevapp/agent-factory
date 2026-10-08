@@ -110,6 +110,7 @@ export function unlockWithCode(code) {
     const allProps = COSMETIC_CATALOG.props.map((pr) => pr.id);
     const allAuras = (COSMETIC_CATALOG.auras || []).map((a) => a.id);
     const allTrophies = (COSMETIC_CATALOG.trophies || []).map((t) => t.id);
+    const allThemes = (COSMETIC_CATALOG.officeThemes || []).map((th) => th.id);
     const allUnlocked = Array.from(
       new Set([
         ...current.unlockedItems,
@@ -118,6 +119,7 @@ export function unlockWithCode(code) {
         ...allProps,
         ...allAuras,
         ...allTrophies,
+        ...allThemes,
       ])
     );
 

@@ -1,6 +1,7 @@
 import { Container, FillGradient, Graphics, Rectangle, Text } from "pixi.js";
 import { STATE_COLORS, STATE_LABELS } from "./office-layout";
 import { getItemById } from "@/lib/catalog/index.js";
+import { getActiveFont } from "@/lib/themeStore.js";
 
 function parseHexColor(hexStr, fallback = 0x00f0ff) {
   if (!hexStr) return fallback;
@@ -15,8 +16,8 @@ function clip(text, max) {
   return str.length > max ? `${str.slice(0, max - 1)}…` : str;
 }
 
-const MONO = "ui-monospace, Menlo, monospace";
-const SANS = "Inter, system-ui, sans-serif";
+const getMonoFont = () => getActiveFont("mono");
+const getSansFont = () => getActiveFont("ui");
 
 // Vertical two/three-stop gradient in the shape's own space — the cheap trick
 // that turns flat 2D primitives into lit, rounded-looking "3D" volumes.
@@ -360,7 +361,7 @@ export function createDesk({
 
   const monTagText = new Text({
     text: badgeLabel,
-    style: { fontFamily: MONO, fontSize: 7, fill: badgeColor, fontWeight: "900" },
+    style: { fontFamily: getMonoFont(), fontSize: 7, fill: badgeColor, fontWeight: "900" },
   });
   monTagText.anchor.set(0.5, 0.5);
   monTagText.x = W / 2 - 33;
@@ -382,7 +383,7 @@ export function createDesk({
   }
   root.addChild(pile);
   if (queued > 1) {
-    const q = new Text({ text: `×${queued}`, style: { fontFamily: SANS, fontSize: 10, fill: 0xfbbf24, fontWeight: "800" } });
+    const q = new Text({ text: `×${queued}`, style: { fontFamily: getSansFont(), fontSize: 10, fill: 0xfbbf24, fontWeight: "800" } });
     q.anchor.set(0.5, 1);
     q.x = 9;
     q.y = 22 - sheets * 3.4 - 1;
@@ -391,7 +392,7 @@ export function createDesk({
 
   const name = new Text({
     text: clip(label, 18),
-    style: { fontFamily: SANS, fontSize: 11.5, fill: isApp ? 0xf5d0fe : 0xe6edf6, fontWeight: "700" },
+    style: { fontFamily: getSansFont(), fontSize: 11.5, fill: isApp ? 0xf5d0fe : 0xe6edf6, fontWeight: "700" },
   });
   name.anchor.set(0.5, 0);
   name.x = W / 2;
@@ -401,16 +402,19 @@ export function createDesk({
   const subText = providerUpper ? `${providerUpper} · ${clip(meta, 18)}` : clip(meta, 28);
   const sub = new Text({
     text: clip(subText, 28),
-    style: { fontFamily: MONO, fontSize: 8.5, fill: isApp ? 0xd8b4fe : 0x93a1b5 },
+    style: { fontFamily: getMonoFont(), fontSize: 8.5, fill: isApp ? 0xd8b4fe : 0x93a1b5 },
   });
   sub.anchor.set(0.5, 0);
   sub.x = W / 2;
   sub.y = 57;
 
-  const secs = elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`;
+  const safeCost = typeof cost === "number" ? cost : Number(cost) || 0;
+  const safeElapsed = typeof elapsedMs === "number" ? elapsedMs : Number(elapsedMs) || 0;
+  const safeCachedPct = typeof cachedPct === "number" ? cachedPct : Number(cachedPct) || 0;
+  const secs = safeElapsed >= 1000 ? `${(safeElapsed / 1000).toFixed(1)}s` : `${safeElapsed}ms`;
   const stats = new Text({
-    text: `${secs} · $${cost.toFixed(2)} · ${cachedPct}% cached`,
-    style: { fontFamily: MONO, fontSize: 8.5, fill: barColor },
+    text: `${secs} · $${safeCost.toFixed(2)} · ${safeCachedPct}% cached`,
+    style: { fontFamily: getMonoFont(), fontSize: 8.5, fill: barColor },
   });
   stats.anchor.set(0.5, 0);
   stats.x = W / 2;
@@ -638,7 +642,7 @@ export function createDesk({
 export function createBadge(text, { color = 0x22d3ee, size = 10 } = {}) {
   const label = new Text({
     text,
-    style: { fontFamily: SANS, fontSize: size, fill: color, fontWeight: "700" },
+    style: { fontFamily: getSansFont(), fontSize: size, fill: color, fontWeight: "700" },
   });
   return label;
 }

@@ -1,5 +1,5 @@
-import { getAllLiveTraces, getProvidersFromTraces } from "../../../../lib/watchers/watcherManager.js";
-import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "../../../../lib/mockTraces.js";
+import { getLiveTraceSnapshot, getProvidersFromTraces } from "@/lib/watchers/watcherManager.js";
+import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "@/lib/mockTraces.js";
 
 export const dynamic = "force-dynamic";
 
@@ -43,17 +43,26 @@ export async function GET(request) {
 
         // Live Mode
         try {
-          const liveTraces = await getAllLiveTraces(false, maxAgeMs);
-          const providers = getProvidersFromTraces(liveTraces);
+          const { traces, errors } = await getLiveTraceSnapshot(false, maxAgeMs);
+          const providers = getProvidersFromTraces(traces);
           send({
-            traces: liveTraces,
+            traces,
             providers,
+            errors,
             timestamp: Date.now(),
             mode: "live",
-            activeAgents: liveTraces.filter((t) => t.state === "streaming" || t.state === "pending").length,
+            activeAgents: traces.filter((t) => t.state === "streaming" || t.state === "pending").length,
           });
         } catch (err) {
           console.error("[SSE] Failed to fetch live traces:", err);
+          send({
+            traces: [],
+            providers: [],
+            errors: [{ source: "telemetry", message: err.message || "Failed to read live traces" }],
+            timestamp: Date.now(),
+            mode: "live",
+            activeAgents: 0,
+          });
         }
       };
 

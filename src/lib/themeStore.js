@@ -97,9 +97,10 @@ export const AVAILABLE_THEMES = [
 
 export const AVAILABLE_UI_FONTS = [
   { id: "system", name: "System Default (SF Pro / Segoe UI / Roboto)", value: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
-  { id: "inter", name: "Inter (Modern UI)", value: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif' },
-  { id: "segoe", name: "Segoe UI (Windows Native)", value: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
+  { id: "inter", name: "Inter (Modern UI)", value: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+  { id: "segoe", name: "Segoe UI (Windows Native)", value: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif' },
   { id: "roboto", name: "Roboto (Material)", value: '"Roboto", "Helvetica Neue", Arial, sans-serif' },
+  { id: "geist", name: "Geist Sans (Vercel Modern)", value: '"Geist Sans", "Geist", -apple-system, BlinkMacSystemFont, sans-serif' },
 ];
 
 export const AVAILABLE_CODE_FONTS = [
@@ -107,6 +108,7 @@ export const AVAILABLE_CODE_FONTS = [
   { id: "jetbrains", name: "JetBrains Mono (Developer Friendly)", value: '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace' },
   { id: "fira-code", name: "Fira Code (Ligatures Ready)", value: '"Fira Code", ui-monospace, Menlo, Consolas, monospace' },
   { id: "cascadia", name: "Cascadia Code (VS / Terminal)", value: '"Cascadia Code", "Cascadia Mono", Consolas, monospace' },
+  { id: "geist-mono", name: "Geist Mono (Clean Technical)", value: '"Geist Mono", ui-monospace, Menlo, Consolas, monospace' },
 ];
 
 export const AVAILABLE_FONT_SIZES = [
@@ -122,6 +124,24 @@ export const DEFAULT_THEME_SETTINGS = {
   codeFont: "system-mono",
   fontSize: "13",
 };
+
+/**
+ * Returns the currently active font family string (for Canvas/PixiJS, SVG, or Monaco)
+ */
+export function getActiveFont(type = "ui") {
+  if (typeof window === "undefined") {
+    return type === "mono"
+      ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
+      : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  }
+  const settings = getThemeSettings();
+  if (type === "mono") {
+    const found = AVAILABLE_CODE_FONTS.find((f) => f.id === settings.codeFont);
+    return found ? found.value : 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+  }
+  const found = AVAILABLE_UI_FONTS.find((f) => f.id === settings.uiFont);
+  return found ? found.value : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+}
 
 /**
  * Load theme settings from localStorage
@@ -172,21 +192,26 @@ export function applyThemeSettingsToDOM(settings) {
     root.classList.add("dark");
   }
 
-  // 2. UI Font Family
-  const uiFontObj = AVAILABLE_UI_FONTS.find((f) => f.id === settings.uiFont);
+  // 2. UI Font Family - synchronize all standard CSS variable aliases
+  const uiFontObj = AVAILABLE_UI_FONTS.find((f) => f.id === settings.uiFont) || AVAILABLE_UI_FONTS[0];
   if (uiFontObj) {
     root.style.setProperty("--font-family-ui", uiFontObj.value);
+    root.style.setProperty("--font-sans", uiFontObj.value);
+    root.style.setProperty("--font-ui", uiFontObj.value);
   }
 
-  // 3. Monospace Code Font Family
-  const codeFontObj = AVAILABLE_CODE_FONTS.find((f) => f.id === settings.codeFont);
+  // 3. Monospace Code Font Family - synchronize all standard CSS variable aliases
+  const codeFontObj = AVAILABLE_CODE_FONTS.find((f) => f.id === settings.codeFont) || AVAILABLE_CODE_FONTS[0];
   if (codeFontObj) {
     root.style.setProperty("--font-family-mono", codeFontObj.value);
+    root.style.setProperty("--font-mono", codeFontObj.value);
+    root.style.setProperty("--font-code", codeFontObj.value);
   }
 
   // 4. Base Font Size
   const size = settings.fontSize || "13";
   root.style.setProperty("--font-size-ui", `${size}px`);
+  root.style.setProperty("--font-size-base", `${size}px`);
 }
 
 /**

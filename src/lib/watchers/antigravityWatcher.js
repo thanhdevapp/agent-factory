@@ -75,7 +75,7 @@ export function extractModelFromTranscript(content) {
 }
 
 export function normalizeModel(raw) {
-  if (!raw) return "gemini-3.8-flash";
+  if (!raw) return null;
   const lower = raw.toLowerCase();
   if (lower.includes("3.8") && lower.includes("flash")) return "gemini-3.8-flash";
   if (lower.includes("3.5") && lower.includes("flash")) return "gemini-3.5-flash";
@@ -92,6 +92,17 @@ export function normalizeModel(raw) {
 function compactText(value, maxLength = 160) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   return text ? text.slice(0, maxLength) : null;
+}
+
+function getProviderFromModel(modelName, clientType) {
+  const model = String(modelName || "").toLowerCase();
+  let provider = null;
+  if (model.includes("gemini")) provider = "gemini";
+  else if (model.includes("claude")) provider = "anthropic";
+  else if (model.includes("gpt") || model.includes("o1") || model.includes("o3")) provider = "openai";
+  else if (model.includes("minimax")) provider = "minimax";
+  else if (model.includes("deepseek")) provider = "deepseek";
+  return provider ? `${provider} (${clientType})` : null;
 }
 
 function cleanUserPrompt(content) {
@@ -198,6 +209,7 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         let totalIn = 0;
         let totalOut = 0;
         let totalCached = 0;
+        let hasUsage = false;
         let lastToolEntry = null;
         let lastStep = null;
         const toolSet = new Set();
@@ -219,9 +231,16 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
             if (!firstTime && entry.created_at) firstTime = entryTime;
             if (entry.created_at) lastTime = entryTime;
 
-            if (entry.input_tokens) totalIn += entry.input_tokens;
-            if (entry.output_tokens) totalOut += entry.output_tokens;
-            if (entry.cache_read_tokens) totalCached += entry.cache_read_tokens;
+            if (
+              Number.isFinite(entry.input_tokens) ||
+              Number.isFinite(entry.output_tokens) ||
+              Number.isFinite(entry.cache_read_tokens)
+            ) {
+              hasUsage = true;
+              totalIn += entry.input_tokens || 0;
+              totalOut += entry.output_tokens || 0;
+              totalCached += entry.cache_read_tokens || 0;
+            }
 
             if (entry.type === "USER_INPUT" && entry.content) {
               const cleanPrompt = cleanUserPrompt(entry.content);
@@ -286,12 +305,13 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           }
         }
 
-        const isRecent = (now - mtime) < 45 * 1000;
         let state = "done";
-        if (isRecent) {
-          if (lastStep && lastStep.type === "USER_INPUT") state = "pending";
-          else if (lastToolEntry && lastToolEntry.status === "RUNNING") state = "streaming";
-          else state = "streaming";
+        if (lastToolEntry?.status === "RUNNING") {
+          state = "streaming";
+        } else if (lastStep?.type === "USER_INPUT") {
+          state = "pending";
+        } else if (now - mtime < 45 * 1000) {
+          state = "idle";
         }
 
         // Loop detection: 5 consecutive identical tool calls (same tool and target) within 60s
@@ -323,10 +343,9 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         seenConvIds.add(convId);
         const clientType = source === "app" ? "app" : source === "ide" ? "ide" : "cli";
         const appLabel = source === "app" ? "Antigravity App" : source === "ide" ? "Antigravity IDE" : "Antigravity";
-        const providerName = source === "app" ? "gemini (app)" : source === "ide" ? "gemini (ide)" : "gemini (cli)";
-
-        const rawModel = extractModelFromTranscript(content) || defaultCliModel;
+        const rawModel = extractModelFromTranscript(content) || (source === "cli" ? defaultCliModel : null);
         const modelName = normalizeModel(rawModel);
+        const providerName = getProviderFromModel(modelName, clientType);
 
         const fallbackWorkspace = path.basename(process.cwd()) || "agent-factory";
         const finalAccount = folderName || fallbackWorkspace;
@@ -345,12 +364,12 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           startedAt: firstTime || (now - elapsedMs),
           elapsedMs,
           tokens: {
-            input: totalIn || 2500,
-            output: totalOut || 850,
-            cached: totalCached,
+            input: hasUsage ? totalIn : null,
+            output: hasUsage ? totalOut : null,
+            cached: hasUsage ? totalCached : null,
           },
-          cost: 0,
-          status: isLooping ? "error" : "200",
+          cost: null,
+          status: isLooping ? "error" : null,
           tools: Array.from(toolSet),
           activeTool,
           currentCommand: activeCommandDetail,

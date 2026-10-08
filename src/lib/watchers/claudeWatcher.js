@@ -69,13 +69,13 @@ function normalizeClaudeTool(name, input = {}) {
 
 function detectProvider(modelName, clientType = "cli") {
   const m = String(modelName || "").toLowerCase();
-  let base = "anthropic";
+  let base = null;
   if (m.includes("claude")) base = "anthropic";
   else if (m.includes("gemini")) base = "gemini";
   else if (m.includes("gpt") || m.includes("o1") || m.includes("o3")) base = "openai";
   else if (m.includes("minimax")) base = "minimax";
   else if (m.includes("deepseek")) base = "deepseek";
-  return `${base} (${clientType})`;
+  return base ? `${base} (${clientType})` : null;
 }
 
 function compactText(value, maxLength = 160) {
@@ -102,7 +102,8 @@ async function parseClaudeTranscript(transcriptPath) {
     totalIn: 0,
     totalOut: 0,
     totalCached: 0,
-    model: "claude-3-7-sonnet",
+    hasUsage: false,
+    model: null,
     activeTool: null,
     activeCommand: null,
     sessionTitle: null,
@@ -149,6 +150,7 @@ async function parseClaudeTranscript(transcriptPath) {
           if (msg.model) result.model = msg.model;
           const u = msg.usage;
           if (u) {
+            result.hasUsage = true;
             if (u.input_tokens) result.totalIn += u.input_tokens;
             if (u.output_tokens) result.totalOut += u.output_tokens;
             if (u.cache_read_input_tokens) result.totalCached += u.cache_read_input_tokens;
@@ -291,13 +293,10 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           if (status === "busy" || status === "running" || status === "working") {
             state = "streaming";
           } else if (status === "idle") {
-            state = "pending";
+            state = "idle";
           } else {
-            state = "streaming";
+            state = "idle";
           }
-        } else {
-          const isRecent = (now - lastActive) < 90 * 1000;
-          state = isRecent ? "streaming" : "done";
         }
 
         const workspaceName = cwd
@@ -328,15 +327,15 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           model,
           provider: detectProvider(model, clientType),
           state,
-          startedAt: startedAt || now,
-          elapsedMs,
+          startedAt: startedAt || null,
+          elapsedMs: startedAt ? elapsedMs : null,
           tokens: {
-            input: parsed.totalIn || 3200,
-            output: parsed.totalOut || 1100,
-            cached: parsed.totalCached || 0,
+            input: parsed.hasUsage ? parsed.totalIn : null,
+            output: parsed.hasUsage ? parsed.totalOut : null,
+            cached: parsed.hasUsage ? parsed.totalCached : null,
           },
-          cost: 0,
-          status: parsed.isLooping ? "error" : "200",
+          cost: null,
+          status: parsed.isLooping ? "error" : null,
           tools: Array.from(parsed.toolSet || []),
           activeTool: parsed.activeTool || null,
           currentCommand: parsed.activeCommand || null,
@@ -401,7 +400,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
             (parsed.slug ? parsed.slug.replace(/-/g, " ") : null) ||
             workspaceName;
 
-          const model = parsed.model || "claude-3-7-sonnet";
+          const model = parsed.model || null;
           const connectionId = isExtension
             ? `Claude Extension (${parsed.slug || fileSessionId.slice(0, 6)})`
             : `Claude (${parsed.slug || fileSessionId.slice(0, 6)})`;
@@ -416,15 +415,15 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
             model,
             provider: detectProvider(model, clientType),
             state,
-            startedAt: stat.birthtimeMs || (mtime - elapsedMs),
-            elapsedMs,
+            startedAt: stat.birthtimeMs || null,
+            elapsedMs: stat.birthtimeMs ? elapsedMs : null,
             tokens: {
-              input: parsed.totalIn || 2500,
-              output: parsed.totalOut || 900,
-              cached: parsed.totalCached || 0,
+              input: parsed.totalIn || null,
+              output: parsed.totalOut || null,
+              cached: parsed.totalCached || null,
             },
-            cost: 0,
-            status: parsed.isLooping ? "error" : "200",
+            cost: null,
+            status: parsed.isLooping ? "error" : null,
             tools: Array.from(parsed.toolSet || []),
             activeTool: parsed.activeTool || null,
             currentCommand: parsed.activeCommand || null,

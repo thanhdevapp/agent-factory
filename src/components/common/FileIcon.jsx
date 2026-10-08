@@ -64,7 +64,7 @@ export default function FileIcon({
           x="3"
           y="12"
           fill="#000000"
-          fontFamily="system-ui, -apple-system, sans-serif"
+          fontFamily="var(--font-family-ui, system-ui, sans-serif)"
           fontWeight="bold"
           fontSize="9.5"
         >
@@ -83,7 +83,7 @@ export default function FileIcon({
           x="2.5"
           y="12"
           fill="#ffffff"
-          fontFamily="system-ui, -apple-system, sans-serif"
+          fontFamily="var(--font-family-ui, system-ui, sans-serif)"
           fontWeight="bold"
           fontSize="9.5"
         >
@@ -102,7 +102,7 @@ export default function FileIcon({
           x="3.5"
           y="12"
           fill="#f1c40f"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="10"
         >
@@ -121,7 +121,7 @@ export default function FileIcon({
           x="2"
           y="11.5"
           fill="#519aba"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="8.5"
         >
@@ -140,7 +140,7 @@ export default function FileIcon({
           x="1"
           y="11.5"
           fill="#e44d26"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="8"
         >
@@ -159,7 +159,7 @@ export default function FileIcon({
           x="2"
           y="11.5"
           fill="#42a5f5"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="8.5"
         >
@@ -178,7 +178,7 @@ export default function FileIcon({
           x="1.5"
           y="11.5"
           fill="#f89820"
-          fontFamily="sans-serif"
+          fontFamily="var(--font-family-ui, sans-serif)"
           fontWeight="bold"
           fontSize="8.5"
         >
@@ -197,7 +197,7 @@ export default function FileIcon({
           x="2.5"
           y="11.5"
           fill="#3776ab"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="9"
         >
@@ -248,7 +248,7 @@ export default function FileIcon({
           x="1"
           y="11.5"
           fill="#ff7043"
-          fontFamily="system-ui, sans-serif"
+          fontFamily="var(--font-family-ui, system-ui, sans-serif)"
           fontWeight="bold"
           fontSize="7.5"
         >
@@ -298,7 +298,7 @@ export default function FileIcon({
           x="1"
           y="11.5"
           fill="#e06c75"
-          fontFamily="system-ui, sans-serif"
+          fontFamily="var(--font-family-ui, system-ui, sans-serif)"
           fontWeight="bold"
           fontSize="7.5"
         >
@@ -357,7 +357,7 @@ export default function FileIcon({
           x="1"
           y="11.5"
           fill="#e74c3c"
-          fontFamily="monospace"
+          fontFamily="var(--font-family-mono, monospace)"
           fontWeight="bold"
           fontSize="8"
         >

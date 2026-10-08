@@ -24,7 +24,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     for (const t of nextTraces) {
       const id = t.connectionId || t.id;
       const prevStatus = prevMap.get(id);
-      const currStatus = t.status;
+      const currStatus = t.state;
 
       if (currStatus === "streaming") {
         hasStreaming = true;

@@ -21,7 +21,7 @@ import {
 import FileIcon from "../common/FileIcon";
 import ImageViewer from "./ImageViewer";
 import MarkdownPreview from "./MarkdownPreview";
-import { getThemeSettings, THEME_CHANGE_EVENT } from "../../lib/themeStore";
+import { getThemeSettings, getActiveFont, THEME_CHANGE_EVENT } from "../../lib/themeStore";
 
 export default function CodeFileEditor({
   filePath,
@@ -41,6 +41,10 @@ export default function CodeFileEditor({
   const [wordWrap, setWordWrap] = useState("on");
   const [showMinimap, setShowMinimap] = useState(true);
   const [monacoTheme, setMonacoTheme] = useState("vs-dark");
+  const [editorFontFamily, setEditorFontFamily] = useState(
+    'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
+  );
+  const [editorFontSize, setEditorFontSize] = useState(13);
   const [markdownMode, setMarkdownMode] = useState("preview"); // "preview" | "edit" | "split"
   const [svgMode, setSvgMode] = useState("image"); // "image" | "code"
 
@@ -49,7 +53,7 @@ export default function CodeFileEditor({
     return filePath.split("/").pop() || filePath;
   }, [filePath]);
 
-  // Sync Monaco editor theme with active workbench theme
+  // Sync Monaco editor theme, font, and size with active workbench settings
   useEffect(() => {
     const applyTheme = () => {
       const cfg = getThemeSettings();
@@ -57,6 +61,10 @@ export default function CodeFileEditor({
         setMonacoTheme("vs");
       } else {
         setMonacoTheme("vs-dark");
+      }
+      setEditorFontFamily(getActiveFont("mono"));
+      if (cfg.fontSize) {
+        setEditorFontSize(parseInt(cfg.fontSize, 10) || 13);
       }
     };
     applyTheme();
@@ -368,8 +376,8 @@ export default function CodeFileEditor({
                 theme={monacoTheme}
                 options={{
                   readOnly,
-                  fontSize: 13,
-                  fontFamily: "var(--font-mono, JetBrains Mono, Menlo, Monaco, monospace)",
+                  fontSize: editorFontSize,
+                  fontFamily: editorFontFamily,
                   minimap: { enabled: showMinimap },
                   scrollBeyondLastLine: false,
                   wordWrap,
@@ -398,8 +406,8 @@ export default function CodeFileEditor({
             theme={monacoTheme}
             options={{
               readOnly,
-              fontSize: 13,
-              fontFamily: "var(--font-mono, JetBrains Mono, Menlo, Monaco, monospace)",
+              fontSize: editorFontSize,
+              fontFamily: editorFontFamily,
               minimap: { enabled: showMinimap },
               scrollBeyondLastLine: false,
               wordWrap,

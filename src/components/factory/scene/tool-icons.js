@@ -1,4 +1,5 @@
 import { Container, Graphics, Text } from "pixi.js";
+import { getActiveFont } from "@/lib/themeStore.js";
 
 // One glyph per tool type. Each is drawn inside a ±10 box so a badge can swap
 // icons without relayout. Only the tool *type* is shown — never arguments.
@@ -229,7 +230,7 @@ export function createToolBadge(tool, { size = 1, showLabel = true, label: label
   if (showLabel) {
     const label = new Text({
       text: labelOverride ?? def.label,
-      style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 9, fill: def.color, fontWeight: "800" },
+      style: { fontFamily: getActiveFont("ui"), fontSize: 9, fill: def.color, fontWeight: "800" },
     });
     label.anchor.set(0.5, 0);
     label.y = 18;

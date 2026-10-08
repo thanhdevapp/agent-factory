@@ -6,20 +6,26 @@ import { extractProviders } from "../traceContract.js";
  * WatcherManager aggregates traces across all installed CLI watchers
  * (Antigravity, Claude Code, etc.) with automatic fallback and caching.
  */
-let cachedTraces = [];
+let cachedSnapshot = { traces: [], errors: [] };
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 1500; // 1.5s cache to avoid reading disks too frequently
 
-export async function getAllLiveTraces(force = false, maxAgeMs = 24 * 60 * 60 * 1000) {
+export async function getLiveTraceSnapshot(force = false, maxAgeMs = 24 * 60 * 60 * 1000) {
   const now = Date.now();
-  if (!force && now - lastFetchTime < CACHE_TTL_MS && cachedTraces.length > 0) {
-    return cachedTraces;
+  if (!force && now - lastFetchTime < CACHE_TTL_MS) {
+    return cachedSnapshot;
   }
 
-  const [agyList, claudeList] = await Promise.all([
-    getAntigravityTraces(maxAgeMs).catch(() => []),
-    getClaudeTraces(maxAgeMs).catch(() => []),
+  const results = await Promise.allSettled([
+    getAntigravityTraces(maxAgeMs),
+    getClaudeTraces(maxAgeMs),
   ]);
+  const errors = [];
+  const [agyResult, claudeResult] = results;
+  const agyList = agyResult.status === "fulfilled" ? agyResult.value : [];
+  const claudeList = claudeResult.status === "fulfilled" ? claudeResult.value : [];
+  if (agyResult.status === "rejected") errors.push({ source: "antigravity", message: agyResult.reason?.message || "Watcher failed" });
+  if (claudeResult.status === "rejected") errors.push({ source: "claude", message: claudeResult.reason?.message || "Watcher failed" });
 
   const combined = [...agyList, ...claudeList];
 
@@ -31,9 +37,13 @@ export async function getAllLiveTraces(force = false, maxAgeMs = 24 * 60 * 60 * 
     return (b.startedAt || 0) - (a.startedAt || 0);
   });
 
-  cachedTraces = combined;
+  cachedSnapshot = { traces: combined, errors };
   lastFetchTime = now;
-  return combined;
+  return cachedSnapshot;
+}
+
+export async function getAllLiveTraces(force = false, maxAgeMs) {
+  return (await getLiveTraceSnapshot(force, maxAgeMs)).traces;
 }
 
 export function getProvidersFromTraces(traces) {

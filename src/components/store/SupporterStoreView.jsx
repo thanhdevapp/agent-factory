@@ -564,7 +564,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[#007acc]/20 text-cyan-300 border border-[#007acc]/40">
-                CATALOG 1,000
+                CATALOG 1,010
               </span>
               <h1 className="text-base font-bold text-white flex items-center gap-2">
                 {activeTab === "all" && <Grid className="w-4 h-4 text-cyan-400" />}

@@ -265,13 +265,13 @@ export default function RightSidebar({
                     <div>
                       <span className="text-slate-500 text-[10px] block">PROVIDER</span>
                       <span className="font-semibold text-slate-300 uppercase">
-                        {selectedAgent.provider || "Gemini"}
+                        {selectedAgent.provider || "Unavailable"}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-500 text-[10px] block">MODEL</span>
                       <span className="font-semibold text-emerald-400 truncate block">
-                        {selectedAgent.model || "gemini-3.8-flash"}
+                        {selectedAgent.model || "Unavailable"}
                       </span>
                     </div>
                   </div>
@@ -318,13 +318,13 @@ export default function RightSidebar({
                     <div>
                       <span className="text-slate-500 text-[10px] block">Total Tokens</span>
                       <span className="font-bold text-emerald-400 font-mono">
-                        {selectedAgent.tokensTotal ? selectedAgent.tokensTotal.toLocaleString() : 0}
+                        {Number.isFinite(selectedAgent.totalTokens) ? selectedAgent.totalTokens.toLocaleString() : "—"}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-500 text-[10px] block">Requests / Steps</span>
                       <span className="font-bold text-slate-300 font-mono">
-                        {selectedAgent.requestCount || 1}
+                        {Number.isFinite(selectedAgent.requestCount) ? selectedAgent.requestCount : "—"}
                       </span>
                     </div>
                   </div>

@@ -23,8 +23,6 @@ export const MODEL_PRICING = {
   "gpt-4o-mini": { input: 0.15, output: 0.60, cached: 0.075 },
   // MiniMax
   "minimax": { input: 0.20, output: 0.80, cached: 0.05 },
-  // Default fallback
-  default: { input: 0.10, output: 0.40, cached: 0.02 },
 };
 
 export function getPricingForModel(model) {
@@ -32,11 +30,12 @@ export function getPricingForModel(model) {
   for (const [key, p] of Object.entries(MODEL_PRICING)) {
     if (norm.includes(key)) return p;
   }
-  return MODEL_PRICING.default;
+  return null;
 }
 
 export function calculateCost(model, input = 0, output = 0, cached = 0) {
   const p = getPricingForModel(model);
+  if (!p) return null;
   const cost =
     (input / 1_000_000) * p.input +
     (output / 1_000_000) * p.output +
@@ -46,6 +45,7 @@ export function calculateCost(model, input = 0, output = 0, cached = 0) {
 
 export function calculateCacheSavings(model, cached = 0) {
   const p = getPricingForModel(model);
+  if (!p) return null;
   // How much was saved compared to reading these cached tokens as raw input
   const diff = Math.max(0, p.input - p.cached);
   const savings = (cached / 1_000_000) * diff;
@@ -55,7 +55,7 @@ export function calculateCacheSavings(model, cached = 0) {
 // In-memory cache for parsed transcripts to avoid reading large files repeatedly
 const transcriptCache = new Map(); // path -> { mtime, size, data }
 
-async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-flash") {
+async function parseTranscriptTokens(transcriptPath, defaultModel = null) {
   try {
     const stat = await fs.stat(transcriptPath);
     const cached = transcriptCache.get(transcriptPath);
@@ -81,9 +81,13 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
       if (!line) continue;
       try {
         const obj = JSON.parse(line);
-        if (obj.input_tokens) inTok += obj.input_tokens;
-        if (obj.output_tokens) outTok += obj.output_tokens;
-        if (obj.cache_read_tokens) cachedTok += obj.cache_read_tokens;
+        const usage = obj.message?.usage;
+        if (Number.isFinite(obj.input_tokens)) inTok += obj.input_tokens;
+        else if (Number.isFinite(usage?.input_tokens)) inTok += usage.input_tokens;
+        if (Number.isFinite(obj.output_tokens)) outTok += obj.output_tokens;
+        else if (Number.isFinite(usage?.output_tokens)) outTok += usage.output_tokens;
+        if (Number.isFinite(obj.cache_read_tokens)) cachedTok += obj.cache_read_tokens;
+        else if (Number.isFinite(usage?.cache_read_input_tokens)) cachedTok += usage.cache_read_input_tokens;
         if (obj.type === "USER_INPUT") requestCount++;
 
         // Tool calls
@@ -99,6 +103,11 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
         }
 
         // Model detection
+        const entryModel = obj.message?.model;
+        if (entryModel) {
+          detectedModel = entryModel;
+        }
+
         if (obj.content && typeof obj.content === "string") {
           const m = obj.content.match(/model["']?\s*:\s*["']([^"']+)["']/i);
           if (m) detectedModel = m[1];
@@ -131,7 +140,7 @@ async function parseTranscriptTokens(transcriptPath, defaultModel = "gemini-3.8-
       total: inTok + outTok + cachedTok,
       firstDate: firstDate || new Date(stat.birthtimeMs).toISOString(),
       lastDate: lastDate || new Date(stat.mtimeMs).toISOString(),
-      model: detectedModel || defaultModel,
+      model: detectedModel || defaultModel || null,
       project: detectedProject || null,
       tools: Array.from(toolSet),
       hasError,
@@ -266,19 +275,19 @@ export async function getAggregatedTokenReport(options = {}) {
       path: path.join(homedir, ".gemini", "antigravity", "brain"),
       provider: "gemini (app)",
       clientType: "app",
-      defaultModel: "gemini-3.8-flash",
+      defaultModel: null,
     },
     {
       path: path.join(homedir, ".gemini", "antigravity-cli", "brain"),
       provider: "gemini (cli)",
       clientType: "cli",
-      defaultModel: "gemini-3.8-flash",
+      defaultModel: null,
     },
     {
       path: path.join(homedir, ".gemini", "antigravity-ide", "brain"),
       provider: "gemini (app)",
       clientType: "app",
-      defaultModel: "gemini-3.8-flash",
+      defaultModel: null,
     },
   ];
 
@@ -315,7 +324,7 @@ export async function getAggregatedTokenReport(options = {}) {
       if (sessionTimestamp < startTime || sessionTimestamp > endTime) continue;
 
       const project = metaData.account || metaData.workspace || tokenData.project || "Agent Factory";
-      const model = tokenData.model || b.defaultModel;
+      const model = tokenData.model || "Unknown Model";
       const cost = calculateCost(model, tokenData.input, tokenData.output, tokenData.cached);
       const savings = calculateCacheSavings(model, tokenData.cached);
 
@@ -359,7 +368,7 @@ export async function getAggregatedTokenReport(options = {}) {
       for (const f of files) {
         if (!f.isFile() || !f.name.endsWith(".jsonl")) continue;
         const filePath = path.join(projPath, f.name);
-        const tokenData = await parseTranscriptTokens(filePath, "claude-3-5-sonnet");
+        const tokenData = await parseTranscriptTokens(filePath);
         if (!tokenData || tokenData.total === 0) continue;
 
         const sessionDate = new Date(tokenData.lastDate || tokenData.firstDate);
@@ -369,7 +378,7 @@ export async function getAggregatedTokenReport(options = {}) {
 
         const projectName =
           proj.name.replace(/^-Volumes-[^-]+-/, "").replace(/^-Users-[^-]+-/, "").slice(0, 30) || "Claude Workspace";
-        const model = tokenData.model || "claude-3-5-sonnet";
+        const model = tokenData.model || "Unknown Model";
         const cost = calculateCost(model, tokenData.input, tokenData.output, tokenData.cached);
         const savings = calculateCacheSavings(model, tokenData.cached);
 
@@ -451,6 +460,7 @@ export async function getAggregatedTokenReport(options = {}) {
   let totalTokens = 0;
   let totalCost = 0;
   let totalSavings = 0;
+  let pricedSessionCount = 0;
   let totalRequests = 0;
 
   const byModel = {};
@@ -475,8 +485,11 @@ export async function getAggregatedTokenReport(options = {}) {
     totalOutput += s.tokens.output;
     totalCached += s.tokens.cached;
     totalTokens += s.tokens.total;
-    totalCost += s.cost;
-    totalSavings += s.savings;
+    if (Number.isFinite(s.cost)) {
+      totalCost += s.cost;
+      pricedSessionCount++;
+    }
+    if (Number.isFinite(s.savings)) totalSavings += s.savings;
     totalRequests += s.requests;
 
     // Day of week
@@ -484,7 +497,7 @@ export async function getAggregatedTokenReport(options = {}) {
     const dayKey = DAY_KEYS[d.getDay()];
     if (byDayOfWeek[dayKey]) {
       byDayOfWeek[dayKey].tokens += s.tokens.total;
-      byDayOfWeek[dayKey].cost += s.cost;
+      byDayOfWeek[dayKey].cost += s.cost ?? 0;
       byDayOfWeek[dayKey].sessions++;
     }
 
@@ -506,8 +519,8 @@ export async function getAggregatedTokenReport(options = {}) {
     byModel[m].output += s.tokens.output;
     byModel[m].cached += s.tokens.cached;
     byModel[m].total += s.tokens.total;
-    byModel[m].cost += s.cost;
-    byModel[m].savings += s.savings;
+    byModel[m].cost += s.cost ?? 0;
+    byModel[m].savings += s.savings ?? 0;
     byModel[m].sessions++;
 
     // By Provider
@@ -528,7 +541,7 @@ export async function getAggregatedTokenReport(options = {}) {
     byProvider[p].output += s.tokens.output;
     byProvider[p].cached += s.tokens.cached;
     byProvider[p].total += s.tokens.total;
-    byProvider[p].cost += s.cost;
+    byProvider[p].cost += s.cost ?? 0;
     byProvider[p].sessions++;
 
     // By Project
@@ -548,7 +561,7 @@ export async function getAggregatedTokenReport(options = {}) {
     byProject[proj].output += s.tokens.output;
     byProject[proj].cached += s.tokens.cached;
     byProject[proj].total += s.tokens.total;
-    byProject[proj].cost += s.cost;
+    byProject[proj].cost += s.cost ?? 0;
     byProject[proj].sessions++;
 
     // By Tools
@@ -594,23 +607,25 @@ export async function getAggregatedTokenReport(options = {}) {
     timeseriesMap[timeKey].input += s.tokens.input;
     timeseriesMap[timeKey].output += s.tokens.output;
     timeseriesMap[timeKey].cached += s.tokens.cached;
-    timeseriesMap[timeKey].cost += s.cost;
+    timeseriesMap[timeKey].cost += s.cost ?? 0;
     timeseriesMap[timeKey].sessions++;
   });
 
   const timeseries = Object.values(timeseriesMap).sort((a, b) => a.date.localeCompare(b.date));
 
   const cacheRate = totalTokens > 0 ? Math.round((totalCached / totalTokens) * 1000) / 10 : 0;
-  const avgCostPerSession = filtered.length > 0 ? Math.round((totalCost / filtered.length) * 1000) / 1000 : 0;
+  const avgCostPerSession = pricedSessionCount > 0 ? Math.round((totalCost / pricedSessionCount) * 1000) / 1000 : null;
   const avgTokensPerSession = filtered.length > 0 ? Math.round(totalTokens / filtered.length) : 0;
 
   // Monthly Run-rate projection
-  let projectedMonthlyCost = totalCost;
+  let projectedMonthlyCost = pricedSessionCount > 0 ? totalCost : null;
   let projectedMonthlyTokens = totalTokens;
   const spanMs = Math.max(1, (endTime === Infinity ? Date.now() : endTime) - startTime);
   const spanDays = Math.max(1, spanMs / (1000 * 60 * 60 * 24));
   if (spanDays >= 1 && spanDays < 30) {
-    projectedMonthlyCost = Math.round((totalCost / spanDays) * 30 * 100) / 100;
+    if (pricedSessionCount > 0) {
+      projectedMonthlyCost = Math.round((totalCost / spanDays) * 30 * 100) / 100;
+    }
     projectedMonthlyTokens = Math.round((totalTokens / spanDays) * 30);
   }
 
@@ -635,10 +650,11 @@ export async function getAggregatedTokenReport(options = {}) {
       totalOutput,
       totalCached,
       cacheRate,
-      totalCost: Math.round(totalCost * 100) / 100,
-      totalCostVnd: Math.round(totalCost * 25400),
-      totalSavings: Math.round(totalSavings * 100) / 100,
-      totalSavingsVnd: Math.round(totalSavings * 25400),
+      totalCost: pricedSessionCount > 0 ? Math.round(totalCost * 100) / 100 : null,
+      totalCostVnd: pricedSessionCount > 0 ? Math.round(totalCost * 25400) : null,
+      totalSavings: pricedSessionCount > 0 ? Math.round(totalSavings * 100) / 100 : null,
+      totalSavingsVnd: pricedSessionCount > 0 ? Math.round(totalSavings * 25400) : null,
+      pricedSessionCount,
       sessionCount: filtered.length,
       totalRequests,
       avgCostPerSession,

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Copy, Check, Download, ZoomIn, ZoomOut, Maximize2, Code, Eye, AlertCircle } from "lucide-react";
 import CodeBlock from "./CodeBlock.js";
+import { getActiveFont } from "../../lib/themeStore.js";
 
 let mermaidInitialized = false;
 
@@ -20,7 +21,7 @@ async function getMermaid() {
         lineColor: "#38bdf8",
         secondaryColor: "#0f172a",
         tertiaryColor: "#1e293b",
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontFamily: getActiveFont("mono"),
         fontSize: "13px",
       },
       securityLevel: "loose",

@@ -44,12 +44,12 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
                   parentId: targetTrace.traceId || targetTrace.connectionId,
                   role: item.Role || item.role || "Subagent Worker",
                   typeName: item.TypeName || item.name || "specialist",
-                  model: item.Model || item.model || targetTrace.model || "inherit",
+                  model: item.Model || item.model || null,
                   prompt: item.Prompt || item.prompt || item.system_prompt || "",
                   workspace: item.Workspace || item.workspace || "inherit",
-                  status: tool.status === "running" ? "streaming" : "done",
-                  tokens: { input: 1200, output: 450, cached: 3000 },
-                  durationMs: 8500,
+                  status: tool.status === "running" ? "streaming" : "idle",
+                  tokens: null,
+                  durationMs: null,
                   isSubagent: true,
                 });
               }
@@ -93,11 +93,11 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
       level: 0,
       label: trace.account || trace.connectionId || "Orchestrator Agent",
       role: "Lead Orchestrator",
-      model: trace.model || "gemini-2.5-pro",
+      model: trace.model || null,
       status: trace.state || trace.mode || "idle",
       isLooping: !!trace.isLooping,
-      tokens: trace.tokens || { input: 0, output: 0, cached: 0 },
-      toolsCount: trace.tools?.length || trace.logs?.length || 0,
+      tokens: trace.tokens || null,
+      toolsCount: trace.tools?.length ?? trace.logs?.length ?? null,
       clientType: trace.clientType || "cli",
       color: trace.color ? `#${trace.color.toString(16).padStart(6, "0")}` : "#38bdf8",
       isRoot: true,
@@ -119,7 +119,7 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
         status: sub.status,
         prompt: sub.prompt,
         tokens: sub.tokens,
-        toolsCount: 2,
+        toolsCount: null,
         clientType: "subagent",
         color: "#818cf8", // Indigo
         isRoot: false,
@@ -131,41 +131,6 @@ export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedT
         toId: sub.id,
         active: sub.status === "streaming",
         label: sub.typeName,
-      });
-    });
-  } else {
-    // If no subagent in transcript, link other workspace traces as Peer / Sub nodes
-    const targetWs = (targetTrace.cwd || targetTrace.workspace || "").toLowerCase();
-    const relatedTraces = traces.filter(t => (t.traceId || t.connectionId) !== (targetTrace.traceId || targetTrace.connectionId));
-
-    relatedTraces.slice(0, 6).forEach((trace) => {
-      const traceId = trace.traceId || trace.connectionId;
-      const isPeer = (trace.cwd || "").toLowerCase() === targetWs;
-      const level = isPeer ? 1 : 1;
-
-      addNodeSafe({
-        id: traceId,
-        level: level,
-        parentId: targetTrace.traceId || targetTrace.connectionId,
-        label: trace.account || trace.connectionId,
-        role: trace.account ? `${trace.account} Worker` : "Peer Agent",
-        model: trace.model || "gemini-2.5-flash",
-        status: trace.state || trace.mode || "idle",
-        isLooping: !!trace.isLooping,
-        tokens: trace.tokens || { input: 0, output: 0, cached: 0 },
-        toolsCount: trace.tools?.length || 0,
-        clientType: trace.clientType || "cli",
-        color: trace.color ? `#${trace.color.toString(16).padStart(6, "0")}` : "#34d399",
-        isRoot: false,
-        traceRef: trace,
-      });
-
-      addEdgeSafe({
-        id: `edge-${targetTrace.traceId || targetTrace.connectionId}-${traceId}`,
-        fromId: targetTrace.traceId || targetTrace.connectionId,
-        toId: traceId,
-        active: trace.state === "streaming" || trace.mode === "streaming",
-        label: "Sync / A2A",
       });
     });
   }

@@ -4,6 +4,7 @@ import { createCharacter, createDesk, createBadge } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
 import { getSupporterState, COSMETIC_CATALOG, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
+import { getActiveFont, THEME_CHANGE_EVENT } from "@/lib/themeStore";
 
 const MAX_ZOOM = 1.0; // Strictly capped at 1.0: large screens display more area instead of enlarging elements!
 const MIN_ZOOM = 0.25;
@@ -158,7 +159,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
   const rackLabel = new Text({
     text: "CORE HUB",
-    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 14, fill: 0x38bdf8, fontWeight: "800", letterSpacing: 2 },
+    style: { fontFamily: getActiveFont("ui"), fontSize: 14, fill: 0x38bdf8, fontWeight: "800", letterSpacing: 2 },
   });
   rackLabel.anchor.set(0.5, 0);
   rackLabel.y = -92;
@@ -328,7 +329,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         disc.circle(0, 0, 6).stroke({ width: 1.2, color: 0xa16207 });
         const amount = new Text({
           text: `+$${ws.cost.toFixed(2)}`,
-          style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0xfacc15, fontWeight: "800" },
+          style: { fontFamily: getActiveFont("ui"), fontSize: 11, fill: 0xfacc15, fontWeight: "800" },
         });
         amount.x = 10;
         amount.anchor.set(0, 0.5);
@@ -400,7 +401,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
       const label = new Text({
         text: pod.provider.toUpperCase(),
-        style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 12, fill: 0xdce6f2, fontWeight: "800", letterSpacing: 1 },
+        style: { fontFamily: getActiveFont("ui"), fontSize: 12, fill: 0xdce6f2, fontWeight: "800", letterSpacing: 1 },
       });
       label.anchor.set(0.5, 0);
       label.x = pod.x;
@@ -436,7 +437,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
       const tag = new Text({
         text: `FALLBACK ×${lane.count}`,
-        style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 9, fill: 0xfbbf24, fontWeight: "800", letterSpacing: 1 },
+        style: { fontFamily: getActiveFont("ui"), fontSize: 9, fill: 0xfbbf24, fontWeight: "800", letterSpacing: 1 },
       });
       tag.anchor.set(1, 0.5);
       tag.x = laneX - 9;
@@ -584,11 +585,12 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   canvas.addEventListener("webglcontextlost", onContextLost, false);
   canvas.addEventListener("webglcontextrestored", onContextRestored, false);
 
-  const onSupporterChange = () => {
+  const onThemeOrFontChange = () => {
     drawFloor(FLOOR.w, FLOOR.h);
     rebuild(currentTraces, true);
   };
-  window.addEventListener(SUPPORTER_CHANGE_EVENT, onSupporterChange);
+  window.addEventListener(SUPPORTER_CHANGE_EVENT, onThemeOrFontChange);
+  window.addEventListener(THEME_CHANGE_EVENT, onThemeOrFontChange);
 
   // ---- animation --------------------------------------------------------
   let t = 0;
@@ -681,7 +683,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   const legendTitle = (text, x) => {
     const title = new Text({
       text,
-      style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0x7d8aa0, fontWeight: "800", letterSpacing: 2 },
+      style: { fontFamily: getActiveFont("ui"), fontSize: 11, fill: 0x7d8aa0, fontWeight: "800", letterSpacing: 2 },
     });
     title.x = x;
     title.y = FLOOR.y + FLOOR.h - 52;
@@ -703,7 +705,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   });
   const packetKey = new Text({
     text: "●  input    ◆  output    ■  cached",
-    style: { fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fill: 0x7d8aa0, fontWeight: "700" },
+    style: { fontFamily: getActiveFont("ui"), fontSize: 11, fill: 0x7d8aa0, fontWeight: "700" },
   });
   packetKey.x = 1560;
   packetKey.y = FLOOR.y + FLOOR.h - 50;
@@ -761,7 +763,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         canvas.removeEventListener("dblclick", onDblClick);
         canvas.removeEventListener("webglcontextlost", onContextLost);
         canvas.removeEventListener("webglcontextrestored", onContextRestored);
-        window.removeEventListener(SUPPORTER_CHANGE_EVENT, onSupporterChange);
+        window.removeEventListener(SUPPORTER_CHANGE_EVENT, onThemeOrFontChange);
+        window.removeEventListener(THEME_CHANGE_EVENT, onThemeOrFontChange);
         app.renderer?.off?.("resize", fit);
       } catch {}
 

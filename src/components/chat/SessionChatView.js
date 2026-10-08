@@ -229,7 +229,7 @@ export default function SessionChatView({
                 </span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono truncate">
-                {session?.model || sessionTrace.model || "gemini-3.8-flash"}
+                {session?.model || sessionTrace.model || "Unavailable"}
               </div>
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function SessionChatView({
                 <span>{sessionTrace.connectionId}</span>
                 <span>•</span>
                 <span className="text-cyan-400 uppercase">
-                  {session?.model || sessionTrace.model || "gemini-3.8-flash"}
+                  {session?.model || sessionTrace.model || "Unavailable"}
                 </span>
                 {session?.cwd && (
                   <>
@@ -376,14 +376,19 @@ export default function SessionChatView({
 
           {/* Action Controls in Modal */}
           <div className="flex items-center gap-1.5">
-            <ContextGauge
-              compact
-              inputTokens={session?.tokens?.input || sessionTrace?.tokens?.input || 0}
-              outputTokens={session?.tokens?.output || sessionTrace?.tokens?.output || 0}
-              cachedTokens={session?.tokens?.cached || sessionTrace?.tokens?.cached || 0}
-              model={session?.model || sessionTrace?.model || "gemini-3.8-flash"}
-              className="hidden md:inline-flex mr-1"
-            />
+            {Number.isFinite(session?.tokens?.input ?? sessionTrace?.tokens?.input) &&
+              Number.isFinite(session?.tokens?.output ?? sessionTrace?.tokens?.output) &&
+              Number.isFinite(session?.tokens?.cached ?? sessionTrace?.tokens?.cached) &&
+              (session?.model || sessionTrace?.model) && (
+                <ContextGauge
+                  compact
+                  inputTokens={session?.tokens?.input ?? sessionTrace.tokens.input}
+                  outputTokens={session?.tokens?.output ?? sessionTrace.tokens.output}
+                  cachedTokens={session?.tokens?.cached ?? sessionTrace.tokens.cached}
+                  model={session?.model || sessionTrace.model}
+                  className="hidden md:inline-flex mr-1"
+                />
+              )}
 
             {/* Search */}
             <button
@@ -532,19 +537,23 @@ export default function SessionChatView({
             <div className="rounded-lg bg-[#252526] p-2 border border-[#333333]">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Provider</span>
               <p className="font-semibold text-cyan-400 mt-0.5 truncate uppercase">
-                {sessionTrace.provider || "Gemini"}
+                {sessionTrace.provider || "Unavailable"}
               </p>
             </div>
             <div className="rounded-lg bg-[#252526] p-2 border border-[#333333]">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Elapsed</span>
               <p className="font-semibold text-slate-200 mt-0.5">
-                {fmtDuration(session?.durationMs || sessionTrace.elapsedMs)}
+                {Number.isFinite(session?.durationMs ?? sessionTrace.elapsedMs)
+                  ? fmtDuration(session?.durationMs ?? sessionTrace.elapsedMs)
+                  : "Unavailable"}
               </p>
             </div>
             <div className="rounded-lg bg-[#252526] p-2 border border-[#333333]">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cached</span>
               <p className="font-semibold text-emerald-400 mt-0.5">
-                {fmtTokens(session?.tokens?.cached || sessionTrace?.tokens?.cached)} ({sessionTrace.cachedPct || 0}%)
+                {Number.isFinite(session?.tokens?.cached ?? sessionTrace?.tokens?.cached)
+                  ? `${fmtTokens(session?.tokens?.cached ?? sessionTrace.tokens.cached)} (${sessionTrace.cachedPct ?? "—"}%)`
+                  : "Unavailable"}
               </p>
             </div>
             <div className="rounded-lg bg-[#252526] p-2 border border-[#333333]">
@@ -555,12 +564,17 @@ export default function SessionChatView({
             </div>
           </div>
 
-          <ContextGauge
-            inputTokens={session?.tokens?.input || sessionTrace?.tokens?.input || 0}
-            outputTokens={session?.tokens?.output || sessionTrace?.tokens?.output || 0}
-            cachedTokens={session?.tokens?.cached || sessionTrace?.tokens?.cached || 0}
-            model={session?.model || sessionTrace?.model || "gemini-3.8-flash"}
-          />
+          {Number.isFinite(session?.tokens?.input ?? sessionTrace?.tokens?.input) &&
+            Number.isFinite(session?.tokens?.output ?? sessionTrace?.tokens?.output) &&
+            Number.isFinite(session?.tokens?.cached ?? sessionTrace?.tokens?.cached) &&
+            (session?.model || sessionTrace?.model) && (
+              <ContextGauge
+                inputTokens={session?.tokens?.input ?? sessionTrace.tokens.input}
+                outputTokens={session?.tokens?.output ?? sessionTrace.tokens.output}
+                cachedTokens={session?.tokens?.cached ?? sessionTrace.tokens.cached}
+                model={session?.model || sessionTrace.model}
+              />
+            )}
 
           {sessionTrace.currentCommand && (
             <div className="rounded-lg bg-black/70 p-2 border border-[#333333]">

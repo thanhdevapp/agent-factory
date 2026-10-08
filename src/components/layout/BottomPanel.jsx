@@ -102,7 +102,7 @@ export default function BottomPanel({
             clientType,
             account,
             model,
-            message: `Active session processing tokens (${t.tokensTotal ? Math.round(t.tokensTotal/1000) + 'k' : '0k'})`,
+            message: `Active session processing tokens (${Number.isFinite(t.totalTokens) ? `${Math.round(t.totalTokens / 1000)}k` : "unavailable"})`,
           });
         }
 

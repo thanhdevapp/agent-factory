@@ -1,24 +1,31 @@
 # AGMon - Design Guidelines & UI Tokens
 
-Tài liệu này quy định các tiêu chuẩn thiết kế UI/UX, Design Tokens, quy tắc sử dụng icon và hướng dẫn đồ hoạ cho dự án **AGMon (Agent Factory)**. Mọi lập trình viên và tác nhân AI khi xây dựng hoặc cập nhật giao diện đều phải tuân thủ nghiêm ngặt các quy tắc dưới đây.
+Tài liệu này quy định các tiêu chuẩn thiết kế UI/UX, Design Tokens, quy tắc sử dụng icon, hệ thống đồ họa 3D Isometric SVG, kiến trúc giao diện Supporter Store và hướng dẫn hiển thị cho dự án **AGMon (Agent Factory)**. Mọi lập trình viên và tác nhân AI khi xây dựng hoặc cập nhật giao diện đều phải tuân thủ nghiêm ngặt các quy tắc dưới đây.
 
 ---
 
 ## 1. Quy tắc cốt lõi về UI & Icon (Bắt buộc)
 
 ### 1.1. Tuyệt đối không sử dụng Raw Emoji / Unicode Symbol thô trong UI
-* **Cấm**: Tuyệt đối không hardcode các ký tự unicode emoji thô trong mã JSX/HTML (ví dụ: `🤖`, `🔊`, `🔇`, `🔔`, `🔕`, `📱`, `⚡`, `💬`, `👤`, `🛠️`, `🧠`, `📟`, `ℹ️`, `⚠️`, `❌`, `🚀`, `✅`...).
+* **Cấm**: Tuyệt đối không hardcode các ký tự unicode emoji thô trong mã JSX/HTML (ví dụ: `🤖`, `🔊`, `🔇`, `🔔`, `🔕`, `📱`, `⚡`, `💬`, `👤`, `🛠️`, `🧠`, `📟`, `ℹ️`, `⚠️`, `❌`, `🚀`, `✅`, `☕`, `🎨`...).
 * **Lý do**: Emoji hiển thị không đồng nhất trên các hệ điều hành (macOS, Windows, Linux, iOS, Android), làm vỡ font metrics, phá vỡ tính chuyên nghiệp và thẩm mỹ chuẩn Developer Tooling của VS Code.
-* **Quy chuẩn**: Luôn sử dụng icon component từ thư viện `lucide-react` hoặc file SVG vector tiêu chuẩn với kích thước, màu sắc và stroke nhất quán.
-* **Thông báo hệ thống (Notifications) & Export**: Trong title trình duyệt hoặc file markdown xuất ra, sử dụng text tag có cấu trúc (ví dụ: `[DONE]`, `[ALERT]`, `### User`, `### Assistant`).
+* **Quy chuẩn**: Luôn sử dụng icon component từ thư viện `lucide-react` hoặc file SVG vector tiêu chuẩn với kích thước, màu sắc và stroke nhất quán (`w-3.5 h-3.5`, `w-4 h-4`, stroke-width: 1.5 - 2).
+* **Thông báo hệ thống (Notifications) & Export**: Trong title trình duyệt hoặc file markdown xuất ra, sử dụng text tag có cấu trúc (ví dụ: `[DONE]`, `[ALERT]`, `### User`, `### Assistant`, `[VIP]`).
 
-### 1.2. Quy tắc Canvas Scaling & Tỷ lệ hiển thị
+### 1.2. Ngôn ngữ Giao diện Chuẩn (100% English UI Text)
+* **Toàn bộ văn bản hiển thị trên giao diện người dùng phải bằng tiếng Anh (100% English)**:
+  - Menu, tabs, buttons, tooltips, dialogs, badges, empty states.
+  - Thông báo lỗi, toast messages, logs hiển thị trên terminal/console.
+  - Tiêu đề, nhãn danh mục, mô tả item trong Supporter Store và Catalog.
+* **Tài liệu kỹ thuật**: Các file markdown nội bộ (như `DESIGN.md`, `CLAUDE.md`) có thể dùng tiếng Việt để giải thích quy chuẩn, nhưng mọi mockup, text props, chuỗi giao diện phải là tiếng Anh chuẩn.
+
+### 1.3. Quy tắc Canvas Scaling & Tỷ lệ hiển thị
 * **Không tự động zoom vượt quá 100% (1:1 scale)**: Khi người dùng mở ứng dụng trên màn hình lớn hoặc siêu rộng (2K, 4K, UltraWide), Canvas Pixi.js không được tự ý scale phóng to vượt quá tỷ lệ tự nhiên 100%.
 * **Mở rộng không gian hiển thị**: Màn hình lớn được tận dụng để hiển thị không gian văn phòng rộng hơn, hiển thị nhiều bàn làm việc của agents hơn ở tỷ lệ sắc nét từng pixel.
 * **Điều khiển Pan & Zoom mượt mà**:
   - Hỗ trợ kéo chuột (Pan/Drag) tự do trong không gian văn phòng.
   - Cho phép người dùng chủ động zoom qua con lăn chuột hoặc nút điều khiển với khoảng giới hạn an toàn (`MIN_ZOOM = 0.2`, `MAX_ZOOM = 1.15` - `1.2`).
-  - Hỗ trợ Double Click vào vùng trống để tự động fit toàn bộ văn phòng vào khung nhìn (`fit to screen`).
+  - Hỗ trợ Double Click vào vùng trống hoặc nút *Reset Zoom* để tự động fit toàn bộ văn phòng vào khung nhìn (`fit to screen`).
 
 ---
 
@@ -35,11 +42,13 @@ Giao diện AGMon được thiết kế theo phong cách VS Code Dark Modern v�
 | **Activity Bar** | `#181818` / `bg-[#181818]` | Thanh công cụ dọc ngoài cùng bên trái (48px) |
 | **Hover / Active State** | `#2a2d2e` / `hover:bg-[#2a2d2e]` | Trạng thái hover của các hàng, danh sách |
 | **Selection Highlight** | `#37373d` / `bg-[#37373d]` | Trạng thái item đang được chọn |
+| **Subtle Overlay** | `bg-black/60 backdrop-blur-md` | Backdrop modal, drawer overlays |
 
 ### 2.2. Đường viền (Borders & Dividers)
-* **Subtle Border**: `#2b2b2b` hoặc `#333333` (phân chia panels, separators, tab borders).
+* **Subtle Border**: `#2b2b2b` hoặc `#333333` (`border-neutral-800` / `border-[#2b2b2b]`) - phân chia panels, separators, tab borders.
 * **Focused / Active Border**: `#007acc` hoặc `#38bdf8` (thể hiện focus state hoặc active tab).
 * **Warning Border**: `#f59e0b/40` hoặc `#f43f5e/40` (thể hiện cảnh báo hoặc loop alert).
+* **Card Outer Glow**: `shadow-[0_0_15px_rgba(0,0,0,0.5)]` kết hợp viền mờ `border-neutral-800/80`.
 
 ### 2.3. Màu điểm nhấn & Trạng thái Agent (Accents & State Colors)
 * **VS Code Primary Accent**: `#007acc` / `#0062a3` (nút hành động chính, active indicator).
@@ -51,34 +60,138 @@ Giao diện AGMon được thiết kế theo phong cách VS Code Dark Modern v�
 
 ---
 
-## 3. Typography & Phông chữ
+## 3. Hệ Thống 10 Themes Virtual Office (Floor Styles & Palettes)
+
+Virtual Office hỗ trợ 10 phong cách nền sàn với bảng màu và ánh sáng môi trường riêng biệt:
+
+| Theme ID | Tên hiển thị | Tông màu nền sàn | Màu lưới / Chỉ dẫn | Ánh sáng môi trường (Ambient) | Phân loại |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `theme_default` | **Classic Charcoal Slate** | `#14161a` (Dark Slate) | `#2d3548` (Slate-700) | `#38bdf8` (Sky blue glow) | FREE |
+| `theme_cyberpunk` | **Cyberpunk Neon Night** | `#0d0819` (Deep Violet) | `#ff2a85` & `#00f0ff` | `#d946ef` (Neon Fuchsia) | FREE |
+| `theme_matrix` | **Phosphor Matrix Terminal** | `#020d05` (Terminal Dark) | `#00ff66` (CRT Green) | `#10b981` (Phosphor Green) | FREE |
+| `theme_wood` | **Cozy Scandinavian Loft** | `#1f1610` (Warm Walnut) | `#451a03` (Woodgrain) | `#f59e0b` (Warm Amber) | COFFEE |
+| `theme_space` | **Deep Space Void** | `#030712` (Cosmic Black) | `#1e1b4b` (Indigo Grid) | `#6366f1` (Nebula Indigo) | COFFEE |
+| `theme_blueprint` | **Blueprint CAD Grid** | `#0b1a30` (Architect Blue)| `#1d4ed8` (Blue Metric) | `#38bdf8` (Cyan Precision) | COFFEE |
+| `theme_synthwave` | **Retro Synthwave 80s** | `#1a052e` (Sunset Purple) | `#d946ef` (Retro Magenta) | `#ec4899` (Sun Coral) | VIP |
+| `theme_sakura_cyber` | **Sakura Cyber Garden** | `#1c0e18` (Obsidian Plum)| `#f43f5e` (Petal Rose) | `#fb7185` (Sakura Bloom) | VIP |
+| `theme_nordic_ice` | **Minimalist Nordic Ice** | `#0f172a` (Glacial Deep) | `#38bdf8` (Frost Cyan) | `#e2e8f0` (Polar Glow) | VIP |
+| `theme_industrial` | **High-Voltage Industrial** | `#18181b` (Hazard Zinc) | `#eab308` (Hazard Yellow) | `#f59e0b` (Amber Spark) | VIP |
+
+### 3.1. Đồng bộ và Kích hoạt Theme (Theme Synchronization)
+* Khi người dùng trang bị (Equip) một sàn mới trong Store:
+  - Dữ liệu lưu ngay vào `localStorage` với key `agmon_supporter_data` (`equippedOfficeTheme`).
+  - Phát sự kiện nội bộ `window.dispatchEvent(new CustomEvent('agmon:office-theme-change', { detail: { themeId } }))`.
+  - Canvas Pixi.js (`office-canvas.js`) và Component Scene cập nhật lại Sprite/Graphics lưới sàn ngay lập tức mà không cần reload trang.
+
+---
+
+## 4. Typography & Phông chữ
 
 1. **Monospace (`font-mono`)**: Bắt buộc sử dụng cho:
    - Session IDs, Trace IDs, Process PIDs.
    - Số lượng Token (Input, Output, Cache, Total).
-   - Chi phí tiền tệ (`$0.015`).
+   - Chi phí tiền tệ (`$0.0150`).
    - Dấu mốc thời gian (`10:45:12`, `durationMs`).
    - Tên Models (`gemini-2.5-pro`, `claude-3-7-sonnet`).
    - Tên Tools (`run_command`, `replace_file_content`).
+   - Mã phím tắt (`Cmd+Shift+P`, `Esc`, `/`).
 2. **Sans-serif (`font-sans`)**: Sử dụng cho tiêu đề bảng điều khiển, nhãn điều hướng, thông điệp hướng dẫn, nội dung hội thoại chat.
 
 ---
 
-## 4. Chuẩn thiết kế Thành phần UI (Components)
+## 5. Chuẩn thiết kế Thành phần UI (Components)
 
-### 4.1. Bảng dữ liệu (Tables)
+### 5.1. Bảng dữ liệu (Tables)
 * **Phân trang bắt buộc**: Mọi bảng dữ liệu tiềm năng có hàng trăm bản ghi (như Token Analytics) phải có phân trang (Pagination: 25 / 50 / 100 / 200). Không render toàn bộ vào DOM cùng lúc.
 * **Sticky Header**: Tiêu đề cột luôn nhìn thấy khi cuộn trang, hỗ trợ click sắp xếp (Sortable) với icon `ArrowUpDown`.
-* **Empty State**: Khi không có dữ liệu, hiển thị thông báo dịu mắt kèm gợi ý xóa bộ lọc.
+* **Empty State**: Khi không có dữ liệu, hiển thị thông báo dịu mắt kèm gợi ý xóa bộ lọc, không dùng emoji.
 
-### 4.2. Hộp thoại nổi (Modals & Drawers)
+### 5.2. Hộp thoại nổi (Modals & Drawers)
 * Nền backdrop tối mờ nhẹ (`backdrop-blur-md bg-black/60`).
-* Nút đóng (`X`) rõ ràng, hỗ trợ phím tắt `Escape`.
+* Nút đóng (`X`) rõ ràng với phím tắt `Escape`.
 * Hỗ trợ nút phóng to toàn màn hình (`Maximize2` / `Minimize2`).
 * Header và Footer luôn cố định (sticky), phần thân nội dung cuộn độc lập (`overflow-y-auto`).
 
-### 4.3. Badge & Chip Tags
-* Sử dụng kích thước chuẩn `xs` hoặc `sm` với padding cân đối (`px-2 py-0.5`).
-* Phân biệt rõ loại Client:
+### 5.3. Badge & Chip Tags
+* Sử dụng kích thước chuẩn `xs` hoặc `sm` với padding cân đối (`px-2 py-0.5 rounded`).
+* Phân biệt rõ danh mục và trạng thái:
   - **APP**: Tông màu tím (`bg-purple-950/80 border-purple-700/80 text-purple-300`).
   - **CLI**: Tông màu xanh ngọc (`bg-emerald-950/80 border-emerald-700/80 text-emerald-300`).
+  - **FREE**: Tông màu ngọc lam (`bg-emerald-500/20 text-emerald-300 border-emerald-500/30`).
+  - **COFFEE**: Tông màu vàng hổ phách (`bg-amber-500/20 text-amber-300 border-amber-500/30`).
+  - **VIP SUPPORTER**: Tông vàng kim sang trọng (`bg-amber-500/20 text-amber-300 border-amber-500/40`).
+  - **EQUIPPED**: Tông cyan nổi bật (`bg-cyan-500/20 text-cyan-300 border-cyan-500/40`).
+
+---
+
+## 6. Hệ Thống Đồ Họa Vector 3D Isometric SVG (Isometric Tech Art)
+
+Các vật phẩm trong Supporter Store và Virtual Office sử dụng đồ hoạ vector 3D Isometric chuẩn xác:
+
+### 6.1. Tọa độ & Phép chiếu Isometric (Isometric Projection Standard)
+* **Góc chiếu trục đo tiêu chuẩn (True Isometric ~30°)**:
+  - Đỉnh trên: `(cx, cy - h/2)`
+  - Đỉnh phải: `(cx + w/2, cy)`
+  - Đỉnh dưới: `(cx, cy + h/2)`
+  - Đỉnh trái: `(cx - w/2, cy)`
+  - Path đa giác bề mặt sàn chuẩn: `M 100 25 L 175 68 L 100 110 L 25 68 Z`.
+* **Cấu trúc xếp lớp độ sâu (Z-Layering)**:
+  1. **Lớp bóng đổ sàn (Cast Shadow)**: Ellipse hoặc Path nằm dưới cùng với hiệu ứng mờ nhạt (`fill="black" opacity="0.4 - 0.6"`).
+  2. **Lớp cạnh đáy vát (Bevel Edge / Extrusion Rim)**: Thể hiện độ dày của khối với màu tối hơn mặt trên 30% (`M 25 68 L 100 110 L 100 120 L 25 78 Z`).
+  3. **Lớp bề mặt chính (Top Surface Slate)**: Gradient tuyến tính thể hiện nguồn sáng từ góc trên bên trái (`x1="0" y1="0" x2="1" y2="1"`).
+  4. **Lớp lưới vi mạch (Circuitry & Gridlines)**: Đường nét nội tại với `strokeDasharray`, phát quang neon nhẹ.
+  5. **Vật thể trọng tâm (Workstation / Agent Core)**: Chi tiết bàn máy tính hoặc khối lõi phát sáng tâm đối xứng.
+
+---
+
+## 7. Kiến trúc Supporter Store & Catalog (1,010 Tech Items)
+
+Supporter Store cung cấp hệ thống 1,010 vật phẩm công nghệ cao chia thành 6 danh mục:
+
+1. **Office Themes & Wallpapers (10 Floor Styles)**: Giao diện nền và lưới ánh sáng cho phòng làm việc 2D.
+2. **Agent Skins 3D (250 Items)**: Ngoại trang cyborg, giáp cơ khí và hình thái avatar đặc nhiệm.
+3. **Tech Desk Props (350 Items)**: Màn hình cong, máy chủ rack, cốc cà phê giữ nhiệt, bàn phím cơ và thiết bị lập trình.
+4. **Pets & Companions (200 Items)**: Drone bay mini lơ lửng, robot đồng hành, thú cưng cyber.
+5. **Auras & Effects (100 Items)**: Vòng năng lượng phát quang chân bàn, hạt hào quang, hiệu ứng dữ liệu.
+6. **Trophies & Milestones (100 Items)**: Kỷ niệm chương đạt mốc 10M tokens, huy hiệu tốc độ xử lý.
+
+### 7.1. Bố cục Store View
+* **Left Navigation Sidebar**:
+  - Danh mục với icon `lucide-react` chuyên biệt, số lượng item trên từng danh mục (`badge count`).
+  - Card "Current Avatar" hiển thị trực tiếp trạng thái avatar, theme phòng làm việc đang trang bị, số lượng props, và huy hiệu VIP.
+* **Header & Quick Filter Bar**:
+  - Thanh tìm kiếm tức thời hỗ trợ phím tắt `/`.
+  - Bộ nút chuyển nhanh danh mục (Quick Category Pills).
+  - Nút chuyển đổi View Mode: Grid tiêu chuẩn (`LayoutGrid`) và Ma trận thu nhỏ (`Grid2X2`).
+  - Nút nhập mã ủng hộ / mở khóa VIP ("Buff Dev").
+* **Card Sản phẩm (Product Card)**:
+  - Khung xem trước 3D Isometric Slate sắc nét.
+  - Tên vật phẩm và mô tả ngắn gọn.
+  - Huy hiệu phân loại (`FREE`, `COFFEE`, `VIP`).
+  - Nút tương tác rõ ràng: `Apply Floor` / `Equip` / `Equipped` (đổi màu xanh cyan khi đã trang bị).
+
+---
+
+## 8. Chuẩn Render An Toàn Dữ Liệu & Hiệu Năng (Data Metric Safety & Performance)
+
+### 8.1. An toàn Null/Undefined cho số đo và tiền tệ
+Để ngăn chặn crash DOM khi luồng SSE truyền dữ liệu rỗng hoặc chưa hoàn tất:
+* **Cost & Phí**: Luôn bọc hàm an toàn:
+  ```javascript
+  const safeCost = typeof cost === 'number' ? cost : Number(cost) || 0;
+  return `$${safeCost.toFixed(4)}`;
+  ```
+* **Thời lượng (Elapsed ms)**:
+  ```javascript
+  const safeElapsed = Math.max(0, Number(elapsed) || 0);
+  ```
+* **Tỷ lệ Cache & Tiến độ (%)**:
+  ```javascript
+  const safeCachedPct = Math.min(100, Math.max(0, Number(cachedPct) || 0));
+  ```
+
+### 8.2. Quy tắc Hiệu năng cho ứng dụng chạy liên tục
+* **Stable React Keys**: Tuyệt đối không dùng `Date.now()` hoặc pure loop index. Dùng composite key ổn định: `${connId}-${item.timestamp || idx}-${idx}`.
+* **Bounded Buffer**: Cap tối đa buffer log ở 200 - 250 dòng để tránh rò rỉ bộ nhớ DOM.
+* **Tránh Heavy Serialization**: Không gọi `JSON.stringify` trực tiếp trong render body của component cập nhật thường xuyên; bọc trong `useMemo`.
+* **Garbage Collection**: Luôn quét và xóa các session ID đã kết thúc trong `useRef` Map state khi size vượt ngưỡng (> 100).

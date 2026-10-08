@@ -226,11 +226,13 @@ export function generateSessionHtml(session = {}, turns = [], options = {}) {
       --accent-amber: #f59e0b;
       --accent-purple: #a855f7;
       --code-bg: #141416;
+      --font-family-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--font-family-ui);
       background-color: var(--bg-primary);
       color: var(--text-primary);
       line-height: 1.6;
@@ -265,7 +267,7 @@ export function generateSessionHtml(session = {}, turns = [], options = {}) {
       padding: 3px 8px;
       border-radius: 4px;
       font-size: 12px;
-      font-family: monospace;
+      font-family: var(--font-family-mono);
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       color: var(--accent-cyan);
@@ -409,7 +411,7 @@ export function generateSessionHtml(session = {}, turns = [], options = {}) {
       padding: 8px 12px;
       margin-bottom: 8px;
       font-size: 12px;
-      font-family: monospace;
+      font-family: var(--font-family-mono);
     }
     .tool-name { color: var(--accent-amber); font-weight: 600; }
     .tool-output {
