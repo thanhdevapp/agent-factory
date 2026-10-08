@@ -128,7 +128,7 @@ export default function TimeMachineToolbar({
             value={currentStepIndex}
             onChange={(e) => seekToStep(parseInt(e.target.value, 10))}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
-            title="Kéo để tua thời gian"
+            title="Drag to scrub timeline"
           />
         </div>
 
@@ -136,11 +136,11 @@ export default function TimeMachineToolbar({
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-2 truncate">
             <span className="text-[#007acc] font-bold">
-              Bước {currentStepIndex + 1}/{totalSteps}
+              Step {currentStepIndex + 1}/{totalSteps}
             </span>
             <span className="text-slate-600">•</span>
             <span className="text-white truncate font-sans">
-              {currentKeyframe?.title || "Sự kiện"}
+              {currentKeyframe?.title || "Event"}
             </span>
             {currentKeyframe?.activeTool && (
               <Badge variant="type" badgeSize="xs" className="shrink-0 font-mono">
@@ -164,7 +164,7 @@ export default function TimeMachineToolbar({
             variant="secondary"
             size="icon-sm"
             onClick={reset}
-            title="Tua về đầu phiên (Home)"
+            title="Rewind to start (Home)"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </Button>
@@ -174,7 +174,7 @@ export default function TimeMachineToolbar({
             size="icon-sm"
             onClick={stepBackward}
             disabled={currentStepIndex <= 0}
-            title="Lùi 1 bước (←)"
+            title="Step backward (←)"
           >
             <SkipBack className="w-3.5 h-3.5" />
           </Button>
@@ -184,7 +184,7 @@ export default function TimeMachineToolbar({
             size="sm"
             onClick={togglePlay}
             className="px-3"
-            title={isPlaying ? "Tạm dừng (Space)" : "Phát lại (Space)"}
+            title={isPlaying ? "Pause (Space)" : "Play (Space)"}
             leftIcon={
               isPlaying ? (
                 <Pause className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export default function TimeMachineToolbar({
               )
             }
           >
-            {isPlaying ? "Tạm dừng" : "Phát"}
+            {isPlaying ? "Pause" : "Play"}
           </Button>
 
           <Button
@@ -201,14 +201,14 @@ export default function TimeMachineToolbar({
             size="icon-sm"
             onClick={stepForward}
             disabled={currentStepIndex >= totalSteps - 1}
-            title="Tiến 1 bước (→)"
+            title="Step forward (→)"
           >
             <SkipForward className="w-3.5 h-3.5" />
           </Button>
 
           {/* Speed Select */}
           <div className="flex items-center gap-1 pl-2 border-l border-[#333]">
-            <span className="text-[10px] text-slate-400 font-medium">Tốc độ:</span>
+            <span className="text-[10px] text-slate-400 font-medium">Speed:</span>
             <div className="flex items-center bg-[#252526] border border-[#3e3e42] rounded p-0.5 text-[10px]">
               {speedOptions.map((s) => (
                 <button
@@ -253,10 +253,10 @@ export default function TimeMachineToolbar({
               size="xs"
               onClick={onClose}
               className="text-slate-400 hover:text-white ml-1"
-              title="Thoát chế độ Replay"
+              title="Exit Replay mode"
               leftIcon={<X className="w-3 h-3" />}
             >
-              Thoát Replay
+              Exit Replay
             </Button>
           )}
         </div>

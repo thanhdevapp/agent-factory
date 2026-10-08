@@ -233,6 +233,17 @@ export default function VSCodeWorkbench({
     return tabs.find((t) => t.id === activeTabId) || tabs[0];
   }, [tabs, activeTabId]);
 
+  // Memoized telemetry JSON preview to prevent DOM thrashing and CPU serialization overhead
+  const telemetryJsonPreview = useMemo(() => {
+    if (activeTabId !== "telemetry") return "";
+    const previewList = effectiveTraces.length > 30 ? effectiveTraces.slice(-30) : effectiveTraces;
+    try {
+      return JSON.stringify(previewList, null, 2);
+    } catch {
+      return "[]";
+    }
+  }, [activeTabId, effectiveTraces]);
+
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#181818] text-[#cccccc] font-sans antialiased">
       {/* 1. VS Code Standard TitleBar (34px) */}
@@ -391,10 +402,13 @@ export default function VSCodeWorkbench({
                         <div className="absolute inset-0 p-4 overflow-auto font-mono text-xs bg-[#181818] text-slate-300">
                           <div className="mb-3 flex items-center justify-between pb-2 border-b border-[#333333]">
                             <h3 className="font-bold text-sm text-cyan-400">Realtime Telemetry Snapshots</h3>
-                            <span className="text-slate-500">{effectiveTraces.length} active sessions</span>
+                            <span className="text-slate-500">
+                              {effectiveTraces.length} active sessions
+                              {effectiveTraces.length > 30 ? " (latest 30)" : ""}
+                            </span>
                           </div>
                           <pre className="bg-[#121212] p-4 rounded border border-[#2b2b2b] text-[11px] text-emerald-400 leading-relaxed overflow-x-auto">
-                            {JSON.stringify(effectiveTraces, null, 2)}
+                            {telemetryJsonPreview}
                           </pre>
                         </div>
                       )}

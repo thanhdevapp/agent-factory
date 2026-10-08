@@ -51,7 +51,7 @@ export function notifyAgentDone(account = "Agent Desk", summary = "Task complete
   lastNotificationTime = now;
 
   try {
-    const n = new Notification(`✅ Task Complete: ${account}`, {
+    const n = new Notification(`[DONE] Task Complete: ${account}`, {
       body: summary,
       icon: "/icons/icon-192x192.png",
       tag: `done-${account}`,
@@ -74,7 +74,7 @@ export function notifyAgentAlert(account = "Agent Desk", reason = "Runaway loop 
   lastNotificationTime = now;
 
   try {
-    const n = new Notification(`⚠️ AGMon Alert: ${account}`, {
+    const n = new Notification(`[ALERT] AGMon Alert: ${account}`, {
       body: reason,
       icon: "/icons/icon-192x192.png",
       tag: `alert-${account}`,

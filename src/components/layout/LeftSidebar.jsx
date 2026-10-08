@@ -87,7 +87,7 @@ export default function LeftSidebar({
 
     return (
       <div
-        key={`${agent.connectionId || "agent"}-${idx}`}
+        key={agent.connectionId || `agent-${idx}`}
         onClick={() => {
           onSelectAgent?.(agent.connectionId);
           onOpenAgentTab?.(agent);

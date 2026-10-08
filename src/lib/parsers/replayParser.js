@@ -87,7 +87,7 @@ export function normalizeTranscriptToKeyframes(transcript) {
         type: "user_input",
         milestoneType: "prompt", // For dot color: 'prompt' (amber)
         agentState: "thinking",
-        title: "User Prompt / Yêu cầu người dùng",
+        title: "User Prompt",
         summary: turn.content ? turn.content.slice(0, 80) + (turn.content.length > 80 ? "..." : "") : "User message",
         content: turn.content || "",
         cumulativeTokens: currentCumulativeTokens,
@@ -107,7 +107,7 @@ export function normalizeTranscriptToKeyframes(transcript) {
         type: "thought",
         milestoneType: "thought",
         agentState: "thinking",
-        title: "AI Chain of Thought / Suy nghĩ giải pháp",
+        title: "AI Chain of Thought",
         summary: turn.thinking.slice(0, 90) + (turn.thinking.length > 90 ? "..." : ""),
         content: turn.thinking,
         cumulativeTokens: currentCumulativeTokens,
@@ -142,7 +142,7 @@ export function normalizeTranscriptToKeyframes(transcript) {
         type: isFileEdit ? "file_write" : "tool_call",
         milestoneType: tool.status === "error" ? "error" : "tool", // 'tool' (cyan) or 'error' (rose)
         agentState: isFileEdit ? "typing" : "running_tool",
-        title: `Gọi công cụ: ${tool.name || "tool"}`,
+        title: `Tool Call: ${tool.name || "tool"}`,
         summary: tool.summary || tool.action || tool.name,
         details: {
           id: tool.id,
@@ -171,7 +171,7 @@ export function normalizeTranscriptToKeyframes(transcript) {
         type: "assistant_reply",
         milestoneType: "reply",
         agentState: "typing",
-        title: "Phản hồi kết quả",
+        title: "Assistant Reply",
         summary: turn.content.slice(0, 90) + (turn.content.length > 90 ? "..." : ""),
         content: turn.content,
         cumulativeTokens: currentCumulativeTokens,
@@ -191,9 +191,9 @@ export function normalizeTranscriptToKeyframes(transcript) {
     type: "finish",
     milestoneType: "finish", // 'finish' (emerald)
     agentState: "done",
-    title: "Phiên làm việc hoàn tất",
-    summary: `Hoàn tất ${turns.length} lượt tương tác • ${keyframes.length} sự kiện`,
-    content: "Đã hoàn thành toàn bộ công việc theo chỉ dẫn.",
+    title: "Session Completed",
+    summary: `Completed ${turns.length} turns • ${keyframes.length} events`,
+    content: "All tasks completed as instructed.",
     cumulativeTokens: runningInputTokens + runningOutputTokens + runningCachedTokens,
     cumulativeCost: calculateCost(
       { input: runningInputTokens, output: runningOutputTokens, cached: runningCachedTokens },

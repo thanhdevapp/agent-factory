@@ -40,7 +40,7 @@ function parseDate(str) {
 
 const PRESETS = [
   {
-    label: "Hôm nay",
+    label: "Today",
     getValue: () => {
       const now = new Date();
       const s = formatDate(now);
@@ -48,7 +48,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Hôm qua",
+    label: "Yesterday",
     getValue: () => {
       const now = new Date();
       now.setDate(now.getDate() - 1);
@@ -57,7 +57,7 @@ const PRESETS = [
     },
   },
   {
-    label: "7 ngày qua",
+    label: "Last 7 days",
     getValue: () => {
       const end = new Date();
       const start = new Date();
@@ -66,7 +66,7 @@ const PRESETS = [
     },
   },
   {
-    label: "14 ngày qua",
+    label: "Last 14 days",
     getValue: () => {
       const end = new Date();
       const start = new Date();
@@ -75,7 +75,7 @@ const PRESETS = [
     },
   },
   {
-    label: "30 ngày qua",
+    label: "Last 30 days",
     getValue: () => {
       const end = new Date();
       const start = new Date();
@@ -84,7 +84,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Tháng này",
+    label: "This month",
     getValue: () => {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -92,7 +92,7 @@ const PRESETS = [
     },
   },
   {
-    label: "Tháng trước",
+    label: "Last month",
     getValue: () => {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -101,12 +101,12 @@ const PRESETS = [
     },
   },
   {
-    label: "Toàn bộ",
+    label: "All time",
     getValue: () => ({ startDate: "", endDate: "" }),
   },
 ];
 
-const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 export function DateRangePicker({
   startDate = "",
@@ -260,13 +260,13 @@ export function DateRangePicker({
             {startDate ? (
               <span className="text-slate-100 font-medium">{startDate}</span>
             ) : (
-              <span className="text-slate-400">Từ đầu</span>
+              <span className="text-slate-400">Start</span>
             )}
             <ArrowRight className="w-2.5 h-2.5 text-slate-500" />
             {endDate ? (
               <span className="text-slate-100 font-medium">{endDate}</span>
             ) : (
-              <span className="text-slate-400">Hiện tại</span>
+              <span className="text-slate-400">Present</span>
             )}
           </div>
         </button>
@@ -283,7 +283,7 @@ export function DateRangePicker({
             {/* Left: Quick Presets */}
             <div className="w-full sm:w-36 bg-[#252526] p-2 flex flex-col gap-1 shrink-0">
               <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider px-2 py-1">
-                Khoảng nhanh
+                Presets
               </span>
               {PRESETS.map((preset) => (
                 <button
@@ -303,14 +303,14 @@ export function DateRangePicker({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-white flex items-center gap-1.5">
                   <CalendarDays className="w-3.5 h-3.5 text-[#007acc]" />
-                  Tháng {month + 1}, {year}
+                  {viewDate.toLocaleString("en-US", { month: "long" })} {year}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={handlePrevMonth}
                     className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
-                    title="Tháng trước"
+                    title="Previous month"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -318,14 +318,14 @@ export function DateRangePicker({
                     type="button"
                     onClick={handleNextMonth}
                     className="p-1 hover:bg-[#2a2d2e] text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
-                    title="Tháng sau"
+                    title="Next month"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Day Headers (T2 - CN) */}
+              {/* Day Headers (Mo - Su) */}
               <div className="grid grid-cols-7 gap-1 text-center">
                 {WEEKDAYS.map((wd) => (
                   <div
@@ -384,7 +384,7 @@ export function DateRangePicker({
               {/* Manual Date Input Fields */}
               <div className="pt-2 border-t border-[#2d2d30] flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 text-[11px]">Từ:</span>
+                  <span className="text-slate-400 text-[11px]">From:</span>
                   <input
                     type="date"
                     value={tempStart}
@@ -394,7 +394,7 @@ export function DateRangePicker({
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 text-[11px]">Đến:</span>
+                  <span className="text-slate-400 text-[11px]">To:</span>
                   <input
                     type="date"
                     value={tempEnd}
@@ -412,7 +412,7 @@ export function DateRangePicker({
                   onClick={handleReset}
                   className="flex items-center gap-1 px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" /> Đặt lại
+                  <RotateCcw className="w-3 h-3" /> Reset
                 </button>
                 <div className="flex items-center gap-2">
                   <button
@@ -420,14 +420,14 @@ export function DateRangePicker({
                     onClick={() => setOpen(false)}
                     className="px-2.5 py-1 text-slate-400 hover:text-white text-xs hover:bg-[#2a2d2e] rounded transition-colors cursor-pointer"
                   >
-                    Đóng
+                    Close
                   </button>
                   <button
                     type="button"
                     onClick={handleApply}
                     className="flex items-center gap-1 px-3 py-1 bg-[#007acc] hover:bg-[#0098ff] text-white text-xs font-medium rounded transition-colors shadow-sm cursor-pointer"
                   >
-                    <Check className="w-3 h-3" /> Áp dụng
+                    <Check className="w-3 h-3" /> Apply
                   </button>
                 </div>
               </div>

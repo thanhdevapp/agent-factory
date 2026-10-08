@@ -24,6 +24,8 @@ import {
   Clock,
   ArrowUpDown,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   RotateCcw,
 } from "lucide-react";
@@ -56,6 +58,8 @@ export default function TokenReportView({ onClose, onStartReplay }) {
   const [searchTable, setSearchTable] = useState("");
   const [sortField, setSortField] = useState("timestamp");
   const [sortAsc, setSortAsc] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [selectedSessionDetail, setSelectedSessionDetail] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -164,6 +168,17 @@ export default function TokenReportView({ onClose, onStartReplay }) {
 
     return list;
   }, [sessions, searchTable, sortField, sortAsc]);
+
+  // Reset pagination to page 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTable, timeRange, providerFilter, modelFilter, projectFilter, toolFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedSessions.length / pageSize));
+  const paginatedSessions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedSessions.slice(start, start + pageSize);
+  }, [sortedSessions, currentPage, pageSize]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -949,14 +964,14 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#242426] text-slate-300">
-                  {sortedSessions.length === 0 ? (
+                  {paginatedSessions.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-8 text-center text-slate-500 italic">
                         Không tìm thấy phiên làm việc nào phù hợp với bộ lọc
                       </td>
                     </tr>
                   ) : (
-                    sortedSessions.map((s) => {
+                    paginatedSessions.map((s) => {
                       const isApp = s.clientType === "app";
                       const isClaude = s.provider.includes("claude");
                       return (
@@ -1018,6 +1033,71 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {sortedSessions.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[#2b2b2b] bg-[#1a1a1c] text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Hiển thị{" "}
+                    <strong className="text-white font-medium">
+                      {(currentPage - 1) * pageSize + 1}
+                    </strong>{" "}
+                    -{" "}
+                    <strong className="text-white font-medium">
+                      {Math.min(currentPage * pageSize, sortedSessions.length)}
+                    </strong>{" "}
+                    trong{" "}
+                    <strong className="text-white font-medium">
+                      {sortedSessions.length.toLocaleString()}
+                    </strong>{" "}
+                    phiên
+                  </span>
+                  <div className="flex items-center gap-1.5 ml-4">
+                    <span className="text-slate-500">Mỗi trang:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="bg-[#252526] border border-[#3c3c3c] text-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:border-cyan-500 cursor-pointer"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={200}>200</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">
+                    Trang {currentPage} / {totalPages || 1}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className="p-1 rounded bg-[#252526] border border-[#3c3c3c] text-slate-300 hover:text-white hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      title="Trang trước"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      className="p-1 rounded bg-[#252526] border border-[#3c3c3c] text-slate-300 hover:text-white hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      title="Trang kế tiếp"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

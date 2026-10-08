@@ -118,7 +118,7 @@ export default function ReplayEventInspector({
         <div className="flex items-center gap-2">
           <IconComponent className={`w-4 h-4 ${isError ? "text-rose-400" : currentType.color}`} />
           <span className="text-white font-semibold">
-            Chi Tiết Sự Kiện • Bước {currentStepIndex + 1}/{totalSteps}
+            Event Details • Step {currentStepIndex + 1}/{totalSteps}
           </span>
           <Badge
             variant={isError ? "danger" : currentType.variant}
@@ -158,7 +158,7 @@ export default function ReplayEventInspector({
               disabled={currentStepIndex <= 0}
               leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
             >
-              Bước Trước
+              Previous
             </Button>
             <Button
               variant="secondary"
@@ -167,11 +167,11 @@ export default function ReplayEventInspector({
               disabled={currentStepIndex >= totalSteps - 1}
               rightIcon={<ChevronRight className="w-3.5 h-3.5" />}
             >
-              Bước Tiếp
+              Next
             </Button>
           </div>
           <Button variant="secondary" size="sm" onClick={onClose}>
-            Đóng
+            Close
           </Button>
         </div>
       }
@@ -200,7 +200,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-amber-400" />
-                Nội dung yêu cầu từ người dùng
+                User Prompt Message
               </span>
               <Button
                 variant="ghost"
@@ -208,11 +208,11 @@ export default function ReplayEventInspector({
                 onClick={() => handleCopy(currentKeyframe.content)}
                 leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               >
-                {copied ? "Đã chép" : "Sao chép"}
+                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
             <pre className="p-3 bg-[#141414] border border-[#2b2b2b] rounded-lg text-xs font-sans text-slate-200 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
-              {currentKeyframe.content || "Không có nội dung text."}
+              {currentKeyframe.content || "No text content."}
             </pre>
           </div>
         )}
@@ -223,7 +223,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <Brain className="w-3.5 h-3.5 text-cyan-400" />
-                Suy nghĩ nội tâm của AI (Chain of Thought)
+                AI Reasoning (Chain of Thought)
               </span>
               <Button
                 variant="ghost"
@@ -231,7 +231,7 @@ export default function ReplayEventInspector({
                 onClick={() => handleCopy(currentKeyframe.content)}
                 leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               >
-                {copied ? "Đã chép" : "Sao chép"}
+                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
             <pre className="p-3 bg-[#12161f] border border-cyan-900/40 rounded-lg text-xs font-mono text-cyan-200/90 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
@@ -246,7 +246,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <FileCode className="w-3.5 h-3.5 text-purple-400" />
-                So Sánh Thay Đổi Code (Diff Preview)
+                Code Changes (Diff Preview)
               </span>
               {details.targetFile && (
                 <span className="text-[10px] font-mono text-purple-300 truncate max-w-[260px]">
@@ -259,7 +259,7 @@ export default function ReplayEventInspector({
             {details.args.TargetContent && (
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider block">
-                  - Nội Dung Cũ Bị Thay Thế (Old Content)
+                  - Original Content (Replaced)
                 </span>
                 <pre className="p-2.5 bg-rose-950/20 border border-rose-500/30 rounded-lg text-xs font-mono text-rose-300 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
                   {details.args.TargetContent}
@@ -270,7 +270,7 @@ export default function ReplayEventInspector({
             {/* Replacement Content (Added) */}
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
-                + Nội Dung Mới Được Thêm (New Content)
+                + New Content (Added)
               </span>
               <pre className="p-2.5 bg-emerald-950/20 border border-emerald-500/30 rounded-lg text-xs font-mono text-emerald-300 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
                 {details.args.ReplacementContent}
@@ -285,7 +285,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <FileCode className="w-3.5 h-3.5 text-purple-400" />
-                Nội dung file được tạo mới
+                Created File Content
               </span>
               {details.targetFile && (
                 <span className="text-[10px] font-mono text-purple-300 truncate max-w-[260px]">
@@ -305,7 +305,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <Code2 className="w-3.5 h-3.5 text-blue-400" />
-                Tham số truyền vào ({currentKeyframe.activeTool})
+                Arguments ({currentKeyframe.activeTool})
               </span>
               {details.targetFile && (
                 <span className="text-[11px] font-mono text-purple-300 truncate max-w-[280px]">
@@ -325,7 +325,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                Kết quả thực thi (Output)
+                Execution Output
               </span>
               <Button
                 variant="ghost"
@@ -333,7 +333,7 @@ export default function ReplayEventInspector({
                 onClick={() => handleCopy(details.output)}
                 leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               >
-                {copied ? "Đã chép" : "Sao chép"}
+                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
             <pre className="p-3 bg-[#101010] border border-[#2b2b2b] rounded-lg text-xs font-mono text-emerald-400/90 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
@@ -348,7 +348,7 @@ export default function ReplayEventInspector({
             <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
               <span className="flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                Phản hồi gửi người dùng
+                Assistant Response
               </span>
               <Button
                 variant="ghost"
@@ -356,7 +356,7 @@ export default function ReplayEventInspector({
                 onClick={() => handleCopy(currentKeyframe.content)}
                 leftIcon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               >
-                {copied ? "Đã chép" : "Sao chép"}
+                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
             <pre className="p-3 bg-[#141414] border border-[#2b2b2b] rounded-lg text-xs font-sans text-slate-200 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
@@ -370,23 +370,23 @@ export default function ReplayEventInspector({
           <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-lg space-y-3">
             <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
               <CheckCircle2 className="w-5 h-5" />
-              Tổng Kết Phiên Làm Việc
+              Session Summary
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="bg-[#181818] p-2.5 rounded border border-[#2b2b2b]">
-                <span className="text-slate-400 text-[10px] block">TỔNG THỜI GIAN</span>
-                <span className="font-mono text-white text-sm font-semibold">{totalElapsedSeconds} giây</span>
+                <span className="text-slate-400 text-[10px] block">TOTAL DURATION</span>
+                <span className="font-mono text-white text-sm font-semibold">{totalElapsedSeconds}s</span>
               </div>
               <div className="bg-[#181818] p-2.5 rounded border border-[#2b2b2b]">
-                <span className="text-slate-400 text-[10px] block">TỔNG SỐ BƯỚC</span>
-                <span className="font-mono text-white text-sm font-semibold">{totalSteps} sự kiện</span>
+                <span className="text-slate-400 text-[10px] block">TOTAL STEPS</span>
+                <span className="font-mono text-white text-sm font-semibold">{totalSteps} events</span>
               </div>
               <div className="bg-[#181818] p-2.5 rounded border border-[#2b2b2b]">
-                <span className="text-slate-400 text-[10px] block">TỔNG TOKEN TIÊU THỤ</span>
+                <span className="text-slate-400 text-[10px] block">TOTAL TOKENS</span>
                 <span className="font-mono text-cyan-400 text-sm font-semibold">{(currentKeyframe.cumulativeTokens || 0).toLocaleString()}</span>
               </div>
               <div className="bg-[#181818] p-2.5 rounded border border-[#2b2b2b]">
-                <span className="text-slate-400 text-[10px] block">TỔNG CHI PHÍ ƯỚC TÍNH</span>
+                <span className="text-slate-400 text-[10px] block">ESTIMATED COST</span>
                 <span className="font-mono text-amber-300 text-sm font-semibold">${(currentKeyframe.cumulativeCost || 0).toFixed(4)}</span>
               </div>
             </div>

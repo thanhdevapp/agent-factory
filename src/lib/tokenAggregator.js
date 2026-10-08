@@ -458,13 +458,13 @@ export async function getAggregatedTokenReport(options = {}) {
   const byProject = {};
   const byTool = {};
   const byDayOfWeek = {
-    Sun: { day: "Chủ nhật", tokens: 0, cost: 0, sessions: 0 },
-    Mon: { day: "Thứ 2", tokens: 0, cost: 0, sessions: 0 },
-    Tue: { day: "Thứ 3", tokens: 0, cost: 0, sessions: 0 },
-    Wed: { day: "Thứ 4", tokens: 0, cost: 0, sessions: 0 },
-    Thu: { day: "Thứ 5", tokens: 0, cost: 0, sessions: 0 },
-    Fri: { day: "Thứ 6", tokens: 0, cost: 0, sessions: 0 },
-    Sat: { day: "Thứ 7", tokens: 0, cost: 0, sessions: 0 },
+    Sun: { day: "Sunday", tokens: 0, cost: 0, sessions: 0 },
+    Mon: { day: "Monday", tokens: 0, cost: 0, sessions: 0 },
+    Tue: { day: "Tuesday", tokens: 0, cost: 0, sessions: 0 },
+    Wed: { day: "Wednesday", tokens: 0, cost: 0, sessions: 0 },
+    Thu: { day: "Thursday", tokens: 0, cost: 0, sessions: 0 },
+    Fri: { day: "Friday", tokens: 0, cost: 0, sessions: 0 },
+    Sat: { day: "Saturday", tokens: 0, cost: 0, sessions: 0 },
   };
   const DAY_KEYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

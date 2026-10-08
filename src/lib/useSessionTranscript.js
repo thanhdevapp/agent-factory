@@ -7,12 +7,22 @@ export function useSessionTranscript(sessionId, isActive = false) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pollTimerRef = useRef(null);
+  const isFetchingRef = useRef(false);
+  const abortControllerRef = useRef(null);
 
   const fetchTranscript = useCallback(async () => {
-    if (!sessionId) return;
+    if (!sessionId || isFetchingRef.current) return;
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    isFetchingRef.current = true;
     try {
-      const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/transcript`);
+      const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/transcript`, {
+        signal: abortControllerRef.current.signal,
+      });
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || `HTTP ${res.status}`);
@@ -21,8 +31,11 @@ export function useSessionTranscript(sessionId, isActive = false) {
       setData(json);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      if (err.name !== "AbortError") {
+        setError(err.message);
+      }
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
   }, [sessionId]);
@@ -31,6 +44,9 @@ export function useSessionTranscript(sessionId, isActive = false) {
   useEffect(() => {
     setLoading(true);
     fetchTranscript();
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
   }, [fetchTranscript]);
 
   // Visibility-aware polling when active
@@ -54,6 +70,7 @@ export function useSessionTranscript(sessionId, isActive = false) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, [isActive, sessionId, fetchTranscript]);
 
@@ -74,10 +91,10 @@ export function useSessionTranscript(sessionId, isActive = false) {
 
     for (const turn of data.turns) {
       if (turn.role === "user") {
-        md += `### 👤 User (${turn.timestamp || ""})\n\n`;
+        md += `### User (${turn.timestamp || ""})\n\n`;
         md += `${turn.content}\n\n`;
       } else {
-        md += `### 🤖 Assistant (${turn.timestamp || ""})\n\n`;
+        md += `### Assistant (${turn.timestamp || ""})\n\n`;
         if (turn.thinking) {
           md += `> **Thinking:**\n> ${turn.thinking.replace(/\n/g, "\n> ")}\n\n`;
         }

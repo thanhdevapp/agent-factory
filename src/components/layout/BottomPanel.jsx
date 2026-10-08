@@ -39,10 +39,9 @@ export default function BottomPanel({
     setCurrentTab(activeTab);
   }, [activeTab]);
 
-  // Generate logs from traces
+  // Generate logs from traces with stable IDs and capped memory
   const logs = useMemo(() => {
     const list = [];
-    const now = Date.now();
 
     const formatLogTime = (ts) => {
       if (!mounted) return "--:--:--";
@@ -59,46 +58,66 @@ export default function BottomPanel({
       const model = t.model || "gemini-3.8-flash";
       const clientType = t.clientType || (t.provider?.includes("app") ? "app" : "cli");
       const provider = t.provider || "gemini";
-      const logTime = formatLogTime(t.timestamp);
+      const connId = t.connectionId || t.traceId || "agent";
 
-      if (t.activeTool) {
-        list.push({
-          id: `${t.connectionId}-tool-${now}`,
-          time: logTime,
-          level: "TOOL",
-          provider,
-          clientType,
-          account,
-          model,
-          message: `Executing tool: ${t.activeTool}`,
-          meta: t.activeToolParams || "",
+      // 1. Incorporate actual real-time event logs if present
+      if (Array.isArray(t.logs) && t.logs.length > 0) {
+        t.logs.forEach((logItem, lIdx) => {
+          const rawType = (logItem.type || "").toUpperCase();
+          const level = rawType.includes("ERR") ? "ERROR" : rawType.includes("TOOL") ? "TOOL" : "STREAM";
+          list.push({
+            id: `${connId}-${logItem.timestamp || lIdx}-${lIdx}`,
+            time: formatLogTime(logItem.timestamp),
+            level,
+            provider,
+            clientType,
+            account,
+            model,
+            message: logItem.detail || logItem.summary || "Event recorded",
+            meta: logItem.summary !== logItem.detail ? logItem.summary : "",
+          });
         });
-      }
+      } else {
+        // Fallback to trace state snapshot with stable IDs
+        if (t.activeTool) {
+          list.push({
+            id: `${connId}-tool-${t.activeTool}`,
+            time: formatLogTime(t.timestamp),
+            level: "TOOL",
+            provider,
+            clientType,
+            account,
+            model,
+            message: `Executing tool: ${t.activeTool}`,
+            meta: t.activeToolParams || "",
+          });
+        }
 
-      if (t.state === "streaming" || t.state === "busy") {
-        list.push({
-          id: `${t.connectionId}-stream-${now}`,
-          time: logTime,
-          level: "STREAM",
-          provider,
-          clientType,
-          account,
-          model,
-          message: `Active session processing tokens (${t.tokensTotal ? Math.round(t.tokensTotal/1000) + 'k' : '0k'})`,
-        });
-      }
+        if (t.state === "streaming" || t.state === "busy") {
+          list.push({
+            id: `${connId}-stream`,
+            time: formatLogTime(t.timestamp),
+            level: "STREAM",
+            provider,
+            clientType,
+            account,
+            model,
+            message: `Active session processing tokens (${t.tokensTotal ? Math.round(t.tokensTotal/1000) + 'k' : '0k'})`,
+          });
+        }
 
-      if (t.state === "error") {
-        list.push({
-          id: `${t.connectionId}-err-${now}`,
-          time: logTime,
-          level: "ERROR",
-          provider,
-          clientType,
-          account,
-          model,
-          message: `Session encountered error state`,
-        });
+        if (t.state === "error") {
+          list.push({
+            id: `${connId}-err`,
+            time: formatLogTime(t.timestamp),
+            level: "ERROR",
+            provider,
+            clientType,
+            account,
+            model,
+            message: `Session encountered error state (${t.error || "failed"})`,
+          });
+        }
       }
     });
 
@@ -115,10 +134,13 @@ export default function BottomPanel({
       });
     }
 
+    // Keep only the most recent 250 log entries to prevent memory and DOM bloat
+    const capped = list.length > 250 ? list.slice(-250) : list;
+
     if (clearedAt) {
-      return list.filter((l) => l.time > clearedAt);
+      return capped.filter((l) => l.time > clearedAt);
     }
-    return list;
+    return capped;
   }, [traces, clearedAt, mounted]);
 
   // Filter logs

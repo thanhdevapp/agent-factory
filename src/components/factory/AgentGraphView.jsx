@@ -42,6 +42,10 @@ export default function AgentGraphView({
   // State điều khiển Pan & Zoom
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 100, y: 50 });
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+  const panRef = useRef(pan);
+  panRef.current = pan;
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -77,50 +81,60 @@ export default function AgentGraphView({
     return buildAgentHierarchy(traces, focusedId, activeTurns);
   }, [traces, focusedId, activeTurns]);
 
+  const boundsRef = useRef(bounds);
+  boundsRef.current = bounds;
+  const nodesCountRef = useRef(nodes.length);
+  nodesCountRef.current = nodes.length;
+
   // Tự động căn giữa toàn bộ đồ thị (Fit to Screen)
   const fitView = useCallback(() => {
-    if (!containerRef.current || nodes.length === 0) return;
+    if (!containerRef.current || nodesCountRef.current === 0) return;
     const { clientWidth, clientHeight } = containerRef.current;
-    const graphWidth = bounds.maxX - bounds.minX;
-    const graphHeight = bounds.maxY - bounds.minY;
+    const b = boundsRef.current;
+    const graphWidth = b.maxX - b.minX;
+    const graphHeight = b.maxY - b.minY;
 
     if (graphWidth <= 0 || graphHeight <= 0) return;
 
     const scaleX = (clientWidth - 120) / graphWidth;
     const scaleY = (clientHeight - 120) / graphHeight;
-    const nextScale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.4), 1.2);
+    const nextScale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.3), 1.2);
 
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    const centerY = (bounds.minY + bounds.maxY) / 2;
+    const centerX = (b.minX + b.maxX) / 2;
+    const centerY = (b.minY + b.maxY) / 2;
 
     const nextPanX = clientWidth / 2 - centerX * nextScale;
     const nextPanY = clientHeight / 2 - centerY * nextScale;
 
     setScale(nextScale);
     setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
-  }, [bounds, nodes.length]);
+  }, []);
 
-  // Tự động fit khi load lần đầu
+  // Tự động fit DUY NHẤT một lần khi đổi session hoặc khởi động lần đầu
+  const lastFittedIdRef = useRef(null);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fitView();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [fitView, focusedId]);
+    if (focusedId && focusedId !== lastFittedIdRef.current && nodes.length > 0) {
+      lastFittedIdRef.current = focusedId;
+      const timer = setTimeout(() => {
+        fitView();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [focusedId, nodes.length, fitView]);
 
   // Xử lý kéo chuột để Pan
   const handleMouseDown = (e) => {
     // Không pan khi click trực tiếp vào nút bấm hoặc node card
-    if (e.target.closest("button") || e.target.closest(".agent-node-card")) return;
+    if (e.target.closest("button") || e.target.closest(".agent-node-card") || e.target.closest("select")) return;
     setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    setDragStart({ x: e.clientX - panRef.current.x, y: e.clientY - panRef.current.y });
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
+      x: Math.round(e.clientX - dragStart.x),
+      y: Math.round(e.clientY - dragStart.y),
     });
   };
 
@@ -128,28 +142,80 @@ export default function AgentGraphView({
     setIsDragging(false);
   };
 
-  // Xử lý con lăn chuột Zoom
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const zoomFactor = 1.1;
-    let nextScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
-    nextScale = Math.min(Math.max(nextScale, 0.25), 2.5);
+  // Double-click vào vùng trống để tự động fit
+  const handleDoubleClick = (e) => {
+    if (e.target.closest("button") || e.target.closest(".agent-node-card") || e.target.closest("select")) return;
+    fitView();
+  };
 
-    // Zoom hướng về con trỏ chuột
+  // Đảm bảo dừng kéo chuột nếu nhả chuột bên ngoài container
+  useEffect(() => {
+    const onGlobalMouseUp = () => setIsDragging(false);
+    window.addEventListener("mouseup", onGlobalMouseUp);
+    return () => window.removeEventListener("mouseup", onGlobalMouseUp);
+  }, []);
+
+  // Zoom In / Zoom Out điều khiển từ nút bấm (căn giữa màn hình)
+  const handleZoomIn = () => {
+    const currentScale = scaleRef.current;
+    const currentPan = panRef.current;
+    const nextScale = Math.min(currentScale * 1.2, 3.0);
+
     if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
+      const { clientWidth, clientHeight } = containerRef.current;
+      const centerX = clientWidth / 2;
+      const centerY = clientHeight / 2;
+      const nextPanX = centerX - (centerX - currentPan.x) * (nextScale / currentScale);
+      const nextPanY = centerY - (centerY - currentPan.y) * (nextScale / currentScale);
+      setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
+    }
+    setScale(nextScale);
+  };
+
+  const handleZoomOut = () => {
+    const currentScale = scaleRef.current;
+    const currentPan = panRef.current;
+    const nextScale = Math.max(currentScale / 1.2, 0.2);
+
+    if (containerRef.current) {
+      const { clientWidth, clientHeight } = containerRef.current;
+      const centerX = clientWidth / 2;
+      const centerY = clientHeight / 2;
+      const nextPanX = centerX - (centerX - currentPan.x) * (nextScale / currentScale);
+      const nextPanY = centerY - (centerY - currentPan.y) * (nextScale / currentScale);
+      setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
+    }
+    setScale(nextScale);
+  };
+
+  // Lắng nghe sự kiện con lăn chuột không passive để zoom mượt mà theo con trỏ chuột
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const zoomFactor = 1.08;
+      const currentScale = scaleRef.current;
+      const currentPan = panRef.current;
+
+      let nextScale = e.deltaY < 0 ? currentScale * zoomFactor : currentScale / zoomFactor;
+      nextScale = Math.min(Math.max(nextScale, 0.2), 3.0);
+
+      const rect = el.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      const nextPanX = mouseX - (mouseX - pan.x) * (nextScale / scale);
-      const nextPanY = mouseY - (mouseY - pan.y) * (nextScale / scale);
+      const nextPanX = mouseX - (mouseX - currentPan.x) * (nextScale / currentScale);
+      const nextPanY = mouseY - (mouseY - currentPan.y) * (nextScale / currentScale);
 
       setScale(nextScale);
-      setPan({ x: nextPanX, y: nextPanY });
-    } else {
-      setScale(nextScale);
-    }
-  };
+      setPan({ x: Math.round(nextPanX), y: Math.round(nextPanY) });
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const activeNodesCount = nodes.filter(n => n.status === "streaming").length;
 
@@ -196,7 +262,7 @@ export default function AgentGraphView({
         {/* Right: Zoom & Pan Controls */}
         <div className="flex items-center gap-1 pointer-events-auto bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-xl backdrop-blur-md">
           <button
-            onClick={() => setScale(s => Math.min(s * 1.2, 2.5))}
+            onClick={handleZoomIn}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title="Zoom In (+)"
           >
@@ -206,7 +272,7 @@ export default function AgentGraphView({
             {Math.round(scale * 100)}%
           </span>
           <button
-            onClick={() => setScale(s => Math.max(s / 1.2, 0.25))}
+            onClick={handleZoomOut}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title="Zoom Out (-)"
           >
@@ -228,7 +294,7 @@ export default function AgentGraphView({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        onWheel={handleWheel}
+        onDoubleClick={handleDoubleClick}
         className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden"
       >
         {/* Background Dot Grid */}

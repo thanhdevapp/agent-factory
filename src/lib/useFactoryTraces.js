@@ -53,6 +53,17 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
       prevMap.set(id, currStatus);
     }
 
+    // Garbage collect dead session IDs to prevent unbounded memory growth in long-running tabs
+    if (prevMap.size > 100) {
+      const activeIds = new Set(nextTraces.map((t) => t.connectionId || t.id));
+      for (const key of prevMap.keys()) {
+        const baseId = key.endsWith("_looping") ? key.replace("_looping", "") : key;
+        if (!activeIds.has(baseId)) {
+          prevMap.delete(key);
+        }
+      }
+    }
+
     if (hasStreaming) {
       playTick();
     }

@@ -47,7 +47,7 @@ export function useSessionReplay(initialSessionId = null) {
       setCurrentStepIndex(0);
     } catch (err) {
       console.error("[useSessionReplay] Load error:", err);
-      setError(err.message || "Không thể tải dữ liệu phiên làm việc");
+      setError(err.message || "Failed to load session data");
     } finally {
       setLoading(false);
     }

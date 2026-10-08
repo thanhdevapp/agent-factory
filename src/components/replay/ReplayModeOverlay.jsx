@@ -111,7 +111,7 @@ export default function ReplayModeOverlay({
           <span className="text-slate-500 text-xs hidden sm:inline">•</span>
 
           <span className="text-xs text-slate-300 font-mono truncate max-w-[200px]" title={sessionInfo?.id}>
-            {sessionInfo?.id ? `${sessionInfo.id.slice(0, 16)}...` : "Phiên làm việc"}
+            {sessionInfo?.id ? `${sessionInfo.id.slice(0, 16)}...` : "Session"}
           </span>
 
           {sessionInfo?.model && (
@@ -128,9 +128,9 @@ export default function ReplayModeOverlay({
             size="xs"
             onClick={() => setIsInspectorOpen(true)}
             leftIcon={<SlidersHorizontal className="w-3 h-3 text-cyan-400" />}
-            title="Mở bảng chi tiết sự kiện và tham số (Phím I)"
+            title="Inspect event details and parameters (Key: I)"
           >
-            Chi Tiết Bước
+            Step Details
           </Button>
 
           <Button
@@ -139,9 +139,9 @@ export default function ReplayModeOverlay({
             onClick={onExit}
             leftIcon={<X className="w-3.5 h-3.5" />}
             className="text-slate-400 hover:text-white hover:bg-rose-950/40 hover:border-rose-500/40"
-            title="Thoát chế độ Replay và trở về thời gian thực"
+            title="Exit Replay and return to live stream"
           >
-            Thoát Replay
+            Exit Replay
           </Button>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function ReplayModeOverlay({
               {isBubbleExpanded && (
                 <div className="p-3 space-y-2 text-xs">
                   <p className="text-slate-300 leading-relaxed font-sans line-clamp-3">
-                    {currentKeyframe.summary || currentKeyframe.content?.slice(0, 150) || "Đang thực thi nhiệm vụ..."}
+                    {currentKeyframe.summary || currentKeyframe.content?.slice(0, 150) || "Executing task..."}
                   </p>
 
                   {/* Active Tool Badge */}

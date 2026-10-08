@@ -69,7 +69,7 @@ export const Input = React.forwardRef(
               type="button"
               onClick={onClear}
               className="absolute right-2 flex items-center justify-center p-0.5 text-[#8c8c8c] hover:text-[#cccccc] bg-transparent border-none cursor-pointer rounded z-10"
-              title="Xóa nội dung"
+              title="Clear input"
             >
               <X className="w-3 h-3" />
             </button>
