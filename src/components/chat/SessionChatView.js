@@ -108,7 +108,7 @@ export default function SessionChatView({
     sessionTrace?.traces?.[0]?.traceId ||
     sessionTrace?.connectionId ||
     "";
-  const sessionId = targetTraceId.replace(/^agy-|^claude-/, "") || targetTraceId;
+  const sessionId = targetTraceId.replace(/^agy-|^claude-|^codex-/, "") || targetTraceId;
   const isAgentActive =
     sessionTrace?.state === "streaming" ||
     sessionTrace?.state === "busy" ||

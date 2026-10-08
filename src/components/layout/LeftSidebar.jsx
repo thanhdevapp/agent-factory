@@ -76,7 +76,8 @@ export default function LeftSidebar({
     const groups = {
       extensions: [],
       desktop: [],
-      codex: [],
+      codexDesktop: [],
+      codexCli: [],
       geminiApp: [],
       geminiCli: [],
       claude: [],
@@ -90,13 +91,19 @@ export default function LeftSidebar({
       const conn = (w.connectionId || "").toLowerCase();
       const model = (w.model || "").toLowerCase();
 
+      const isCodex = cli === "codex" || p.includes("codex") || conn.includes("codex");
       const isExtension = ct === "extension" || ct === "ide" || conn.includes("extension");
       const isDesktop = ct === "desktop" || conn.includes("desktop");
       const isClaude = cli === "claude" || p.includes("claude") || p.includes("anthropic") || model.includes("claude");
-      const isCodex = cli === "codex" || p.includes("codex") || conn.includes("codex");
 
       if (isCodex) {
-        groups.codex.push(w);
+        if (isExtension) {
+          groups.extensions.push(w);
+        } else if (isDesktop || ct === "app" || conn.includes("app")) {
+          groups.codexDesktop.push(w);
+        } else {
+          groups.codexCli.push(w);
+        }
       } else if (isExtension) {
         groups.extensions.push(w);
       } else if (isDesktop) {
@@ -177,12 +184,12 @@ export default function LeftSidebar({
                   className={`shrink-0 text-[9px] font-bold px-1 rounded uppercase tracking-wider border ${
                     isExt
                       ? "bg-sky-950/80 text-sky-300 border-sky-500/40"
-                      : isApp
-                      ? "bg-purple-950/80 text-purple-300 border-purple-500/40"
+                      : isDesktop || isApp
+                      ? "bg-teal-950/80 text-teal-300 border-teal-500/40"
                       : "bg-teal-950/80 text-teal-300 border-teal-500/40"
                   }`}
                 >
-                  {isExt ? "CX-EXT" : isApp ? "CX-APP" : "CX"}
+                  {isExt ? "EXT" : isDesktop || isApp ? "DESK" : "CLI"}
                 </span>
               ) : isExt ? (
                 <span className="shrink-0 bg-sky-950/80 text-sky-300 border border-sky-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
@@ -363,14 +370,25 @@ export default function LeftSidebar({
                     </div>
                   )}
 
-                  {/* Codex (CLI, App, VS Code extension) */}
-                  {groupedAgents.codex?.length > 0 && (
+                  {/* Codex Desktop App */}
+                  {groupedAgents.codexDesktop?.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-teal-400/90 flex items-center gap-1">
+                        <Monitor className="w-2.5 h-2.5" />
+                        <span>Codex Desktop App ({groupedAgents.codexDesktop.length})</span>
+                      </div>
+                      {groupedAgents.codexDesktop.map(renderAgentRow)}
+                    </div>
+                  )}
+
+                  {/* Codex CLI */}
+                  {groupedAgents.codexCli?.length > 0 && (
                     <div className="mb-2">
                       <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-teal-400/90 flex items-center gap-1">
                         <TerminalSquare className="w-2.5 h-2.5" />
-                        <span>Codex ({groupedAgents.codex.length})</span>
+                        <span>Codex CLI ({groupedAgents.codexCli.length})</span>
                       </div>
-                      {groupedAgents.codex.map(renderAgentRow)}
+                      {groupedAgents.codexCli.map(renderAgentRow)}
                     </div>
                   )}
 
@@ -475,6 +493,17 @@ export default function LeftSidebar({
               >
                 <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span className="truncate font-mono text-[10px]">~/.claude/projects</span>
+              </div>
+              <div
+                onClick={() => {
+                  setExplorerPath("~/.codex/sessions");
+                  setActiveSidebarTab("files");
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-teal-300 cursor-pointer p-1 rounded hover:bg-[#252526] transition-colors"
+                title="Click to browse Codex Sessions files"
+              >
+                <Folder className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                <span className="truncate font-mono text-[10px]">~/.codex/sessions</span>
               </div>
             </div>
           )}

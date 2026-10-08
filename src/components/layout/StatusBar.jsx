@@ -69,7 +69,7 @@ export default function StatusBar({
             <span>({selectedAgent.model || "gemini-3.8-flash"})</span>
           </div>
         ) : (
-          <span>Ready · Real-time monitoring Antigravity CLI, App & Claude</span>
+          <span>Ready · Real-time monitoring Antigravity, Claude & Codex (CLI & Desktop)</span>
         )}
       </div>
 

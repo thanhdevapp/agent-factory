@@ -34,6 +34,11 @@ import {
 
 export default function VSCodeWorkbench({
   traces = [],
+  totalCount = 0,
+  top = 20,
+  onTopChange,
+  timeframe = "24h",
+  onTimeframeChange,
   office = { workstations: [], stats: {} },
   mode = "live",
   mockPreset = "cases",
@@ -399,6 +404,12 @@ export default function VSCodeWorkbench({
       {/* 1. VS Code Standard TitleBar (34px) */}
       <TitleBar
         stats={office.stats}
+        traces={effectiveTraces}
+        totalCount={totalCount}
+        top={top}
+        onTopChange={onTopChange}
+        timeframe={timeframe}
+        onTimeframeChange={onTimeframeChange}
         mode={mode}
         mockPreset={mockPreset}
         onModeChange={onModeChange}

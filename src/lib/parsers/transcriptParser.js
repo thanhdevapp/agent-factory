@@ -1,11 +1,13 @@
 import { parseAntigravityTranscript } from "./antigravityParser.js";
 import { parseClaudeTranscript } from "./claudeParser.js";
+import { parseCodexTranscript } from "./codexParser.js";
 import { redactDeep } from "./secretRedactor.js";
 
 function generateMockTranscript(rawId) {
   const isClaude = rawId.includes("claude");
-  const model = isClaude ? "claude-3-7-sonnet" : "gemini-2.5-pro";
-  const cli = isClaude ? "claude" : "antigravity";
+  const isCodex = rawId.includes("codex");
+  const model = isClaude ? "claude-3-7-sonnet" : isCodex ? "gpt-5.6-terra" : "gemini-2.5-pro";
+  const cli = isClaude ? "claude" : isCodex ? "codex" : "antigravity";
 
   return {
     ok: true,
@@ -117,7 +119,7 @@ export async function getSessionTranscript(rawId, cliHint = "") {
     return generateMockTranscript(rawId);
   }
 
-  // Strip prefixes like "agy-" or "claude-" if present
+  // Strip prefixes like "agy-", "claude-", or "codex-" if present
   let cli = cliHint.toLowerCase();
   if (id.startsWith("agy-")) {
     cli = "antigravity";
@@ -125,6 +127,22 @@ export async function getSessionTranscript(rawId, cliHint = "") {
   } else if (id.startsWith("claude-")) {
     cli = "claude";
     id = id.slice(7);
+  } else if (id.startsWith("codex-")) {
+    cli = "codex";
+    id = id.slice(6);
+  }
+
+  if (cli === "codex") {
+    try {
+      const res = await parseCodexTranscript(id);
+      return {
+        ...res,
+        session: redactDeep(res.session),
+        turns: redactDeep(res.turns),
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
   // If ID was formatted as short hash in traceId, try to resolve full directory in brain
@@ -155,6 +173,20 @@ export async function getSessionTranscript(rawId, cliHint = "") {
       if (cli === "claude") {
         throw err;
       }
+    }
+  }
+
+  // Fallback to codex if no cli specified
+  if (!cli) {
+    try {
+      const res = await parseCodexTranscript(id);
+      return {
+        ...res,
+        session: redactDeep(res.session),
+        turns: redactDeep(res.turns),
+      };
+    } catch {
+      // ignore
     }
   }
 

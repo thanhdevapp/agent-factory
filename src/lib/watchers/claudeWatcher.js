@@ -368,6 +368,8 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
   // Catches all project-level active & historical sessions within the time window
   try {
     const projectFolders = await fs.readdir(projectsDir).catch(() => []);
+    const projectCandidates = [];
+
     for (const pf of projectFolders) {
       const folderPath = path.join(projectsDir, pf);
       let files = [];
@@ -387,60 +389,69 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           const stat = await fs.stat(transcriptPath);
           const mtime = stat.mtimeMs;
           if (now - mtime > maxAgeMs) continue;
-
           seenSessionIds.add(fileSessionId);
-          const parsed = await parseClaudeTranscript(transcriptPath);
+          projectCandidates.push({ transcriptPath, mtime, stat, fileSessionId, pf });
+        } catch {}
+      }
+    }
 
-          const isRecent = (now - mtime) < 90 * 1000;
-          const isPending = (now - mtime) < 15 * 60 * 1000;
-          const state = isRecent ? "streaming" : isPending ? "idle" : "done";
+    // Sort by mtime descending (most recent first) and cap to top 100
+    projectCandidates.sort((a, b) => b.mtime - a.mtime);
+    const toProcess = projectCandidates.slice(0, 100);
 
-          const { clientType, label } = classifyClaudeEntrypoint(...(parsed.entrypoints || []));
-          const workspaceName = parsed.cwd
-            ? path.basename(parsed.cwd)
-            : (extractWorkspaceFromFolder(pf) || fallbackWorkspace);
+    for (const { transcriptPath, mtime, stat, fileSessionId, pf } of toProcess) {
+      try {
+        const parsed = await parseClaudeTranscript(transcriptPath);
 
-          const elapsedMs = Math.max(0, (parsed.lastTimestamp || mtime) - stat.birthtimeMs);
+        const isRecent = (now - mtime) < 90 * 1000;
+        const isPending = (now - mtime) < 15 * 60 * 1000;
+        const state = isRecent ? "streaming" : isPending ? "idle" : "done";
 
-          const sessionTitle =
-            parsed.sessionTitle ||
-            (parsed.slug ? parsed.slug.replace(/-/g, " ") : null) ||
-            workspaceName;
+        const { clientType, label } = classifyClaudeEntrypoint(...(parsed.entrypoints || []));
+        const workspaceName = parsed.cwd
+          ? path.basename(parsed.cwd)
+          : (extractWorkspaceFromFolder(pf) || fallbackWorkspace);
 
-          const model = parsed.model || null;
-          const connectionId = `${label} (${parsed.slug || fileSessionId.slice(0, 6)})`;
+        const elapsedMs = Math.max(0, (parsed.lastTimestamp || mtime) - stat.birthtimeMs);
 
-          traces.push(normalizeTrace({
-            traceId: `claude-${fileSessionId.slice(0, 6)}`,
-            cli: "claude",
-            clientType,
-            source: clientType,
-            connectionId,
-            account: workspaceName,
-            model,
-            provider: detectProvider(model, clientType),
-            state,
-            startedAt: stat.birthtimeMs || null,
-            elapsedMs: stat.birthtimeMs ? elapsedMs : null,
-            tokens: {
-              input: parsed.totalIn || null,
-              output: parsed.totalOut || null,
-              cached: parsed.totalCached || null,
-            },
-            cost: null,
-            status: parsed.isLooping ? "error" : null,
-            tools: Array.from(parsed.toolSet || []),
-            activeTool: parsed.activeTool || null,
-            currentCommand: parsed.activeCommand || null,
-            sessionTitle,
-            lastText: parsed.lastText || null,
-            lastTextRole: parsed.lastTextRole || null,
-            isLooping: parsed.isLooping || false,
-            logs: (parsed.recentLogs || []).slice(-25),
-          }));
-        } catch {
-          // ignore unreadable project file
-        }
+        const sessionTitle =
+          parsed.sessionTitle ||
+          (parsed.slug ? parsed.slug.replace(/-/g, " ") : null) ||
+          workspaceName;
+
+        const model = parsed.model || null;
+        const connectionId = `${label} (${parsed.slug || fileSessionId.slice(0, 6)})`;
+
+        traces.push(normalizeTrace({
+          traceId: `claude-${fileSessionId.slice(0, 6)}`,
+          cli: "claude",
+          clientType,
+          source: clientType,
+          connectionId,
+          account: workspaceName,
+          model,
+          provider: detectProvider(model, clientType),
+          state,
+          startedAt: stat.birthtimeMs || null,
+          elapsedMs: stat.birthtimeMs ? elapsedMs : null,
+          tokens: {
+            input: parsed.totalIn || null,
+            output: parsed.totalOut || null,
+            cached: parsed.totalCached || null,
+          },
+          cost: null,
+          status: parsed.isLooping ? "error" : null,
+          tools: Array.from(parsed.toolSet || []),
+          activeTool: parsed.activeTool || null,
+          currentCommand: parsed.activeCommand || null,
+          sessionTitle,
+          lastText: parsed.lastText || null,
+          lastTextRole: parsed.lastTextRole || null,
+          isLooping: parsed.isLooping || false,
+          logs: (parsed.recentLogs || []).slice(-25),
+        }));
+      } catch {
+        // ignore unreadable project file
       }
     }
   } catch {

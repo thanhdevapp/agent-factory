@@ -7,8 +7,32 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const source = searchParams.get("source") || "live";
   const mockPreset = searchParams.get("mockPreset") || searchParams.get("preset");
-  const hours = Number(searchParams.get("hours") || 24);
-  const maxAgeMs = Math.max(1, hours) * 60 * 60 * 1000;
+  const rawHours = searchParams.get("hours");
+  let hours = 24;
+  if (rawHours !== null) {
+    if (rawHours === "0" || rawHours === "all") {
+      hours = 0;
+    } else {
+      const parsedHours = Number(rawHours);
+      if (!Number.isNaN(parsedHours) && parsedHours >= 0) {
+        hours = parsedHours;
+      }
+    }
+  }
+  const maxAgeMs = hours > 0 ? hours * 60 * 60 * 1000 : Infinity;
+
+  const rawLimit = searchParams.get("limit") || searchParams.get("top");
+  let limit = 20;
+  if (rawLimit !== null) {
+    if (rawLimit === "0" || rawLimit === "all") {
+      limit = 0;
+    } else {
+      const parsedLimit = Number(rawLimit);
+      if (!Number.isNaN(parsedLimit) && parsedLimit >= 0) {
+        limit = parsedLimit;
+      }
+    }
+  }
 
   const encoder = new TextEncoder();
 
@@ -30,24 +54,35 @@ export async function GET(request) {
 
         if (source === "mock" || mockPreset) {
           const presetConfig = MOCK_PRESETS[mockPreset] || MOCK_PRESETS.cases;
-          const traces = generateMockTraces({
+          const rawTraces = generateMockTraces({
             count: presetConfig.agents,
             errorRatio: presetConfig.errorRatio,
             cases: !!presetConfig.cases,
             preset: mockPreset,
             seed: 42,
           });
+          const totalCount = rawTraces.length;
+          const traces = (limit > 0 && limit < totalCount) ? rawTraces.slice(0, limit) : rawTraces;
           const providers = mockProviderDescriptors(traces);
-          send({ traces, providers, timestamp: Date.now(), mode: "mock", preset: mockPreset || "cases" });
+          send({
+            traces,
+            totalCount,
+            providers,
+            timestamp: Date.now(),
+            mode: "mock",
+            preset: mockPreset || "cases",
+            activeAgents: traces.filter((t) => t.state === "streaming" || t.state === "pending").length,
+          });
           return;
         }
 
         // Live Mode
         try {
-          const { traces, errors } = await getLiveTraceSnapshot(false, maxAgeMs);
+          const { traces, totalCount, errors } = await getLiveTraceSnapshot(false, maxAgeMs, limit);
           const providers = getProvidersFromTraces(traces);
           send({
             traces,
+            totalCount,
             providers,
             errors,
             timestamp: Date.now(),
@@ -58,6 +93,7 @@ export async function GET(request) {
           console.error("[SSE] Failed to fetch live traces:", err);
           send({
             traces: [],
+            totalCount: 0,
             providers: [],
             errors: [{ source: "telemetry", message: err.message || "Failed to read live traces" }],
             timestamp: Date.now(),

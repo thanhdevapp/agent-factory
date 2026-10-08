@@ -5,7 +5,57 @@ import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "./moc
 import { playTick, playComplete, playAlarm, playNeedInput } from "./soundFx";
 import { notifyAgentDone, notifyAgentAlert } from "./notifications";
 
-export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
+export const TIMEFRAME_HOURS_MAP = {
+  "1h": 1,
+  "6h": 6,
+  "24h": 24,
+  "3d": 72,
+  "7d": 168,
+  "all": 0,
+};
+
+export function useFactoryTraces({
+  mode = "live",
+  preset = "cases",
+  initialTop = 20,
+  initialTimeframe = "24h",
+} = {}) {
+  const [top, setTop] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("agmon_filter_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.top !== undefined) return parsed.top;
+        }
+      } catch {}
+    }
+    return initialTop;
+  });
+
+  const [timeframe, setTimeframe] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("agmon_filter_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.timeframe) return parsed.timeframe;
+        }
+      } catch {}
+    }
+    return initialTimeframe;
+  });
+
+  const [totalCount, setTotalCount] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("agmon_filter_settings", JSON.stringify({ top, timeframe }));
+      } catch {}
+    }
+  }, [top, timeframe]);
+
   const [traces, setTraces] = useState([]);
   const [providers, setProviders] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -88,8 +138,11 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
 
     const cfg = MOCK_PRESETS[preset] || MOCK_PRESETS.cases;
     const updateMock = () => {
-      const next = generateMockTraces({ count: cfg.agents, cases: !!cfg.cases, errorRatio: cfg.errorRatio, preset });
+      const allMock = generateMockTraces({ count: cfg.agents, cases: !!cfg.cases, errorRatio: cfg.errorRatio, preset });
+      const limit = top === "all" ? 0 : Number(top);
+      const next = (limit > 0 && limit < allMock.length) ? allMock.slice(0, limit) : allMock;
       setTraces(next);
+      setTotalCount(allMock.length);
       triggerSoundEffects(next);
       setProviders(mockProviderDescriptors(next));
       setConnected(true);
@@ -99,7 +152,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     updateMock();
     const interval = setInterval(updateMock, 3000);
     return () => clearInterval(interval);
-  }, [mode, preset, connectionEpoch]);
+  }, [mode, preset, top, timeframe, connectionEpoch, triggerSoundEffects]);
 
   // 2. Live Mode (SSE + Wake-up Watchdog)
   useEffect(() => {
@@ -119,7 +172,9 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
     };
 
     try {
-      const es = new EventSource("/api/traces/stream?source=live");
+      const hours = TIMEFRAME_HOURS_MAP[timeframe] ?? 24;
+      const limit = top === "all" ? 0 : Number(top);
+      const es = new EventSource(`/api/traces/stream?source=live&hours=${hours}&limit=${limit}`);
       eventSourceRef.current = es;
 
       es.onopen = () => {
@@ -136,6 +191,11 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
           if (Array.isArray(payload.traces)) {
             setTraces(payload.traces);
             triggerSoundEffects(payload.traces);
+          }
+          if (typeof payload.totalCount === "number") {
+            setTotalCount(payload.totalCount);
+          } else if (Array.isArray(payload.traces)) {
+            setTotalCount(payload.traces.length);
           }
           if (Array.isArray(payload.providers)) {
             setProviders(payload.providers);
@@ -164,7 +224,7 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
         eventSourceRef.current = null;
       }
     };
-  }, [mode, connectionEpoch]);
+  }, [mode, timeframe, top, connectionEpoch, triggerSoundEffects]);
 
   // 3. Auto-reconnect when laptop wakes up or tab gains focus (debounced & safe)
   useEffect(() => {
@@ -201,6 +261,11 @@ export function useFactoryTraces({ mode = "live", preset = "cases" } = {}) {
 
   return {
     traces,
+    totalCount,
+    top,
+    setTop,
+    timeframe,
+    setTimeframe,
     providers,
     connected,
     live: mode === "live",

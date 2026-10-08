@@ -13,19 +13,20 @@ export const MOCK_PRESETS = {
 };
 
 const CLIENTS = [
-  { account: "Claude Code · main", icon: "terminal" },
-  { account: "Claude Code · review", icon: "rate_review" },
-  { account: "Antigravity · agent", icon: "smart_toy" },
-  { account: "Antigravity · dev", icon: "construction" },
-  { account: "Cursor · workspace", icon: "edit_note" },
-  { account: "OpenCode · build", icon: "science" },
-  { account: "Aider", icon: "smart_toy" },
-  { account: "Continue · dev", icon: "play_arrow" },
+  { account: "Claude Code · main", icon: "terminal", cli: "claude", clientType: "cli" },
+  { account: "Claude Desktop", icon: "desktop_windows", cli: "claude", clientType: "desktop" },
+  { account: "Codex CLI · tui", icon: "terminal", cli: "codex", clientType: "cli" },
+  { account: "Codex Desktop", icon: "desktop_windows", cli: "codex", clientType: "desktop" },
+  { account: "Antigravity · agent", icon: "smart_toy", cli: "antigravity", clientType: "cli" },
+  { account: "Antigravity App", icon: "smart_toy", cli: "antigravity", clientType: "app" },
+  { account: "Cursor · workspace", icon: "edit_note", cli: "cursor", clientType: "extension" },
+  { account: "OpenCode · build", icon: "science", cli: "opencode", clientType: "cli" },
 ];
 
 const PROVIDER_MODELS = [
   { provider: "claude", model: "claude-3-7-sonnet" },
   { provider: "gemini", model: "gemini-2.5-pro" },
+  { provider: "openai (codex)", model: "gpt-5.6-terra" },
   { provider: "openai", model: "gpt-4o" },
   { provider: "minimax", model: "minimax-m2" },
   { provider: "deepseek", model: "deepseek-v3" },
@@ -750,9 +751,10 @@ export function generateMockTraces({ count = null, errorRatio = 0, seed = 42, no
     }
 
     traces.push({
-      traceId: `mock-${i}-${Math.floor(rand() * 1e6).toString(36)}`,
-      cli: "mock",
-      connectionId,
+      traceId: `mock-${client.cli || "agent"}-${i}-${Math.floor(rand() * 1e6).toString(36)}`,
+      cli: client.cli || "mock",
+      clientType: client.clientType || "cli",
+      connectionId: `${client.account} (${i})`,
       account,
       model: target.model,
       provider: target.provider,

@@ -26,7 +26,18 @@ export default function FactoryPage() {
     }
   }, []);
 
-  const { traces, connected, live, isRefreshing, refresh } = useFactoryTraces({
+  const {
+    traces,
+    totalCount,
+    top,
+    setTop,
+    timeframe,
+    setTimeframe,
+    connected,
+    live,
+    isRefreshing,
+    refresh,
+  } = useFactoryTraces({
     mode,
     preset: mockPreset,
   });
@@ -38,6 +49,11 @@ export default function FactoryPage() {
       <UpdateNotification />
       <VSCodeWorkbench
         traces={traces}
+        totalCount={totalCount}
+        top={top}
+        onTopChange={setTop}
+        timeframe={timeframe}
+        onTimeframeChange={setTimeframe}
         office={office}
         mode={mode}
         mockPreset={mockPreset}

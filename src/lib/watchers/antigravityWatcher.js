@@ -183,6 +183,8 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
     const traces = [];
     const seenConvIds = new Set();
 
+    const candidates = [];
+
     for (const { dir: brainDir, source } of searchDirs) {
       let entries;
       try {
@@ -195,13 +197,26 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         if (!ent.isDirectory()) continue;
         const convId = ent.name;
         if (seenConvIds.has(convId)) continue;
+        seenConvIds.add(convId);
         const transcriptPath = path.join(brainDir, convId, ".system_generated", "logs", "transcript.jsonl");
 
         try {
           const stat = await fs.stat(transcriptPath);
           const mtime = stat.mtimeMs;
           if (now - mtime > maxAgeMs) continue;
+          candidates.push({ transcriptPath, mtime, convId, source, stat });
+        } catch {}
+      }
+    }
 
+    // Sort candidate transcripts by mtime descending (most recent first)
+    candidates.sort((a, b) => b.mtime - a.mtime);
+
+    // Limit parsing to the most recent 100 sessions to avoid unbounded disk I/O
+    const toProcess = candidates.slice(0, 100);
+
+    for (const { transcriptPath, mtime, convId, source, stat } of toProcess) {
+      try {
         const content = await fs.readFile(transcriptPath, "utf-8");
         const lines = content.trim().split("\n");
         if (lines.length === 0) continue;
@@ -383,7 +398,6 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         // file missing or unreadable
       }
     }
-  }
 
     // Sort: active (streaming/pending) first, then by most recent startedAt
     traces.sort((a, b) => {
