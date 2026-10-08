@@ -42,7 +42,6 @@ const VIETQR_CONFIG = {
   bankId: "MB", // MB Bank
   bankName: "MB Bank (Ngân hàng Quân đội)",
   accountNo: "0968868862", // Configured recipient account number
-  accountName: "NGUYEN VAN THANH",
   template: "compact2",
 };
 
@@ -117,7 +116,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
   };
 
   // VietQR image generator URL
-  const vietQrUrl = `https://img.vietqr.io/image/${VIETQR_CONFIG.bankId}-${VIETQR_CONFIG.accountNo}-${VIETQR_CONFIG.template}.png?amount=${selectedTier.amount}&addInfo=AGMON%20${selectedTier.id.toUpperCase()}&accountName=${encodeURIComponent(VIETQR_CONFIG.accountName)}`;
+  const vietQrUrl = `https://img.vietqr.io/image/${VIETQR_CONFIG.bankId}-${VIETQR_CONFIG.accountNo}-${VIETQR_CONFIG.template}.png?amount=${selectedTier.amount}&addInfo=AGMON%20${selectedTier.id.toUpperCase()}`;
 
   return (
     <Modal
@@ -284,10 +283,6 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                         {copiedBank ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Account Name:</span>
-                    <span className="text-white font-semibold">{VIETQR_CONFIG.accountName}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Amount:</span>
