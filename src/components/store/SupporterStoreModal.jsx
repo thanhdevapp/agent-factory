@@ -40,7 +40,8 @@ import { startAmbient, stopAmbient, setAmbientVolume } from "@/lib/ambientAudio"
 // VietQR donation recipient info
 const VIETQR_CONFIG = {
   bankId: "MB", // MB Bank
-  accountNo: "0908889999", // Configured recipient account number
+  bankName: "MB Bank (Ngân hàng Quân đội)",
+  accountNo: "0968868862", // Configured recipient account number
   accountName: "NGUYEN VAN THANH",
   template: "compact2",
 };
@@ -199,7 +200,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* TAB 1: MỜI CÀ PHÊ & VIETQR */}
+        {/* TAB 1: BUY ME A COFFEE & VIETQR */}
         {activeTab === "donate" && (
           <div className="space-y-4 text-xs">
             {/* Tier Selector */}
@@ -247,12 +248,12 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={vietQrUrl}
-                  alt="Mã VietQR ủng hộ tác giả"
+                  alt="VietQR donation code"
                   className="w-40 h-40 object-contain"
                   loading="lazy"
                 />
                 <span className="text-[9px] font-bold text-slate-700 tracking-wider uppercase mt-1">
-                  Quét bằng App Ngân hàng
+                  Scan with Banking App
                 </span>
               </div>
 
@@ -261,41 +262,41 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                 <div className="flex items-center gap-2">
                   <QrCode className="w-4 h-4 text-emerald-400" />
                   <span className="font-bold text-white text-sm">
-                    Ủng hộ qua VietQR Ngân Hàng
+                    Support via VietQR / Bank Transfer
                   </span>
                 </div>
 
                 <div className="bg-[#252526] p-2.5 rounded-lg border border-[#333333] space-y-1.5 font-mono text-[11px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Ngân hàng:</span>
-                    <span className="text-white font-semibold">MB Bank (Quân Đội)</span>
+                    <span className="text-slate-500">Bank:</span>
+                    <span className="text-white font-semibold">{VIETQR_CONFIG.bankName}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Số tài khoản:</span>
+                    <span className="text-slate-500">Account No:</span>
                     <div className="flex items-center gap-1.5">
                       <span className="text-amber-300 font-bold">{VIETQR_CONFIG.accountNo}</span>
                       <button
                         type="button"
                         onClick={handleCopyAccount}
                         className="p-1 rounded hover:bg-[#333333] text-slate-400 hover:text-white"
-                        title="Sao chép số tài khoản"
+                        title="Copy account number"
                       >
                         {copiedBank ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Chủ tài khoản:</span>
+                    <span className="text-slate-500">Account Name:</span>
                     <span className="text-white font-semibold">{VIETQR_CONFIG.accountName}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Số tiền:</span>
+                    <span className="text-slate-500">Amount:</span>
                     <span className="text-emerald-400 font-bold">
-                      {selectedTier.amount.toLocaleString()} VNĐ
+                      {selectedTier.amount.toLocaleString()} VND
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Nội dung:</span>
+                    <span className="text-slate-500">Memo:</span>
                     <span className="text-cyan-300 font-semibold">
                       AGMON {selectedTier.id.toUpperCase()}
                     </span>
@@ -334,22 +335,22 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Kích hoạt mã Supporter Key</span>
+                  <span>Redeem Supporter Key</span>
                 </span>
                 <span className="text-[10px] text-slate-500 font-mono">
-                  Mã demo: AGMON-COFFEE-VIP
+                  Demo code: AGMON-COFFEE-VIP
                 </span>
               </div>
               <form onSubmit={handleUnlockCode} className="flex gap-2">
                 <Input
                   inputSize="sm"
-                  placeholder="Nhập mã mở khóa (ví dụ: AGMON-COFFEE-VIP)..."
+                  placeholder="Enter activation code (e.g. AGMON-COFFEE-VIP)..."
                   value={unlockCodeInput}
                   onChange={(e) => setUnlockCodeInput(e.target.value)}
                   wrapperClassName="flex-1 font-mono uppercase"
                 />
                 <Button type="submit" variant="primary" size="sm">
-                  Kích Hoạt
+                  Activate
                 </Button>
               </form>
 
@@ -373,7 +374,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* TAB 2: KHO NHÂN VẬT SKINS */}
+        {/* TAB 2: AGENT SKINS */}
         {activeTab === "skins" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {COSMETIC_CATALOG.skins.map((skin) => {
@@ -405,7 +406,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                         variant={skin.tier === "free" ? "secondary" : "warning"}
                         badgeSize="xs"
                       >
-                        {skin.tier === "free" ? "Mặc định" : "Supporter"}
+                        {skin.tier === "free" ? "Default" : "Supporter"}
                       </Badge>
                     </div>
                     <p className="text-slate-400 text-[11px] leading-relaxed">
@@ -415,7 +416,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
 
                   <div className="mt-4 pt-2.5 border-t border-[#333333] flex items-center justify-between">
                     <span className="text-[10px] text-slate-500 uppercase font-mono">
-                      {isEquipped ? "Đang sử dụng" : isUnlocked ? "Đã sở hữu" : "Khóa"}
+                      {isEquipped ? "In Use" : isUnlocked ? "Unlocked" : "Locked"}
                     </span>
                     <button
                       type="button"
@@ -429,7 +430,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                           : "bg-[#333333] text-slate-500 cursor-not-allowed"
                       }`}
                     >
-                      {isEquipped ? "Đang Dùng" : isUnlocked ? "Trang Bị" : "Cần Mở Khóa"}
+                      {isEquipped ? "Equipped" : isUnlocked ? "Equip" : "Locked"}
                     </button>
                   </div>
                 </div>
@@ -438,14 +439,14 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* TAB 3: THÚ CƯNG & BÀN LÀM VIỆC */}
+        {/* TAB 3: PETS & DESK PROPS */}
         {activeTab === "props" && (
           <div className="space-y-4 text-xs">
-            {/* Phụ kiện bàn làm việc */}
+            {/* Desk accessories and props */}
             <div>
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Laptop className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Phụ Kiện Trên Bàn Làm Việc</span>
+                <span>Desk Accessories & Props</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {COSMETIC_CATALOG.props.map((prop) => {
@@ -483,7 +484,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                               : "bg-[#222222] text-slate-600 cursor-not-allowed"
                           }`}
                         >
-                          {isEquipped ? "Đang Bật" : isUnlocked ? "Bật" : "Cần Mở Khóa"}
+                          {isEquipped ? "Enabled" : isUnlocked ? "Enable" : "Locked"}
                         </button>
                       </div>
                     </div>
@@ -492,11 +493,11 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Thú cưng dưới gầm bàn */}
+            {/* Desk companions & pets */}
             <div>
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Gift className="w-3.5 h-3.5 text-purple-400" />
-                <span>Thú Cưng Dưới Gầm Bàn</span>
+                <span>Desk Companions & Pets</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {COSMETIC_CATALOG.pets.map((pet) => {
@@ -521,7 +522,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                             variant={pet.tier === "free" ? "secondary" : "primary"}
                             badgeSize="xs"
                           >
-                            {pet.tier === "free" ? "Mặc định" : "Supporter"}
+                            {pet.tier === "free" ? "Default" : "Supporter"}
                           </Badge>
                         </div>
                         <p className="text-[11px] text-slate-400">{pet.description}</p>
@@ -540,7 +541,7 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                               : "bg-[#222222] text-slate-600 cursor-not-allowed"
                           }`}
                         >
-                          {isEquipped ? "Đang Nuôi" : isUnlocked ? "Chọn Nuôi" : "Cần Mở Khóa"}
+                          {isEquipped ? "Active" : isUnlocked ? "Select" : "Locked"}
                         </button>
                       </div>
                     </div>
@@ -551,18 +552,18 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* TAB 4: ÂM THANH KHÔNG GIAN (AMBIENT AUDIO) */}
+        {/* TAB 4: AMBIENT AUDIO */}
         {activeTab === "ambient" && (
           <div className="space-y-4 text-xs">
             <div className="p-3 bg-[#252526] border border-[#333333] rounded-xl flex items-center justify-between">
               <div>
                 <h4 className="font-bold text-white text-sm">Web Audio Ambient Soundscapes</h4>
                 <p className="text-slate-400 text-[11px] mt-0.5">
-                  Âm thanh được tổng hợp trực tiếp bằng trình duyệt qua Web Audio API (0 byte MP3, không tốn băng thông mạng).
+                  Synthesized directly in browser via Web Audio API (0 byte MP3, zero network bandwidth overhead).
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-400">Âm lượng:</span>
+                <span className="text-[11px] text-slate-400">Volume:</span>
                 <input
                   type="range"
                   min="0"
@@ -623,12 +624,12 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
                         {isActive ? (
                           <>
                             <Square className="w-3 h-3 fill-rose-300" />
-                            <span>Tắt</span>
+                            <span>Stop</span>
                           </>
                         ) : (
                           <>
                             <Play className="w-3 h-3 fill-white" />
-                            <span>Bật Âm Thanh</span>
+                            <span>Play Sound</span>
                           </>
                         )}
                       </button>
