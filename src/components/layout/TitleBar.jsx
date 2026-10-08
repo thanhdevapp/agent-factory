@@ -13,6 +13,7 @@ import {
   Cpu,
   BarChart3,
   Coffee,
+  Palette,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
 
@@ -39,6 +40,7 @@ export default function TitleBar({
   onOpenCommandPalette,
   onOpenReports,
   onOpenStore,
+  onOpenThemeSettings,
   isSupporter = false,
   layout,
   onToggleLeftSidebar,
@@ -114,17 +116,27 @@ export default function TitleBar({
         {/* Supporter Store Button */}
         <button
           onClick={onOpenStore}
-          title="Coffee Shop & Supporter Vault (Support Author)"
-          className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] transition-all cursor-pointer ${
+          title="Supporter Store: Skins, Pets, Ambience & Coffee"
+          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[11px] transition-all cursor-pointer ${
             isSupporter
-              ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
-              : "bg-[#252526] hover:bg-[#2e2e30] border-[#333333] hover:border-[#007acc] text-slate-300 hover:text-white"
+              ? "bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30 shadow-sm shadow-amber-500/10"
+              : "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white"
           }`}
         >
-          <Coffee className="w-3 h-3 text-amber-400" />
-          <span className="hidden md:inline font-medium">
-            {isSupporter ? "Supporter VIP" : "Support"}
+          <Coffee className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="font-semibold text-amber-300">
+            {isSupporter ? "VIP Supporter" : "Store"}
           </span>
+        </button>
+
+        {/* Color Themes & Typography Settings Button */}
+        <button
+          onClick={onOpenThemeSettings}
+          title="Color Themes & Font Customization (Preferences)"
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#252526] hover:bg-[#2e2e30] border border-[#333333] hover:border-[#007acc] text-slate-300 hover:text-white text-[11px] transition-colors cursor-pointer"
+        >
+          <Palette className="w-3 h-3 text-cyan-400" />
+          <span className="hidden lg:inline font-medium">Themes</span>
         </button>
 
         {/* Live / Mock Mode Selector */}

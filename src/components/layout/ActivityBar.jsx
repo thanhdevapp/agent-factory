@@ -59,7 +59,7 @@ export default function ActivityBar({
     },
     {
       id: "store",
-      title: "Coffee Shop & Supporter Vault (Support Author)",
+      title: "Supporter Store: Skins, Pets & Ambience",
       icon: Coffee,
     },
   ];
@@ -91,10 +91,12 @@ export default function ActivityBar({
               className={`w-full py-2.5 flex justify-center items-center relative transition-colors ${
                 isActive
                   ? "text-white border-l-2 border-[#007acc] bg-[#252526]/50"
+                  : item.id === "store"
+                  ? "text-amber-400 hover:text-amber-300 hover:bg-[#252526]/40 border-l-2 border-transparent"
                   : "text-[#858585] hover:text-[#cccccc] border-l-2 border-transparent"
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className={`w-5 h-5 ${item.id === "store" ? "text-amber-400" : ""}`} />
               {item.badge !== undefined && (
                 <span className="absolute top-1.5 right-1.5 bg-[#007acc] text-white text-[9px] font-bold px-1 rounded-full leading-none min-w-3 text-center">
                   {item.badge}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, ExternalLink, AppWindow } from "lucide-react";
+import { MessageSquare, AppWindow, RotateCcw } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
 import TitleBar from "./TitleBar";
@@ -14,9 +14,10 @@ import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
 import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
-import SessionChatModal from "../chat/SessionChatModal";
 import TokenReportView from "../reports/TokenReportView";
 import SupporterStoreModal from "../store/SupporterStoreModal";
+import ThemeSettingsModal from "../theme/ThemeSettingsModal";
+import { initThemeEngine } from "../../lib/themeStore";
 import { getSupporterState, SUPPORTER_CHANGE_EVENT } from "../../lib/supporterStore";
 import { initAmbientSync } from "../../lib/ambientAudio";
 import { useSessionReplay } from "../../lib/useSessionReplay";
@@ -51,8 +52,9 @@ export default function VSCodeWorkbench({
   const [selectedId, setSelectedId] = useState(null);
   const [activeTabId, setActiveTabId] = useState("canvas");
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [themeModalTab, setThemeModalTab] = useState("themes");
   const [isSupporter, setIsSupporter] = useState(false);
 
   // Initialize and synchronize supporter store and ambient audio
@@ -66,6 +68,20 @@ export default function VSCodeWorkbench({
       setIsSupporter(Boolean(next.isSupporter));
     };
     window.addEventListener(SUPPORTER_CHANGE_EVENT, onStoreChange);
+
+    // Auto-open store modal if requested via URL query (?store=1, ?coffee=1)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (
+        params.get("store") === "1" ||
+        params.get("store") === "true" ||
+        params.get("modal") === "store" ||
+        params.get("coffee") === "1"
+      ) {
+        setIsStoreModalOpen(true);
+      }
+    }
+
     return () => window.removeEventListener(SUPPORTER_CHANGE_EVENT, onStoreChange);
   }, []);
 
@@ -89,8 +105,9 @@ export default function VSCodeWorkbench({
     { id: "canvas", title: "Virtual Office", type: "canvas", closable: false },
   ]);
 
-  // Load layout from localStorage only after initial client mount
+  // Load layout and initialize theme from localStorage only after initial client mount
   useEffect(() => {
+    initThemeEngine();
     const saved = loadWorkbenchLayout();
     setLayout(saved);
     if (saved.activeEditorTab) {
@@ -130,7 +147,7 @@ export default function VSCodeWorkbench({
     return office;
   }, [replayingTrace, effectiveTraces, office]);
 
-  // Selected workstation object (fallback to traces list if not found in workstations)
+  // Selected workstation object (fallback to traces list or historical session info)
   const selectedAgent = useMemo(() => {
     if (!selectedId) return null;
     return (
@@ -139,10 +156,26 @@ export default function VSCodeWorkbench({
       ) ||
       effectiveTraces.find(
         (t) => t.connectionId === selectedId || t.traceId === selectedId || t.traces?.[0]?.traceId === selectedId
-      ) ||
-      null
+      ) || {
+        connectionId: selectedId,
+        traceId: selectedId,
+        account: selectedId.length > 20 ? `${selectedId.slice(0, 16)}...` : selectedId,
+        model: replay?.sessionInfo?.model || "AI Agent",
+        provider: replay?.sessionInfo?.provider || "antigravity",
+      }
     );
-  }, [effectiveOffice.workstations, effectiveTraces, selectedId]);
+  }, [effectiveOffice.workstations, effectiveTraces, selectedId, replay?.sessionInfo]);
+
+  // Open conversation transcript directly in pinned right sidebar
+  const handleOpenConversation = useCallback((sessionId) => {
+    if (!sessionId) return;
+    setSelectedId(sessionId);
+    setLayout((prev) => ({
+      ...prev,
+      isRightSidebarVisible: true,
+      activeRightSidebarTab: "chat",
+    }));
+  }, []);
 
   // If an agent is selected, ensure right sidebar is visible or open a tab
   const handleSelectAgent = useCallback((id) => {
@@ -283,6 +316,10 @@ export default function VSCodeWorkbench({
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onOpenReports={handleOpenReports}
         onOpenStore={() => setIsStoreModalOpen(true)}
+        onOpenThemeSettings={() => {
+          setThemeModalTab("themes");
+          setIsThemeModalOpen(true);
+        }}
         isSupporter={isSupporter}
         layout={layout}
         onToggleLeftSidebar={() =>
@@ -344,7 +381,10 @@ export default function VSCodeWorkbench({
           onToggleBottomPanel={() =>
             setLayout((p) => ({ ...p, isBottomPanelVisible: !p.isBottomPanelVisible }))
           }
-          onOpenSettings={() => setIsCommandPaletteOpen(true)}
+          onOpenSettings={() => {
+            setThemeModalTab("themes");
+            setIsThemeModalOpen(true);
+          }}
         />
 
         {/* Resizable Panels Group */}
@@ -371,6 +411,7 @@ export default function VSCodeWorkbench({
                   stats={effectiveOffice.stats}
                   onRefresh={onRefresh}
                   onStartReplay={handleStartReplay}
+                  onViewConversation={handleOpenConversation}
                 />
               </Panel>
               <Separator
@@ -398,7 +439,11 @@ export default function VSCodeWorkbench({
                 {/* Editor Content */}
                 <div className="flex-1 relative overflow-hidden bg-[#070b12]">
                   {replaySessionId ? (
-                    <ReplayModeOverlay replay={replay} onExit={handleExitReplay}>
+                    <ReplayModeOverlay
+                      replay={replay}
+                      onExit={handleExitReplay}
+                      onOpenConversation={handleOpenConversation}
+                    >
                       <div className="absolute inset-0">
                         {activeTabId === "network" ? (
                           <AgentGraphView
@@ -470,42 +515,29 @@ export default function VSCodeWorkbench({
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleStartReplay(activeTab.agentData?.connectionId)}
-                                  className="px-3 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-300 rounded text-xs font-semibold cursor-pointer"
+                                  className="px-3.5 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                  title="Replay Session (Default)"
                                 >
-                                  Replay Session
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>Replay Session</span>
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    setSelectedId(activeTab.agentData?.connectionId);
-                                    setLayout((prev) => ({
-                                      ...prev,
-                                      isRightSidebarVisible: true,
-                                      activeRightSidebarTab: "chat",
-                                    }));
-                                  }}
-                                  className="px-3 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                  onClick={() => handleOpenConversation(activeTab.agentData?.connectionId)}
+                                  className="px-3.5 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-200 hover:text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                  title="Pin live chat transcript to Right Sidebar"
                                 >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                  <span>View Live Chat</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedId(activeTab.agentData?.connectionId);
-                                    setIsChatModalOpen(true);
-                                  }}
-                                  className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-300 hover:text-white rounded text-xs cursor-pointer"
-                                  title="Mở dạng Popup nổi"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
+                                  <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                                  <span>Pin to Sidebar</span>
                                 </button>
                                 <button
                                   onClick={() => {
                                     openChatInNewWindow(activeTab.agentData?.connectionId);
                                   }}
-                                  className="p-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-400 hover:text-white rounded text-xs cursor-pointer"
-                                  title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+                                  className="px-3.5 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-400 hover:text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                  title="Open in Detached Window (VS Code style)"
                                 >
-                                  <AppWindow className="w-4 h-4" />
+                                  <AppWindow className="w-3.5 h-3.5" />
+                                  <span>New Window</span>
                                 </button>
                               </div>
                             </div>
@@ -519,6 +551,7 @@ export default function VSCodeWorkbench({
                           <TokenReportView
                             onClose={() => handleCloseTab("reports")}
                             onStartReplay={handleStartReplay}
+                            onViewConversation={handleOpenConversation}
                           />
                         </div>
                       )}
@@ -599,7 +632,6 @@ export default function VSCodeWorkbench({
                   onClose={() =>
                     setLayout((p) => ({ ...p, isRightSidebarVisible: false }))
                   }
-                  onOpenChatModal={() => setIsChatModalOpen(true)}
                   onStartReplay={handleStartReplay}
                 />
               </Panel>
@@ -638,7 +670,14 @@ export default function VSCodeWorkbench({
         onOpenChatSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: true, activeRightSidebarTab: "chat" }))
         }
-        onOpenChatModal={() => setIsChatModalOpen(true)}
+        onOpenThemeSettings={() => {
+          setThemeModalTab("themes");
+          setIsThemeModalOpen(true);
+        }}
+        onOpenFontSettings={() => {
+          setThemeModalTab("fonts");
+          setIsThemeModalOpen(true);
+        }}
         onToggleSound={onToggleSound}
         onToggleNotif={onToggleNotif}
         onRefresh={onRefresh}
@@ -649,30 +688,17 @@ export default function VSCodeWorkbench({
         onStartReplay={handleStartReplay}
       />
 
-      {/* Session Chat Transcript Modal */}
-      {isChatModalOpen && selectedAgent && (
-        <SessionChatModal
-          sessionTrace={selectedAgent}
-          onClose={() => setIsChatModalOpen(false)}
-          onDockToSidebar={(agent) => {
-            setIsChatModalOpen(false);
-            if (agent) {
-              setSelectedId(agent.connectionId || agent.traceId);
-            }
-            setLayout((prev) => ({
-              ...prev,
-              isRightSidebarVisible: true,
-              activeRightSidebarTab: "chat",
-            }));
-          }}
-          onStartReplay={handleStartReplay}
-        />
-      )}
-
       {/* Supporter Store & Character Customization Modal */}
       <SupporterStoreModal
         isOpen={isStoreModalOpen}
         onClose={() => setIsStoreModalOpen(false)}
+      />
+
+      {/* VS Code Theme & Design System Settings Modal */}
+      <ThemeSettingsModal
+        isOpen={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+        initialTab={themeModalTab}
       />
     </div>
   );
