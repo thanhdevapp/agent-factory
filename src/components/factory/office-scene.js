@@ -3,7 +3,7 @@ import { buildOffice, OFFICE, STATE_COLORS } from "./scene/office-layout";
 import { createCharacter, createDesk, createBadge } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
-import { getSupporterState, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
+import { getSupporterState, COSMETIC_CATALOG, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
 
 const MAX_ZOOM = 1.0; // Strictly capped at 1.0: large screens display more area instead of enlarging elements!
 const MIN_ZOOM = 0.25;
@@ -84,25 +84,47 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     FLOOR.w = w;
     FLOOR.h = h;
     floor.clear();
+
+    const supporter = getSupporterState();
+    const equippedThemeId = supporter?.equippedOfficeTheme || "theme_default";
+    const themeObj =
+      (COSMETIC_CATALOG.officeThemes || []).find((t) => t.id === equippedThemeId) ||
+      COSMETIC_CATALOG.officeThemes?.[0];
+    const palette = themeObj?.palette || {
+      floorGradient: [0x0b1018, 0x161f2c],
+      gridColor: 0x1a2330,
+      gridAlpha: 0.7,
+      borderColor: 0x263244,
+      panelRackColor: 0xfde047,
+      panelPodColor: 0x22d3ee,
+    };
+
+    const [gradTop, gradBottom] = palette.floorGradient || [0x0b1018, 0x161f2c];
+    const gridCol = palette.gridColor ?? 0x1a2330;
+    const gridA = palette.gridAlpha ?? 0.7;
+    const borderCol = palette.borderColor ?? 0x263244;
+    const rackCol = palette.panelRackColor ?? 0xfde047;
+    const podCol = palette.panelPodColor ?? 0x22d3ee;
+
     floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).fill(
       new FillGradient({
         type: "linear",
         start: { x: 0, y: 0 },
         end: { x: 0, y: 1 },
-        colorStops: [{ offset: 0, color: 0x0b1018 }, { offset: 1, color: 0x161f2c }],
+        colorStops: [{ offset: 0, color: gradTop }, { offset: 1, color: gradBottom }],
         textureSpace: "local",
       }),
     );
     for (let x = FLOOR.x + 100; x < FLOOR.x + FLOOR.w; x += 100) {
-      floor.moveTo(x, FLOOR.y + 14).lineTo(x, FLOOR.y + FLOOR.h - 14).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+      floor.moveTo(x, FLOOR.y + 14).lineTo(x, FLOOR.y + FLOOR.h - 14).stroke({ width: 1, color: gridCol, alpha: gridA });
     }
     for (let y = FLOOR.y + 100; y < FLOOR.y + FLOOR.h; y += 100) {
-      floor.moveTo(FLOOR.x + 14, y).lineTo(FLOOR.x + FLOOR.w - 14, y).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+      floor.moveTo(FLOOR.x + 14, y).lineTo(FLOOR.x + FLOOR.w - 14, y).stroke({ width: 1, color: gridCol, alpha: gridA });
     }
-    floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: 0x263244, alpha: 0.9 });
+    floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: borderCol, alpha: 0.9 });
     // Zone panels: agents | router | providers
-    floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: 0xfde047, alpha: 0.035 });
-    floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: 0x22d3ee, alpha: 0.035 });
+    floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: rackCol, alpha: 0.045 });
+    floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: podCol, alpha: 0.045 });
   }
   drawFloor(FLOOR_BASE_W, FLOOR_BASE_H);
   floor.eventMode = "static";
@@ -234,6 +256,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         isLooping,
         pet: supporter.equippedPet || "none",
         props: supporter.equippedProps || [],
+        trophy: supporter.equippedTrophy || "none",
       });
       desk.root.x = ws.x;
       desk.root.y = ws.y;
@@ -251,6 +274,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         mode: ws.mode,
         clientType,
         skin: supporter.equippedSkin || "classic",
+        aura: supporter.equippedAura || "none",
       });
       character.root.x = ws.x + 108;
       character.root.baseX = ws.x + 108;
@@ -561,6 +585,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   canvas.addEventListener("webglcontextrestored", onContextRestored, false);
 
   const onSupporterChange = () => {
+    drawFloor(FLOOR.w, FLOOR.h);
     rebuild(currentTraces, true);
   };
   window.addEventListener(SUPPORTER_CHANGE_EVENT, onSupporterChange);
@@ -576,7 +601,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     for (const entry of deskEntries) {
       const { ws } = entry;
       const intensity = ws.mode === "streaming" ? Math.min(1, ws.busy / 2) : MODE_INTENSITY[ws.mode] ?? 0;
-      entry.desk.animate(t, intensity);
+      entry.desk.animate(t, intensity, ws.mode);
       entry.character.animate(t, intensity);
 
       // Tool badges: pop in, float, shrink out; one tool at a time.

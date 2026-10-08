@@ -3,8 +3,9 @@ import { props } from './props.js';
 import { pets } from './pets.js';
 import { auras } from './auras.js';
 import { trophies } from './trophies.js';
+import { officeThemes } from './officeThemes.js';
 
-export { skins, props, pets, auras, trophies };
+export { skins, props, pets, auras, trophies, officeThemes };
 
 export const COSMETIC_CATALOG = {
   skins,
@@ -12,6 +13,7 @@ export const COSMETIC_CATALOG = {
   pets,
   auras,
   trophies,
+  officeThemes,
   soundscapes: [
     {
       id: "none",
@@ -46,11 +48,11 @@ export const COSMETIC_CATALOG = {
   ],
 };
 
-// Fast index map for O(1) item lookup across 1000 items
+// Fast index map for O(1) item lookup across 1000+ items
 export const CATALOG_LOOKUP = new Map();
-[...skins, ...props, ...pets, ...auras, ...trophies].forEach(item => {
+[...skins, ...props, ...pets, ...auras, ...trophies, ...officeThemes].forEach(item => {
   CATALOG_LOOKUP.set(item.id, item);
 });
 
 export const getItemById = (id) => CATALOG_LOOKUP.get(id) || null;
-export const TOTAL_CATALOG_COUNT = skins.length + props.length + pets.length + auras.length + trophies.length;
+export const TOTAL_CATALOG_COUNT = skins.length + props.length + pets.length + auras.length + trophies.length + officeThemes.length;

@@ -28,6 +28,7 @@ import {
   LayoutGrid,
   Zap,
   Trophy,
+  Palette,
 } from "lucide-react";
 import {
   COSMETIC_CATALOG,
@@ -38,6 +39,7 @@ import {
   toggleProp,
   equipAura,
   equipTrophy,
+  equipOfficeTheme,
   setAmbientSound,
   SUPPORTER_CHANGE_EVENT,
 } from "@/lib/supporterStore";
@@ -204,8 +206,14 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     [searchQuery, tierFilter]
   );
 
+  const filteredThemes = useMemo(
+    () => (COSMETIC_CATALOG.officeThemes || []).filter(matchesSearchAndTier),
+    [searchQuery, tierFilter]
+  );
+
   // Active items list based on current tab
   const activeItemsList = useMemo(() => {
+    if (activeTab === "themes") return filteredThemes;
     if (activeTab === "skins") return filteredSkins;
     if (activeTab === "props") return filteredProps;
     if (activeTab === "pets") return filteredPets;
@@ -213,6 +221,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     if (activeTab === "trophies") return filteredTrophies;
     if (activeTab === "all") {
       return [
+        ...filteredThemes,
         ...filteredSkins,
         ...filteredProps,
         ...filteredPets,
@@ -223,6 +232,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     return [];
   }, [
     activeTab,
+    filteredThemes,
     filteredSkins,
     filteredProps,
     filteredPets,
@@ -243,9 +253,16 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     {
       id: "all",
       label: "All Items",
-      count: 1000,
+      count: 1010,
       icon: Grid,
-      desc: "250 Skins · 350 Props · 200 Pets · 100 Auras · 100 Trophies",
+      desc: "10 Themes · 250 Skins · 350 Props · 200 Pets · 100 Auras · 100 Trophies",
+    },
+    {
+      id: "themes",
+      label: "Office Themes",
+      count: (COSMETIC_CATALOG.officeThemes || []).length,
+      icon: Palette,
+      desc: "Virtual office floor styles, neon grids & wallpapers",
     },
     {
       id: "skins",
@@ -306,7 +323,9 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
 
   // Item equip helper
   const handleItemEquipToggle = (item) => {
-    if (item.category === "skins") {
+    if (item.category === "themes") {
+      equipOfficeTheme(item.id);
+    } else if (item.category === "skins") {
       equipSkin(item.id);
     } else if (item.category === "props") {
       toggleProp(item.id);
@@ -320,6 +339,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
   };
 
   const isItemEquipped = (item) => {
+    if (item.category === "themes") return storeState.equippedOfficeTheme === item.id;
     if (item.category === "skins") return storeState.equippedSkin === item.id;
     if (item.category === "props") return storeState.equippedProps?.includes(item.id);
     if (item.category === "pets") return storeState.equippedPet === item.id;
@@ -508,6 +528,12 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
               <div className="font-bold text-white text-xs truncate">
                 {(COSMETIC_CATALOG.skins || []).find((s) => s.id === storeState.equippedSkin)?.name || "Classic Bot"}
               </div>
+              <div className="text-[10px] text-purple-300 truncate flex items-center gap-1">
+                <span>Theme:</span>
+                <span className="font-semibold truncate">
+                  {(COSMETIC_CATALOG.officeThemes || []).find((t) => t.id === storeState.equippedOfficeTheme)?.name || "Classic Slate"}
+                </span>
+              </div>
               <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
                 <span>Pet:</span>
                 <span className="text-pink-300 font-semibold truncate">
@@ -542,6 +568,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
               </span>
               <h1 className="text-base font-bold text-white flex items-center gap-2">
                 {activeTab === "all" && <Grid className="w-4 h-4 text-cyan-400" />}
+                {activeTab === "themes" && <Palette className="w-4 h-4 text-purple-400" />}
                 {activeTab === "skins" && <Bot className="w-4 h-4 text-pink-400" />}
                 {activeTab === "props" && <Laptop className="w-4 h-4 text-emerald-400" />}
                 {activeTab === "pets" && <Gift className="w-4 h-4 text-purple-400" />}
@@ -550,7 +577,8 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                 {activeTab === "ambient" && <Volume2 className="w-4 h-4 text-cyan-400" />}
                 {activeTab === "donate" && <Coffee className="w-4 h-4 text-amber-400" />}
                 <span>
-                  {activeTab === "all" && "All 1,000 Tech Items & 3D Effects"}
+                  {activeTab === "all" && "All 1,010 Tech Items & 3D Effects"}
+                  {activeTab === "themes" && "Office Themes & Wallpapers (10 Floor Styles)"}
                   {activeTab === "skins" && "Agent 3D Skins (250 Armor & Visor Models)"}
                   {activeTab === "props" && "Desk Props & Hardware (350 Devices & Rigs)"}
                   {activeTab === "pets" && "Pets & Cyber Companions (200 Pets & Drones)"}
@@ -562,7 +590,8 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              {activeTab === "all" && "Collection of 1,000 high-precision 3D isometric items: cast shadows, directional lighting, and microchip details."}
+              {activeTab === "all" && "Collection of 1,010 high-precision 3D isometric items: cast shadows, directional lighting, and microchip details."}
+              {activeTab === "themes" && "Custom floor environments, neon gridlines, and ambient lighting for the 2D Virtual Office canvas."}
               {activeTab === "skins" && "Customize chibi robot avatars for AI programming agents on the visual canvas."}
               {activeTab === "props" && "Decorate workstations with dual displays, server racks, espresso machines, and cyber bonsai."}
               {activeTab === "pets" && "Companion robot pets and hover drones to keep you company during complex debugging sessions."}
@@ -626,7 +655,8 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Quick Category Tabs Bar */}
         <div className="px-6 py-2 bg-[#1b1b20] border-b border-[#26262b] flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
           {[
-            { id: "all", label: "All (1,000)", icon: Grid },
+            { id: "all", label: "All (1,010)", icon: Grid },
+            { id: "themes", label: "Themes (10)", icon: Palette },
             { id: "skins", label: "Skins (250)", icon: Bot },
             { id: "props", label: "Props (350)", icon: Laptop },
             { id: "pets", label: "Pets (200)", icon: Gift },
@@ -975,6 +1005,8 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                                   : "Equipped"
                                 : item.category === "props"
                                 ? "Place on Desk"
+                                : item.category === "themes"
+                                ? "Apply Floor"
                                 : "Equip"}
                             </button>
                           ) : (

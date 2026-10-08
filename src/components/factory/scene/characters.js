@@ -1,5 +1,14 @@
 import { Container, FillGradient, Graphics, Rectangle, Text } from "pixi.js";
 import { STATE_COLORS, STATE_LABELS } from "./office-layout";
+import { getItemById } from "@/lib/catalog/index.js";
+
+function parseHexColor(hexStr, fallback = 0x00f0ff) {
+  if (!hexStr) return fallback;
+  if (typeof hexStr === "number") return hexStr;
+  const clean = String(hexStr).replace("#", "").trim();
+  const parsed = parseInt(clean, 16);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
 
 function clip(text, max) {
   const str = String(text || "");
@@ -32,11 +41,16 @@ const stroke = (w, c, a = 1) => ({ width: w, color: c, alpha: a, cap: "round", j
 //   streaming  typing, scanline eyes          pending   one arm waving, waiting
 //   happy      ^ ^ eyes, smile, bounce        sleeping  closed eyes, drifting z's
 //   error      X eyes, shaking, smoke, arms up
-export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming", clientType = "cli", skin = "classic" }) {
+export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming", clientType = "cli", skin = "classic", aura = "none" }) {
   const root = new Container();
   const isApp = clientType === "app";
   const defaultTrim = isApp ? 0x8b5cf6 : 0x10b981; // purple for app, emerald for cli
-  const trim = trimColor ?? defaultTrim;
+
+  // Resolve custom skin from catalog
+  const skinItem = typeof skin === "string" ? getItemById(skin) : null;
+  const skinArchetype = skinItem?.archetype || (skin === "cat" ? "cyber_cat" : skin === "ninja" ? "stealth_ninja" : skin === "hacker" ? "matrix_hacker" : skin || "cyber_classic");
+  const skinColor = skinItem?.color ? parseHexColor(skinItem.color, trimColor ?? defaultTrim) : (trimColor ?? defaultTrim);
+  const trim = skinColor;
   const SHELL = 0xf3f5f9;
   const SHADE = 0xc9d0dc;
 
@@ -77,23 +91,44 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
   head.ellipse(0, -53, 20, 15.5).fill({ color: 0x0f141c });
   head.ellipse(-5, -58, 11, 5).fill({ color: 0xffffff, alpha: 0.06 });
 
-  // Custom Skin Accessories on Head
-  if (skin === "cat") {
+  // Custom Skin Accessories on Head according to 5 Archetypes
+  if (skinArchetype === "stealth_ninja" || skinArchetype === "ninja") {
+    // Ninja Headband & Laser Visor
+    head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b });
+    head.roundRect(-24, -66, 48, 8, 3).stroke({ width: 1.5, color: skinColor });
+    head.circle(0, -62, 3).fill({ color: 0x38bdf8 });
+    head.poly([24, -62, 38, -56, 32, -50, 22, -56]).fill({ color: skinColor, alpha: 0.9 });
+  } else if (skinArchetype === "mecha_pilot") {
+    // Dual Heavy Antennas
+    head.poly([-22, -72, -18, -90, -12, -70]).fill({ color: skinColor });
+    head.poly([12, -70, 18, -90, 22, -72]).fill({ color: skinColor });
+    head.circle(-18, -90, 2.5).fill({ color: 0xffffff });
+    head.circle(18, -90, 2.5).fill({ color: 0xffffff });
+  } else if (skinArchetype === "celestial_astro") {
+    // Golden Solar Halo
+    head.ellipse(0, -64, 30, 8).stroke({ width: 2, color: skinColor, alpha: 0.85 });
+    head.circle(0, -72, 3).fill({ color: 0xfef08a });
+  } else if (skinArchetype === "matrix_hacker" || skinArchetype === "hacker") {
+    // Hacker Matrix Hoodie Cowl
+    head.roundRect(-27, -78, 54, 48, 16).fill({ color: 0x111827 });
+    head.roundRect(-27, -78, 54, 48, 16).stroke({ width: 1.6, color: skinColor });
+  } else if (skinArchetype === "cyber_cat" || skin === "cat") {
     // Cute Cat Ears
     head.poly([-22, -72, -14, -86, -6, -76]).fill({ color: SHELL });
     head.poly([-20, -73, -14, -83, -8, -76]).fill({ color: 0xf472b6, alpha: 0.8 }); // pink inner ear
     head.poly([6, -76, 14, -86, 22, -72]).fill({ color: SHELL });
     head.poly([8, -76, 14, -83, 20, -73]).fill({ color: 0xf472b6, alpha: 0.8 });
-  } else if (skin === "ninja") {
-    // Ninja Headband & Laser Visor
-    head.roundRect(-24, -66, 48, 8, 3).fill({ color: 0x1e1b4b });
-    head.roundRect(-24, -66, 48, 8, 3).stroke({ width: 1.5, color: 0xa855f7 });
-    head.circle(0, -62, 3).fill({ color: 0x38bdf8 });
-    head.poly([24, -62, 38, -56, 32, -50, 22, -56]).fill({ color: 0xa855f7, alpha: 0.9 });
-  } else if (skin === "hacker") {
-    // Hacker Matrix Hoodie Cowl
-    head.roundRect(-27, -78, 54, 48, 16).fill({ color: 0x111827 });
-    head.roundRect(-27, -78, 54, 48, 16).stroke({ width: 1.6, color: 0x22c55e });
+  } else {
+    // High-Tech Crest
+    head.poly([-8, -68, 0, -78, 8, -68]).fill({ color: skinColor });
+  }
+
+  // Aura Ring Graphics (drawn behind character)
+  let auraGfx = null;
+  const auraItem = typeof aura === "string" ? getItemById(aura) : null;
+  if (aura && aura !== "none") {
+    auraGfx = new Graphics();
+    root.addChildAt(auraGfx, 0);
   }
 
   const face = new Graphics();
@@ -230,6 +265,18 @@ export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimCol
         }
       }
 
+      if (auraGfx) {
+        auraGfx.clear();
+        const auraCol = auraItem?.color ? parseHexColor(auraItem.color, 0x00f0ff) : 0x00f0ff;
+        const pulse = 1 + Math.sin(t * 0.006) * 0.12;
+        const aAlpha = m === "happy" ? 0.95 : m === "error" ? 0.35 + Math.sin(t * 0.08) * 0.35 : m === "sleeping" ? 0.25 : 0.6;
+        auraGfx.ellipse(0, -42, 34 * pulse, 13 * pulse).stroke({ width: 2, color: auraCol, alpha: aAlpha });
+        auraGfx.ellipse(0, -42, 26 * pulse, 9 * pulse).stroke({ width: 1.2, color: 0xffffff, alpha: aAlpha * 0.8 });
+        if (m === "happy") {
+          auraGfx.circle(Math.sin(t * 0.01) * 32, -42 + Math.cos(t * 0.01) * 12, 2).fill({ color: 0xffffff });
+        }
+      }
+
       status.alpha = 0.6 + Math.sin(t * 0.007 + seed) * 0.4 * (0.3 + intensity);
     },
     setState(nextColor) {
@@ -256,6 +303,7 @@ export function createDesk({
   isLooping = false,
   pet = "none",
   props = [],
+  trophy = "none",
 }) {
   const root = new Container();
   const W = 150;
@@ -370,9 +418,16 @@ export function createDesk({
 
   root.addChild(name, sub, stats);
 
-  // Cosmetic Props & Pets
+  // Cosmetic Props, Pets & Trophies from Catalog
+  const propList = Array.isArray(props) ? props : [props];
+  const propItems = propList.map((p) => (typeof p === "string" ? getItemById(p) : p)).filter(Boolean);
+  const hasEspresso = propList.includes("coffee_machine") || propItems.some((it) => it.archetype === "espresso_station" || it.id?.includes("prop_3") || it.id?.includes("espresso"));
+  const hasBonsai = propList.includes("bonsai") || propItems.some((it) => it.archetype === "terrarium_bonsai" || it.id?.includes("prop_4") || it.id?.includes("bonsai"));
+  const hasServer = propItems.some((it) => it.archetype === "supercomputer" || it.id?.includes("prop_0") || it.id?.includes("server"));
+  const hasHolo = propItems.some((it) => it.archetype === "hologram_emitter" || it.id?.includes("prop_2") || it.id?.includes("holo"));
+
   let coffeeSteam = null;
-  if (Array.isArray(props) && props.includes("coffee_machine")) {
+  if (hasEspresso) {
     const coffeeMachine = new Container();
     coffeeMachine.x = W - 32;
     coffeeMachine.y = 12;
@@ -389,7 +444,7 @@ export function createDesk({
     root.addChild(coffeeMachine);
   }
 
-  if (Array.isArray(props) && props.includes("bonsai")) {
+  if (hasBonsai) {
     const bonsai = new Container();
     bonsai.x = 4;
     bonsai.y = 14;
@@ -402,28 +457,94 @@ export function createDesk({
     root.addChild(bonsai);
   }
 
+  let serverLeds = null;
+  if (hasServer) {
+    const serverTower = new Container();
+    serverTower.x = W - 22;
+    serverTower.y = 8;
+    const stGfx = new Graphics();
+    stGfx.roundRect(0, 0, 14, 28, 2).fill(vgrad(0x1e293b, 0x0f172a));
+    stGfx.roundRect(0, 0, 14, 28, 2).stroke({ width: 1, color: 0x334155 });
+    serverTower.addChild(stGfx);
+    serverLeds = new Graphics();
+    serverTower.addChild(serverLeds);
+    root.addChild(serverTower);
+  }
+
+  let holoCube = null;
+  if (hasHolo) {
+    const holoProj = new Container();
+    holoProj.x = 6;
+    holoProj.y = 10;
+    const hpBase = new Graphics();
+    hpBase.ellipse(8, 22, 9, 3.5).fill({ color: 0x1e293b });
+    hpBase.ellipse(8, 22, 9, 3.5).stroke({ width: 1, color: 0x06b6d4 });
+    hpBase.poly([8, 22, 1, 6, 15, 6]).fill({ color: 0x06b6d4, alpha: 0.2 });
+    holoProj.addChild(hpBase);
+    holoCube = new Graphics();
+    holoCube.x = 8;
+    holoCube.y = 4;
+    holoCube.roundRect(-4, -4, 8, 8, 1).stroke({ width: 1.2, color: 0x38bdf8, alpha: 0.9 });
+    holoCube.roundRect(-4, -4, 8, 8, 1).fill({ color: 0x06b6d4, alpha: 0.4 });
+    holoProj.addChild(holoCube);
+    root.addChild(holoProj);
+  }
+
+  if (trophy && trophy !== "none") {
+    const trophyItem = typeof trophy === "string" ? getItemById(trophy) : null;
+    const trophyCol = trophyItem?.color ? parseHexColor(trophyItem.color, 0xf59e0b) : 0xf59e0b;
+    const trophyCont = new Container();
+    trophyCont.x = W - 14;
+    trophyCont.y = 16;
+    const trGfx = new Graphics();
+    trGfx.roundRect(-5, 8, 10, 4, 1).fill({ color: 0x1e293b });
+    trGfx.poly([0, -4, 5, 6, -5, 6]).fill({ color: trophyCol });
+    trGfx.circle(0, 0, 1.5).fill({ color: 0xffffff });
+    trophyCont.addChild(trGfx);
+    root.addChild(trophyCont);
+  }
+
   let petContainer = null;
-  if (pet === "cat" || pet === "shiba") {
+  const petItem = typeof pet === "string" ? getItemById(pet) : null;
+  const petArchetype = petItem?.archetype || (pet === "cat" ? "cyber_cat" : pet === "shiba" ? "dozing_shiba" : pet);
+  const petColor = petItem?.color ? parseHexColor(petItem.color, 0xf472b6) : (petArchetype === "dozing_shiba" ? 0xd97706 : 0xf472b6);
+
+  if (pet && pet !== "none") {
     petContainer = new Container();
     petContainer.x = 24;
     petContainer.y = H - 16;
     const petGfx = new Graphics();
-    if (pet === "cat") {
-      petGfx.ellipse(0, 0, 11, 7).fill({ color: 0xf472b6 }); // cute pink cat
-      petGfx.circle(-7, -2, 5.5).fill({ color: 0xf472b6 });
+
+    if (petArchetype === "cyber_cat" || pet === "cat") {
+      petGfx.ellipse(0, 0, 11, 7).fill({ color: petColor });
+      petGfx.circle(-7, -2, 5.5).fill({ color: petColor });
       petGfx.poly([-11, -7, -8, -11, -5, -7]).fill({ color: 0xf43f5e });
       petGfx.poly([-7, -7, -4, -11, -1, -7]).fill({ color: 0xf43f5e });
       petGfx.moveTo(-9, -1).arc(-7, -1, 2, 0, Math.PI).stroke(stroke(1, 0x881337));
-      petGfx.ellipse(7, 2, 5, 2.5).fill({ color: 0xf472b6 });
-    } else if (pet === "shiba") {
-      petGfx.ellipse(0, 0, 13, 8).fill({ color: 0xd97706 }); // shiba
+      petGfx.ellipse(7, 2, 5, 2.5).fill({ color: petColor });
+    } else if (petArchetype === "dozing_shiba" || pet === "shiba") {
+      petGfx.ellipse(0, 0, 13, 8).fill({ color: petColor });
       petGfx.ellipse(2, 2, 9, 4).fill({ color: 0xfef3c7 });
-      petGfx.circle(-8, -2, 6).fill({ color: 0xd97706 });
+      petGfx.circle(-8, -2, 6).fill({ color: petColor });
       petGfx.poly([-12, -7, -9, -12, -6, -7]).fill({ color: 0xb45309 });
       petGfx.poly([-7, -7, -4, -12, -1, -7]).fill({ color: 0xb45309 });
       petGfx.moveTo(-10, -1).arc(-8, -1, 2, 0, Math.PI).stroke(stroke(1, 0x78350f));
-      petGfx.circle(9, -2, 4).fill({ color: 0xd97706 });
+      petGfx.circle(9, -2, 4).fill({ color: petColor });
+    } else if (petArchetype === "hover_drone") {
+      petGfx.ellipse(0, 6, 12, 3.5).stroke({ width: 1.5, color: petColor, alpha: 0.8 });
+      petGfx.circle(0, 0, 7).fill({ color: 0x1e293b });
+      petGfx.circle(0, 0, 7).stroke({ width: 1.2, color: petColor });
+      petGfx.circle(0, 0, 3).fill({ color: 0x38bdf8 });
+      petGfx.circle(-1, -1, 1).fill({ color: 0xffffff });
+    } else {
+      // Cyber Owl
+      petGfx.ellipse(0, 0, 8, 10).fill({ color: 0x1e293b });
+      petGfx.ellipse(0, 0, 8, 10).stroke({ width: 1.2, color: petColor });
+      petGfx.circle(-3, -4, 2.5).fill({ color: petColor });
+      petGfx.circle(3, -4, 2.5).fill({ color: petColor });
+      petGfx.poly([-1, 0, 1, 0, 0, 2]).fill({ color: 0xf59e0b });
     }
+
     petContainer.addChild(petGfx);
     root.addChild(petContainer);
   }
@@ -457,8 +578,8 @@ export function createDesk({
     setHazard(on) {
       hazard.visible = !!on;
     },
-    /** Flicker on the monitor while work is in flight. */
-    animate(t, intensity = 0) {
+    /** Flicker on the monitor and animate props/pets reacting to agent mode */
+    animate(t, intensity = 0, mode = "streaming") {
       screen.alpha = 0.7 + Math.sin(t * 0.008 + root.x) * 0.12 * (0.4 + intensity);
       glow.alpha = 0.3 + intensity * 0.5 + Math.sin(t * 0.004 + root.x) * 0.08;
       if (hazard.visible) {
@@ -475,8 +596,40 @@ export function createDesk({
       } else if (coffeeSteam) {
         coffeeSteam.clear();
       }
+      if (serverLeds) {
+        serverLeds.clear();
+        for (let idx = 0; idx < 4; idx++) {
+          const blink = Math.sin(t * 0.008 + idx * 1.6) > 0;
+          const ledCol = [0x22c55e, 0x00f0ff, 0xf59e0b, 0xec4899][idx];
+          serverLeds.circle(4, 4 + idx * 6, 1.3).fill({ color: blink ? ledCol : 0x1e293b });
+        }
+      }
+      if (holoCube) {
+        holoCube.rotation = t * 0.002;
+      }
       if (petContainer) {
-        petContainer.scale.y = 1 + Math.sin(t * 0.003) * 0.06;
+        if (petArchetype === "hover_drone") {
+          petContainer.y = (H - 24) + Math.sin(t * 0.005) * 4;
+          petContainer.scale.y = 1;
+        } else if (mode === "happy") {
+          // Pet jumps up excitedly with celebrating agent
+          petContainer.y = (H - 16) - Math.abs(Math.sin(t * 0.008)) * 7;
+          petContainer.scale.y = 1 + Math.abs(Math.sin(t * 0.008)) * 0.15;
+        } else if (mode === "sleeping") {
+          // Pet sleeps calmly with gentle breathing
+          petContainer.y = H - 16;
+          petContainer.scale.y = 1 + Math.sin(t * 0.0016) * 0.04;
+        } else if (mode === "error") {
+          // Pet nervous shiver
+          petContainer.x = 24 + Math.sin(t * 0.08) * 1.5;
+          petContainer.y = H - 16;
+        } else if (mode === "looping") {
+          // Pet dizzy tilt
+          petContainer.rotation = Math.sin(t * 0.04) * 0.15;
+        } else {
+          petContainer.y = H - 16;
+          petContainer.scale.y = 1 + Math.sin(t * 0.003) * 0.06;
+        }
       }
     },
   };

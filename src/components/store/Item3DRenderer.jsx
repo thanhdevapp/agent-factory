@@ -28,7 +28,8 @@ export function Item3DPreview({ item, itemId, className = "w-24 h-24" }) {
     );
   }
 
-  const { id, name, category, archetype, color = "#00f0ff", secondaryColor = "#111827", rarity = "rare" } = targetItem;
+  const itemAccent = targetItem.color || targetItem.palette?.accentColor || "#00f0ff";
+  const { id, name, category, archetype, color = itemAccent, secondaryColor = "#111827", rarity = "rare" } = targetItem;
   const filterId = `glow-${id}`;
   const gradId = `grad-${id}`;
 
@@ -82,6 +83,7 @@ export function Item3DPreview({ item, itemId, className = "w-24 h-24" }) {
         {category === "pets" && <Render3DPet item={targetItem} gradId={gradId} />}
         {category === "auras" && <Render3DAura item={targetItem} gradId={gradId} />}
         {category === "trophies" && <Render3DTrophy item={targetItem} gradId={gradId} />}
+        {category === "themes" && <Render3DTheme item={targetItem} gradId={gradId} />}
       </svg>
 
       {/* Rarity & Name Badge */}
@@ -515,6 +517,88 @@ function Render3DTrophy({ item, gradId }) {
 }
 
 // ----------------------------------------------------------------------------
+// 6. 3D ISOMETRIC VIRTUAL OFFICE THEME / FLOOR ENVIRONMENT RENDERER
+// ----------------------------------------------------------------------------
+function Render3DTheme({ item, gradId }) {
+  const p = item.palette || {};
+  const toHex = (c, fallback = "#38bdf8") =>
+    typeof c === "number" ? `#${c.toString(16).padStart(6, "0")}` : (c || fallback);
+
+  const [cTop, cBottom] = (p.floorGradient || [0x0b1018, 0x161f2c]).map((c) => toHex(c));
+  const gridHex = toHex(p.gridColor, "#1a2330");
+  const borderHex = toHex(p.borderColor, "#263244");
+  const rackHex = toHex(p.panelRackColor, "#fde047");
+  const podHex = toHex(p.panelPodColor, "#22d3ee");
+  const accentHex = p.accentColor || "#007acc";
+
+  return (
+    <g>
+      <defs>
+        <linearGradient id={`${gradId}-floor-face`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={cTop} />
+          <stop offset="100%" stopColor={cBottom} />
+        </linearGradient>
+      </defs>
+
+      {/* 3D Isometric Floor Slab */}
+      {/* 1. Left Thickness Slab */}
+      <polygon points="12,42 50,64 50,72 12,50" fill={cTop} stroke="#070a10" strokeWidth="1" opacity="0.9" />
+      {/* 2. Right Thickness Slab */}
+      <polygon points="50,64 88,42 88,50 50,72" fill={cBottom} stroke="#070a10" strokeWidth="1" opacity="0.9" />
+
+      {/* 3. Isometric Top Diamond Face */}
+      <polygon
+        points="50,20 88,42 50,64 12,42"
+        fill={`url(#${gradId}-floor-face)`}
+        stroke={borderHex}
+        strokeWidth="1.8"
+      />
+
+      {/* 4. Isometric Grid Lines (Criss-Cross) */}
+      <line x1="31" y1="31" x2="69" y2="53" stroke={gridHex} strokeWidth="1" opacity={p.gridAlpha || 0.75} />
+      <line x1="69" y1="31" x2="31" y2="53" stroke={gridHex} strokeWidth="1" opacity={p.gridAlpha || 0.75} />
+      <line x1="40" y1="26" x2="78" y2="48" stroke={gridHex} strokeWidth="0.8" opacity={p.gridAlpha || 0.75} />
+      <line x1="60" y1="26" x2="22" y2="48" stroke={gridHex} strokeWidth="0.8" opacity={p.gridAlpha || 0.75} />
+
+      {/* 5. Center Hub Platform Highlight (Mini Core Hub Rack) */}
+      <polygon
+        points="50,33 60,39 50,45 40,39"
+        fill={rackHex}
+        fillOpacity="0.25"
+        stroke={rackHex}
+        strokeWidth="1"
+      />
+      <circle cx="50" cy="39" r="2.5" fill={rackHex} />
+
+      {/* 6. Side Pod Zone Panels */}
+      <polygon
+        points="65,37 73,42 65,47 57,42"
+        fill={podHex}
+        fillOpacity="0.2"
+        stroke={podHex}
+        strokeWidth="0.8"
+      />
+      <polygon
+        points="35,37 43,42 35,47 27,42"
+        fill={podHex}
+        fillOpacity="0.2"
+        stroke={podHex}
+        strokeWidth="0.8"
+      />
+
+      {/* 7. Ambient Glowing Corner Nodes & Circuit Traces */}
+      <circle cx="12" cy="42" r="1.5" fill={borderHex} />
+      <circle cx="88" cy="42" r="1.5" fill={borderHex} />
+      <circle cx="50" cy="20" r="1.5" fill={borderHex} />
+      <circle cx="50" cy="64" r="2" fill={accentHex} />
+
+      {/* 8. Top Surface Specular Flare */}
+      <circle cx="50" cy="39" r="6" fill={accentHex} opacity="0.15" />
+    </g>
+  );
+}
+
+// ----------------------------------------------------------------------------
 // Legacy Delegates for backwards compatibility
 // ----------------------------------------------------------------------------
 export function SkinPreview({ skinId }) {
@@ -535,4 +619,8 @@ export function AuraPreview({ auraId }) {
 
 export function TrophyPreview({ trophyId }) {
   return <Item3DPreview itemId={trophyId} />;
+}
+
+export function ThemePreview({ themeId }) {
+  return <Item3DPreview itemId={themeId} />;
 }

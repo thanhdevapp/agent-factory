@@ -18,6 +18,7 @@ const FREE_PET_IDS = COSMETIC_CATALOG.pets.filter((p) => p.tier === "free").map(
 const FREE_PROP_IDS = COSMETIC_CATALOG.props.filter((pr) => pr.tier === "free").map((pr) => pr.id);
 const FREE_AURA_IDS = (COSMETIC_CATALOG.auras || []).filter((a) => a.tier === "free").map((a) => a.id);
 const FREE_TROPHY_IDS = (COSMETIC_CATALOG.trophies || []).filter((t) => t.tier === "free").map((t) => t.id);
+const FREE_THEME_IDS = (COSMETIC_CATALOG.officeThemes || []).filter((th) => th.tier === "free").map((th) => th.id);
 
 const DEFAULT_STATE = {
   isSupporter: false,
@@ -27,6 +28,7 @@ const DEFAULT_STATE = {
   equippedProps: [],
   equippedAura: "none",
   equippedTrophy: "none",
+  equippedOfficeTheme: "theme_default",
   ambientSound: "none",
   ambientVolume: 0.35,
   unlockedItems: Array.from(
@@ -36,6 +38,7 @@ const DEFAULT_STATE = {
       "prop_0",
       "aura_0",
       "trophy_0",
+      "theme_default",
       "classic",
       "none",
       ...FREE_SKIN_IDS,
@@ -43,6 +46,7 @@ const DEFAULT_STATE = {
       ...FREE_PROP_IDS,
       ...FREE_AURA_IDS,
       ...FREE_TROPHY_IDS,
+      ...FREE_THEME_IDS,
     ])
   ),
 };
@@ -55,6 +59,7 @@ function normalizeState(state) {
   if (s.equippedPet === "none" || !s.equippedPet) s.equippedPet = "pet_0";
   if (!s.equippedAura) s.equippedAura = "none";
   if (!s.equippedTrophy) s.equippedTrophy = "none";
+  if (!s.equippedOfficeTheme) s.equippedOfficeTheme = "theme_default";
   if (!Array.isArray(s.unlockedItems)) s.unlockedItems = DEFAULT_STATE.unlockedItems;
   return s;
 }
@@ -203,6 +208,18 @@ export function equipTrophy(trophyId) {
   return true;
 }
 
+// Equip Office Theme / Floor Environment
+export function equipOfficeTheme(themeId) {
+  const current = getSupporterState();
+  const isFree = (COSMETIC_CATALOG.officeThemes || []).find((t) => t.id === themeId)?.tier === "free";
+  if (!current.unlockedItems.includes(themeId) && !current.isSupporter && !isFree && themeId !== "theme_default") {
+    return false;
+  }
+  const next = { ...current, equippedOfficeTheme: themeId };
+  saveAndNotify(next);
+  return true;
+}
+
 // Update Ambient Soundscape
 export function setAmbientSound(soundId, volume = null) {
   const current = getSupporterState();
@@ -214,3 +231,4 @@ export function setAmbientSound(soundId, volume = null) {
   saveAndNotify(next);
   return next;
 }
+
