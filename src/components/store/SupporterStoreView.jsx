@@ -44,7 +44,7 @@ const VIETQR_CONFIG = {
   bankId: "MB", // MB Bank
   bankName: "MB Bank (Military Commercial Joint Stock Bank)",
   accountNo: "0968868862", // Configured recipient account number
-  template: "compact2",
+  template: "qr_only",
 };
 
 const DONATE_TIERS = [
