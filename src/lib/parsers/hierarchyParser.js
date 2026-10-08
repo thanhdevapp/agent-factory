@@ -1,0 +1,254 @@
+/**
+ * Hierarchy Parser & DAG Layout Engine
+ * Bóc tách cấu trúc phân rã công việc đa tác nhân (Multi-Agent DAG)
+ * và tự động tính toán toạ độ (x, y) theo thuật toán Layered Hierarchical Layout
+ */
+
+export const NODE_WIDTH = 260;
+export const NODE_HEIGHT = 140;
+export const HORIZONTAL_GAP = 60;
+export const VERTICAL_GAP = 140;
+
+/**
+ * Phân tích và xây dựng đồ thị DAG từ danh sách traces và transcript
+ * @param {Array} traces - Danh sách các session trace từ useFactoryTraces
+ * @param {string} focusedTraceId - ID trace đang được focus (hoặc null để xem toàn bộ)
+ * @param {Array} focusedTurns - Danh sách conversation turns của trace đang focus (nếu có)
+ */
+export function buildAgentHierarchy(traces = [], focusedTraceId = null, focusedTurns = []) {
+  if (!Array.isArray(traces) || traces.length === 0) {
+    return { nodes: [], edges: [], bounds: { minX: 0, maxX: 800, minY: 0, maxY: 600 } };
+  }
+
+  // Nếu có focusedTraceId, ưu tiên hiển thị Orchestrator và các Subagents của nó
+  const targetTrace = traces.find(t => 
+    t.traceId === focusedTraceId || 
+    t.traces?.[0]?.traceId === focusedTraceId ||
+    t.connectionId === focusedTraceId
+  ) || traces[0];
+
+  // Trích xuất các Subagents từ tool calls invoke_subagent trong transcript
+  const subagentsFromTranscript = [];
+  if (Array.isArray(focusedTurns)) {
+    focusedTurns.forEach((turn, turnIdx) => {
+      if (Array.isArray(turn.toolCalls)) {
+        turn.toolCalls.forEach((tool) => {
+          const name = (tool.name || "").toLowerCase();
+          if (name.includes("invoke_subagent") || name.includes("define_subagent")) {
+            const rawSub = tool.args?.Subagents || tool.args?.subagents || tool.args;
+            const items = Array.isArray(rawSub) ? rawSub : [rawSub];
+            items.forEach((item, itemIdx) => {
+              if (item && (item.Role || item.role || item.TypeName || item.name)) {
+                subagentsFromTranscript.push({
+                  id: `sub-${turnIdx}-${itemIdx}-${item.TypeName || item.name || "worker"}`,
+                  parentId: targetTrace.traceId || targetTrace.connectionId,
+                  role: item.Role || item.role || "Subagent Worker",
+                  typeName: item.TypeName || item.name || "specialist",
+                  model: item.Model || item.model || targetTrace.model || "inherit",
+                  prompt: item.Prompt || item.prompt || item.system_prompt || "",
+                  workspace: item.Workspace || item.workspace || "inherit",
+                  status: tool.status === "running" ? "streaming" : "done",
+                  tokens: { input: 1200, output: 450, cached: 3000 },
+                  durationMs: 8500,
+                  isSubagent: true,
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Danh sách các root sessions
+  const rootTraces = traces.filter(t => !t.parentTraceId);
+  const otherTraces = traces.filter(t => t.parentTraceId);
+
+  const rawNodes = [];
+  const rawEdges = [];
+
+  // Tạo node cho root session được focus (hoặc tất cả các root)
+  const isSingleRootFocus = subagentsFromTranscript.length > 0;
+  const activeRoots = isSingleRootFocus ? [targetTrace] : (rootTraces.length > 0 ? rootTraces : traces);
+
+  // 1. Level 0: Root Orchestrators
+  activeRoots.forEach((trace) => {
+    const traceId = trace.traceId || trace.connectionId;
+    rawNodes.push({
+      id: traceId,
+      level: 0,
+      label: trace.account || trace.connectionId || "Orchestrator Agent",
+      role: "Lead Orchestrator",
+      model: trace.model || "gemini-2.5-pro",
+      status: trace.state || trace.mode || "idle",
+      isLooping: !!trace.isLooping,
+      tokens: trace.tokens || { input: 0, output: 0, cached: 0 },
+      toolsCount: trace.tools?.length || trace.logs?.length || 0,
+      clientType: trace.clientType || "cli",
+      color: trace.color ? `#${trace.color.toString(16).padStart(6, "0")}` : "#38bdf8",
+      isRoot: true,
+      traceRef: trace,
+    });
+  });
+
+  // 2. Level 1: Subagents trích xuất từ transcript hoặc các session con
+  if (subagentsFromTranscript.length > 0) {
+    subagentsFromTranscript.forEach((sub) => {
+      rawNodes.push({
+        id: sub.id,
+        level: 1,
+        parentId: sub.parentId,
+        label: sub.role,
+        role: sub.role,
+        typeName: sub.typeName,
+        model: sub.model,
+        status: sub.status,
+        prompt: sub.prompt,
+        tokens: sub.tokens,
+        toolsCount: 2,
+        clientType: "subagent",
+        color: "#818cf8", // Indigo
+        isRoot: false,
+      });
+
+      rawEdges.push({
+        id: `edge-${sub.parentId}-${sub.id}`,
+        fromId: sub.parentId,
+        toId: sub.id,
+        active: sub.status === "streaming",
+        label: sub.typeName,
+      });
+    });
+  } else {
+    // Nếu chưa có subagent từ transcript, tìm các traces khác cùng workspace để link làm Peer / Sub nodes
+    const targetWs = (targetTrace.cwd || targetTrace.workspace || "").toLowerCase();
+    const relatedTraces = traces.filter(t => (t.traceId || t.connectionId) !== (targetTrace.traceId || targetTrace.connectionId));
+
+    relatedTraces.slice(0, 6).forEach((trace, idx) => {
+      const traceId = trace.traceId || trace.connectionId;
+      const isPeer = (trace.cwd || "").toLowerCase() === targetWs;
+      const level = isPeer ? 1 : 1;
+
+      rawNodes.push({
+        id: traceId,
+        level: level,
+        parentId: targetTrace.traceId || targetTrace.connectionId,
+        label: trace.account || trace.connectionId,
+        role: trace.account ? `${trace.account} Worker` : "Peer Agent",
+        model: trace.model || "gemini-2.5-flash",
+        status: trace.state || trace.mode || "idle",
+        isLooping: !!trace.isLooping,
+        tokens: trace.tokens || { input: 0, output: 0, cached: 0 },
+        toolsCount: trace.tools?.length || 0,
+        clientType: trace.clientType || "cli",
+        color: trace.color ? `#${trace.color.toString(16).padStart(6, "0")}` : "#34d399",
+        isRoot: false,
+        traceRef: trace,
+      });
+
+      rawEdges.push({
+        id: `edge-${targetTrace.traceId || targetTrace.connectionId}-${traceId}`,
+        fromId: targetTrace.traceId || targetTrace.connectionId,
+        toId: traceId,
+        active: trace.state === "streaming" || trace.mode === "streaming",
+        label: "Sync / A2A",
+      });
+    });
+  }
+
+  // 3. Tính toán vị trí (x, y) theo tầng (Hierarchical DAG Layout)
+  const nodesByLevel = {};
+  rawNodes.forEach(node => {
+    if (!nodesByLevel[node.level]) nodesByLevel[node.level] = [];
+    nodesByLevel[node.level].push(node);
+  });
+
+  const layoutedNodes = [];
+  const nodePositionMap = {};
+
+  const startY = 80;
+  let maxNodesInLevel = 1;
+  Object.values(nodesByLevel).forEach(arr => {
+    if (arr.length > maxNodesInLevel) maxNodesInLevel = arr.length;
+  });
+
+  const totalContentWidth = maxNodesInLevel * (NODE_WIDTH + HORIZONTAL_GAP) - HORIZONTAL_GAP;
+  const canvasCenter = Math.max(totalContentWidth / 2 + 100, 500);
+
+  Object.keys(nodesByLevel).forEach(lvlStr => {
+    const level = parseInt(lvlStr, 10);
+    const nodesInLevel = nodesByLevel[level];
+    const levelWidth = nodesInLevel.length * (NODE_WIDTH + HORIZONTAL_GAP) - HORIZONTAL_GAP;
+    const levelStartX = canvasCenter - levelWidth / 2;
+
+    nodesInLevel.forEach((node, idx) => {
+      const x = Math.round(levelStartX + idx * (NODE_WIDTH + HORIZONTAL_GAP));
+      const y = Math.round(startY + level * (NODE_HEIGHT + VERTICAL_GAP));
+
+      const layoutedNode = {
+        ...node,
+        x,
+        y,
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+      };
+
+      layoutedNodes.push(layoutedNode);
+      nodePositionMap[node.id] = layoutedNode;
+    });
+  });
+
+  // 4. Tính toán toạ độ đường nối (Edges Coordinates)
+  const layoutedEdges = [];
+  rawEdges.forEach(edge => {
+    const fromNode = nodePositionMap[edge.fromId];
+    const toNode = nodePositionMap[edge.toId];
+
+    if (fromNode && toNode) {
+      const x1 = fromNode.x + fromNode.width / 2;
+      const y1 = fromNode.y + fromNode.height;
+      const x2 = toNode.x + toNode.width / 2;
+      const y2 = toNode.y;
+
+      // Cubic Bezier control points
+      const dy = Math.max((y2 - y1) / 2, 40);
+      const cx1 = x1;
+      const cy1 = y1 + dy;
+      const cx2 = x2;
+      const cy2 = y2 - dy;
+
+      const pathData = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+
+      layoutedEdges.push({
+        ...edge,
+        fromPos: { x: x1, y: y1 },
+        toPos: { x: x2, y: y2 },
+        pathData,
+      });
+    }
+  });
+
+  // Tính toán bounds để fit view
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  layoutedNodes.forEach(n => {
+    if (n.x < minX) minX = n.x;
+    if (n.x + n.width > maxX) maxX = n.x + n.width;
+    if (n.y < minY) minY = n.y;
+    if (n.y + n.height > maxY) maxY = n.y + n.height;
+  });
+
+  if (!isFinite(minX)) {
+    minX = 0; maxX = 1000; minY = 0; maxY = 700;
+  }
+
+  return {
+    nodes: layoutedNodes,
+    edges: layoutedEdges,
+    bounds: {
+      minX: Math.max(0, minX - 100),
+      maxX: maxX + 100,
+      minY: Math.max(0, minY - 80),
+      maxY: maxY + 100,
+    }
+  };
+}

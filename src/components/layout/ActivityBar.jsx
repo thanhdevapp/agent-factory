@@ -9,6 +9,7 @@ import {
   Settings,
   BarChart3,
   SlidersHorizontal,
+  GitFork,
 } from "lucide-react";
 
 export default function ActivityBar({
@@ -30,6 +31,11 @@ export default function ActivityBar({
       id: "office",
       title: "Virtual 2D Office View (Canvas)",
       icon: Bot,
+    },
+    {
+      id: "network",
+      title: "Multi-Agent Collaboration DAG Graph",
+      icon: GitFork,
     },
     {
       id: "reports",

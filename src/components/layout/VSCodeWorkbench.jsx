@@ -11,6 +11,7 @@ import RightSidebar from "./RightSidebar";
 import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
 import OfficeCanvas from "../factory/office-canvas";
+import AgentGraphView from "../factory/AgentGraphView";
 import SessionChatModal from "../chat/SessionChatModal";
 import TokenReportView from "../reports/TokenReportView";
 import { loadWorkbenchLayout, saveWorkbenchLayout } from "./layoutStore";
@@ -48,10 +49,19 @@ export default function VSCodeWorkbench({
     saveWorkbenchLayout(layout);
   }, [layout]);
 
-  // Selected workstation object
+  // Selected workstation object (fallback to traces list if not found in workstations)
   const selectedAgent = useMemo(() => {
-    return office.workstations.find((w) => w.connectionId === selectedId) || null;
-  }, [office.workstations, selectedId]);
+    if (!selectedId) return null;
+    return (
+      office.workstations.find(
+        (w) => w.connectionId === selectedId || w.traceId === selectedId || w.traces?.[0]?.traceId === selectedId
+      ) ||
+      traces.find(
+        (t) => t.connectionId === selectedId || t.traceId === selectedId || t.traces?.[0]?.traceId === selectedId
+      ) ||
+      null
+    );
+  }, [office.workstations, traces, selectedId]);
 
   // If an agent is selected, ensure right sidebar is visible or open a tab
   const handleSelectAgent = useCallback((id) => {
@@ -99,6 +109,17 @@ export default function VSCodeWorkbench({
       ];
     });
     setActiveTabId("reports");
+  }, []);
+
+  const handleOpenNetwork = useCallback(() => {
+    setTabs((prev) => {
+      if (prev.find((t) => t.id === "network")) return prev;
+      return [
+        ...prev,
+        { id: "network", title: "Multi-Agent Graph", type: "network", closable: true },
+      ];
+    });
+    setActiveTabId("network");
   }, []);
 
   // Keyboard shortcuts (Cmd+B, Cmd+J, Cmd+Alt+B, Cmd+Shift+P)
@@ -189,6 +210,8 @@ export default function VSCodeWorkbench({
           onViewChange={(view) => {
             if (view === "office") {
               setActiveTabId("canvas");
+            } else if (view === "network") {
+              handleOpenNetwork();
             } else if (view === "reports") {
               handleOpenReports();
             } else if (view === "telemetry") {
@@ -323,6 +346,20 @@ export default function VSCodeWorkbench({
                   {activeTabId === "reports" && (
                     <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
                       <TokenReportView onClose={() => handleCloseTab("reports")} />
+                    </div>
+                  )}
+
+                  {/* Tab 5: Multi-Agent Collaboration DAG Graph */}
+                  {activeTabId === "network" && (
+                    <div className="absolute inset-0 overflow-hidden bg-slate-950 z-20">
+                      <AgentGraphView
+                        traces={traces}
+                        selectedTraceId={selectedId}
+                        onSelectTrace={(t) => {
+                          setSelectedId(t.traceId || t.connectionId);
+                          setIsChatModalOpen(true);
+                        }}
+                      />
                     </div>
                   )}
                 </div>
