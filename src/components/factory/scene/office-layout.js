@@ -189,7 +189,7 @@ export function buildOffice(traces = []) {
   const pods = providers.map((provider, i) => {
     const clients = workstations.filter((w) => w.provider === provider);
     const busy = clients.reduce((s, w) => s + w.busy, 0);
-    const tokens = clients.reduce((s, w) => s + w.totalTokens, 0);
+    const tokens = clients.reduce((s, w) => s + (w.totalTokens ?? 0), 0);
     const anyError = clients.some((w) => w.state === "error");
     return {
       provider,
@@ -227,8 +227,8 @@ export function buildOffice(traces = []) {
     stats: {
       agents: workstations.length,
       busy: workstations.filter((w) => w.busy > 0).length,
-      tokens: workstations.reduce((s, w) => s + w.totalTokens, 0),
-      tokensLabel: humanSize(workstations.reduce((s, w) => s + w.totalTokens, 0)),
+      tokens: workstations.reduce((s, w) => s + (w.totalTokens ?? 0), 0),
+      tokensLabel: humanSize(workstations.reduce((s, w) => s + (w.totalTokens ?? 0), 0)),
     },
   };
 }
