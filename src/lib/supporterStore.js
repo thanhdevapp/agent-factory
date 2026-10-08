@@ -2,7 +2,7 @@
 
 /**
  * Supporter Store & Cosmetic Customization Engine
- * Manages supporter status, item inventory (100 Skins, Pets, Props), and Ambient soundscapes.
+ * Manages supporter status, item inventory (1,000 Skins, Props, Pets, Auras, Trophies), and Ambient soundscapes.
  * Persists in localStorage and broadcasts sync events to PixiJS Canvas.
  */
 
@@ -16,6 +16,8 @@ export const SUPPORTER_CHANGE_EVENT = "agmon:supporter-change";
 const FREE_SKIN_IDS = COSMETIC_CATALOG.skins.filter((s) => s.tier === "free").map((s) => s.id);
 const FREE_PET_IDS = COSMETIC_CATALOG.pets.filter((p) => p.tier === "free").map((p) => p.id);
 const FREE_PROP_IDS = COSMETIC_CATALOG.props.filter((pr) => pr.tier === "free").map((pr) => pr.id);
+const FREE_AURA_IDS = (COSMETIC_CATALOG.auras || []).filter((a) => a.tier === "free").map((a) => a.id);
+const FREE_TROPHY_IDS = (COSMETIC_CATALOG.trophies || []).filter((t) => t.tier === "free").map((t) => t.id);
 
 const DEFAULT_STATE = {
   isSupporter: false,
@@ -23,9 +25,26 @@ const DEFAULT_STATE = {
   equippedSkin: "skin_0",
   equippedPet: "pet_0",
   equippedProps: [],
+  equippedAura: "none",
+  equippedTrophy: "none",
   ambientSound: "none",
   ambientVolume: 0.35,
-  unlockedItems: Array.from(new Set(["skin_0", "pet_0", "classic", "none", ...FREE_SKIN_IDS, ...FREE_PET_IDS, ...FREE_PROP_IDS])),
+  unlockedItems: Array.from(
+    new Set([
+      "skin_0",
+      "pet_0",
+      "prop_0",
+      "aura_0",
+      "trophy_0",
+      "classic",
+      "none",
+      ...FREE_SKIN_IDS,
+      ...FREE_PET_IDS,
+      ...FREE_PROP_IDS,
+      ...FREE_AURA_IDS,
+      ...FREE_TROPHY_IDS,
+    ])
+  ),
 };
 
 // Normalize legacy IDs (e.g. classic -> skin_0, none -> pet_0)
@@ -34,6 +53,8 @@ function normalizeState(state) {
   const s = { ...DEFAULT_STATE, ...state };
   if (s.equippedSkin === "classic" || !s.equippedSkin) s.equippedSkin = "skin_0";
   if (s.equippedPet === "none" || !s.equippedPet) s.equippedPet = "pet_0";
+  if (!s.equippedAura) s.equippedAura = "none";
+  if (!s.equippedTrophy) s.equippedTrophy = "none";
   if (!Array.isArray(s.unlockedItems)) s.unlockedItems = DEFAULT_STATE.unlockedItems;
   return s;
 }
@@ -82,7 +103,18 @@ export function unlockWithCode(code) {
     const allSkins = COSMETIC_CATALOG.skins.map((s) => s.id);
     const allPets = COSMETIC_CATALOG.pets.map((p) => p.id);
     const allProps = COSMETIC_CATALOG.props.map((pr) => pr.id);
-    const allUnlocked = Array.from(new Set([...current.unlockedItems, ...allSkins, ...allPets, ...allProps]));
+    const allAuras = (COSMETIC_CATALOG.auras || []).map((a) => a.id);
+    const allTrophies = (COSMETIC_CATALOG.trophies || []).map((t) => t.id);
+    const allUnlocked = Array.from(
+      new Set([
+        ...current.unlockedItems,
+        ...allSkins,
+        ...allPets,
+        ...allProps,
+        ...allAuras,
+        ...allTrophies,
+      ])
+    );
 
     const nextState = {
       ...current,
@@ -97,7 +129,7 @@ export function unlockWithCode(code) {
     saveAndNotify(nextState);
     return {
       success: true,
-      message: "Congratulations! You have unlocked all 100 VIP items and Supporter status.",
+      message: "Congratulations! You have unlocked all 1,000 items and VIP Supporter status.",
       state: nextState,
     };
   }
@@ -143,6 +175,30 @@ export function toggleProp(propId) {
     props.add(propId);
   }
   const next = { ...current, equippedProps: Array.from(props) };
+  saveAndNotify(next);
+  return true;
+}
+
+// Equip Aura
+export function equipAura(auraId) {
+  const current = getSupporterState();
+  const isFree = (COSMETIC_CATALOG.auras || []).find((a) => a.id === auraId)?.tier === "free";
+  if (!current.unlockedItems.includes(auraId) && !current.isSupporter && !isFree && auraId !== "none" && auraId !== "aura_0") {
+    return false;
+  }
+  const next = { ...current, equippedAura: auraId };
+  saveAndNotify(next);
+  return true;
+}
+
+// Equip Trophy
+export function equipTrophy(trophyId) {
+  const current = getSupporterState();
+  const isFree = (COSMETIC_CATALOG.trophies || []).find((t) => t.id === trophyId)?.tier === "free";
+  if (!current.unlockedItems.includes(trophyId) && !current.isSupporter && !isFree && trophyId !== "none" && trophyId !== "trophy_0") {
+    return false;
+  }
+  const next = { ...current, equippedTrophy: trophyId };
   saveAndNotify(next);
   return true;
 }

@@ -4,36 +4,31 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Coffee,
   Sparkles,
-  Heart,
   ShieldCheck,
   Check,
   ExternalLink,
-  QrCode,
   ShoppingBag,
   Volume2,
   VolumeX,
   Key,
   X,
   Laptop,
-  Flame,
-  Sprout,
   Play,
   Square,
   Gift,
   AlertCircle,
   Copy,
   ChevronRight,
+  ChevronLeft,
   Lock,
   Search,
   Grid,
   Bot,
-  Layers,
   Filter,
   LayoutGrid,
-  Maximize2,
   Zap,
+  Trophy,
 } from "lucide-react";
-import { Button, Input, Badge } from "@/components/ui";
 import {
   COSMETIC_CATALOG,
   getSupporterState,
@@ -41,16 +36,18 @@ import {
   equipSkin,
   equipPet,
   toggleProp,
+  equipAura,
+  equipTrophy,
   setAmbientSound,
   SUPPORTER_CHANGE_EVENT,
 } from "@/lib/supporterStore";
 import { startAmbient, stopAmbient, setAmbientVolume } from "@/lib/ambientAudio";
-import { SkinPreview, PetPreview, PropPreview } from "./ItemPreviewArt";
+import { Item3DPreview } from "./Item3DRenderer";
 
 // VietQR donation recipient info (MB Bank)
 const VIETQR_CONFIG = {
   bankId: "MB",
-  bankName: "MB Bank (Military Commercial Joint Stock Bank)",
+  bankName: "MB Bank (Military Bank)",
   accountNo: "0968868862",
   template: "qr_only",
 };
@@ -58,19 +55,19 @@ const VIETQR_CONFIG = {
 const DONATE_TIERS = [
   {
     id: "coffee",
-    title: "Cup of Coffee",
+    title: "Dev Coffee Fuel",
     amount: 20000,
     amountUsd: "$1",
     tag: "Popular",
-    description: "Gift the developer a fresh cup of coffee to power late-night coding.",
+    description: "Fuel developer energy for late-night coding and debugging sessions.",
   },
   {
     id: "lunch",
-    title: "Developer Lunch",
+    title: "Lunch Encouragement",
     amount: 50000,
     amountUsd: "$2.5",
     tag: "Recommended",
-    description: "Fuel continuous development to ship new features to AGMon.",
+    description: "Support server infrastructure and new feature development for AGMon.",
   },
   {
     id: "vip",
@@ -78,21 +75,25 @@ const DONATE_TIERS = [
     amount: 100000,
     amountUsd: "$5",
     tag: "VIP Supporter",
-    description: "Unlock all supporter badges, skins, pets, and workspace items in the vault.",
+    description: "Unlock all 1,000 3D isometric items, aura effects, and exclusive badges.",
   },
 ];
 
+const ITEMS_PER_PAGE = 48;
+
 export default function SupporterStoreView({ hideHeader = false, onClose = null }) {
-  // Default to 'all' so users immediately see the 100 items on open!
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'skins' | 'props' | 'pets' | 'ambient' | 'donate'
+  // Navigation: 'all' | 'skins' | 'props' | 'pets' | 'auras' | 'trophies' | 'ambient' | 'donate'
+  const [activeTab, setActiveTab] = useState("all");
   const [storeState, setStoreState] = useState(getSupporterState());
   const [selectedTier, setSelectedTier] = useState(DONATE_TIERS[0]);
   const [unlockCodeInput, setUnlockCodeInput] = useState("");
   const [unlockFeedback, setUnlockFeedback] = useState(null);
   const [copiedBank, setCopiedBank] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tierFilter, setTierFilter] = useState("all"); // 'all' | 'free' | 'coffee' | 'meal' | 'vip'
+  const [tierFilter, setTierFilter] = useState("all"); // 'all' | 'free' | 'coffee' | 'lunch' | 'vip'
   const [gridDensity, setGridDensity] = useState("normal"); // 'normal' | 'dense'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [playingAudio, setPlayingAudio] = useState(null);
 
   // Listen for inventory updates
   useEffect(() => {
@@ -107,6 +108,11 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     window.addEventListener(SUPPORTER_CHANGE_EVENT, handleStoreChange);
     return () => window.removeEventListener(SUPPORTER_CHANGE_EVENT, handleStoreChange);
   }, []);
+
+  // Reset pagination when category, query, or tier changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, tierFilter]);
 
   // Unlock via activation code
   const handleUnlockCode = (e) => {
@@ -167,77 +173,128 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     return (
       item.name?.toLowerCase().includes(q) ||
       item.description?.toLowerCase().includes(q) ||
-      item.id?.toLowerCase().includes(q)
+      item.id?.toLowerCase().includes(q) ||
+      item.archetype?.toLowerCase().includes(q)
     );
   };
 
+  // Filtered lists
   const filteredSkins = useMemo(
-    () => COSMETIC_CATALOG.skins.filter(matchesSearchAndTier),
+    () => (COSMETIC_CATALOG.skins || []).filter(matchesSearchAndTier),
     [searchQuery, tierFilter]
   );
 
   const filteredProps = useMemo(
-    () => COSMETIC_CATALOG.props.filter(matchesSearchAndTier),
+    () => (COSMETIC_CATALOG.props || []).filter(matchesSearchAndTier),
     [searchQuery, tierFilter]
   );
 
   const filteredPets = useMemo(
-    () => COSMETIC_CATALOG.pets.filter(matchesSearchAndTier),
+    () => (COSMETIC_CATALOG.pets || []).filter(matchesSearchAndTier),
     [searchQuery, tierFilter]
   );
 
-  const totalFilteredCount = useMemo(() => {
-    if (activeTab === "skins") return filteredSkins.length;
-    if (activeTab === "props") return filteredProps.length;
-    if (activeTab === "pets") return filteredPets.length;
-    if (activeTab === "ambient") return COSMETIC_CATALOG.soundscapes.length;
-    if (activeTab === "all") return filteredSkins.length + filteredProps.length + filteredPets.length;
-    return 0;
-  }, [activeTab, filteredSkins, filteredProps, filteredPets]);
+  const filteredAuras = useMemo(
+    () => (COSMETIC_CATALOG.auras || []).filter(matchesSearchAndTier),
+    [searchQuery, tierFilter]
+  );
+
+  const filteredTrophies = useMemo(
+    () => (COSMETIC_CATALOG.trophies || []).filter(matchesSearchAndTier),
+    [searchQuery, tierFilter]
+  );
+
+  // Active items list based on current tab
+  const activeItemsList = useMemo(() => {
+    if (activeTab === "skins") return filteredSkins;
+    if (activeTab === "props") return filteredProps;
+    if (activeTab === "pets") return filteredPets;
+    if (activeTab === "auras") return filteredAuras;
+    if (activeTab === "trophies") return filteredTrophies;
+    if (activeTab === "all") {
+      return [
+        ...filteredSkins,
+        ...filteredProps,
+        ...filteredPets,
+        ...filteredAuras,
+        ...filteredTrophies,
+      ];
+    }
+    return [];
+  }, [
+    activeTab,
+    filteredSkins,
+    filteredProps,
+    filteredPets,
+    filteredAuras,
+    filteredTrophies,
+  ]);
+
+  // Pagination calculations
+  const totalItemsCount = activeItemsList.length;
+  const totalPages = Math.max(1, Math.ceil(totalItemsCount / ITEMS_PER_PAGE));
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return activeItemsList.slice(start, start + ITEMS_PER_PAGE);
+  }, [activeItemsList, currentPage]);
 
   // Sidebar navigation menu items
   const asideMenuItems = [
     {
       id: "all",
       label: "All Items",
-      count: 100,
+      count: 1000,
       icon: Grid,
-      desc: "30 Skins • 50 Props • 20 Pets",
+      desc: "250 Skins · 350 Props · 200 Pets · 100 Auras · 100 Trophies",
     },
     {
       id: "skins",
-      label: "Agent Skins",
-      count: COSMETIC_CATALOG.skins.length,
+      label: "Agent Skins 3D",
+      count: (COSMETIC_CATALOG.skins || []).length,
       icon: Bot,
-      desc: "Cyber suits & visors",
+      desc: "Cyborgs, mecha frames, and cyber armor",
     },
     {
       id: "props",
       label: "Tech Desk Props",
-      count: COSMETIC_CATALOG.props.length,
+      count: (COSMETIC_CATALOG.props || []).length,
       icon: Laptop,
-      desc: "Workstation gear & hardware",
+      desc: "Workstation gear, hardware, and servers",
     },
     {
       id: "pets",
       label: "Pets & Companions",
-      count: COSMETIC_CATALOG.pets.length,
+      count: (COSMETIC_CATALOG.pets || []).length,
       icon: Gift,
-      desc: "Office animals & flying drones",
+      desc: "Cyber pets & companion hover drones",
+    },
+    {
+      id: "auras",
+      label: "Auras & Effects",
+      count: (COSMETIC_CATALOG.auras || []).length,
+      icon: Sparkles,
+      desc: "Energy rings & particle spectrums",
+    },
+    {
+      id: "trophies",
+      label: "Trophies & Badges",
+      count: (COSMETIC_CATALOG.trophies || []).length,
+      icon: Trophy,
+      desc: "Commemorative awards, silicon wafers & medals",
     },
     {
       id: "ambient",
-      label: "Ambient Sound",
-      count: COSMETIC_CATALOG.soundscapes.length,
+      label: "Ambient Soundscapes",
+      count: (COSMETIC_CATALOG.soundscapes || []).length,
       icon: Volume2,
-      desc: "Procedural Lo-Fi & focus audio",
+      desc: "Lo-Fi beats & focus background noise",
     },
     {
       id: "donate",
       label: "Supporter Vault (VietQR)",
       badge: "Buff Dev",
       icon: Coffee,
-      desc: "Scan VietQR to unlock VIP",
+      desc: "Scan VietQR to unlock all VIP perks",
     },
   ];
 
@@ -246,6 +303,38 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     gridDensity === "dense"
       ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 text-xs"
       : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 text-xs";
+
+  // Item equip helper
+  const handleItemEquipToggle = (item) => {
+    if (item.category === "skins") {
+      equipSkin(item.id);
+    } else if (item.category === "props") {
+      toggleProp(item.id);
+    } else if (item.category === "pets") {
+      equipPet(item.id);
+    } else if (item.category === "auras") {
+      equipAura(item.id);
+    } else if (item.category === "trophies") {
+      equipTrophy(item.id);
+    }
+  };
+
+  const isItemEquipped = (item) => {
+    if (item.category === "skins") return storeState.equippedSkin === item.id;
+    if (item.category === "props") return storeState.equippedProps?.includes(item.id);
+    if (item.category === "pets") return storeState.equippedPet === item.id;
+    if (item.category === "auras") return storeState.equippedAura === item.id;
+    if (item.category === "trophies") return storeState.equippedTrophy === item.id;
+    return false;
+  };
+
+  const isItemUnlocked = (item) => {
+    return (
+      item.tier === "free" ||
+      storeState.isSupporter ||
+      storeState.unlockedItems.includes(item.id)
+    );
+  };
 
   return (
     <div className="w-full h-full flex flex-col md:flex-row bg-[#141416] text-slate-300 overflow-hidden select-none">
@@ -262,14 +351,14 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
             </div>
             <div>
               <h2 className="text-sm font-bold text-white leading-tight">Supporter Store</h2>
-              <p className="text-[11px] text-amber-400 font-mono">100 Tech Items & Effects</p>
+              <p className="text-[11px] text-amber-400 font-mono">1,000 3D Items & Effects</p>
             </div>
           </div>
           {onClose && (
             <button
               onClick={onClose}
               className="p-1 rounded-md hover:bg-[#25252a] text-slate-400 hover:text-white transition-colors"
-              title="Close Store"
+              title="Close store"
             >
               <X className="w-4 h-4" />
             </button>
@@ -282,7 +371,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search in 100 items..."
+              placeholder="Search across 1,000 items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-7 py-1.5 bg-[#202026] border border-[#33333d] rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#007acc] transition-colors"
@@ -301,7 +390,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Aside Category Navigation Menu */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-1 text-xs">
           <div className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            Categories ({COSMETIC_CATALOG.skins.length + COSMETIC_CATALOG.props.length + COSMETIC_CATALOG.pets.length} Items)
+            Categories (1,000 Items)
           </div>
           {asideMenuItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -353,15 +442,15 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           <div className="pt-3 px-2">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <Filter className="w-3 h-3 text-cyan-400" />
-              <span>Filter By Tier</span>
+              <span>Filter by Tier</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {[
-                { id: "all", label: "All (100)" },
+                { id: "all", label: "All" },
                 { id: "free", label: "Free" },
-                { id: "coffee", label: "20k ₫" },
-                { id: "lunch", label: "50k ₫" },
-                { id: "vip", label: "VIP" },
+                { id: "coffee", label: "Coffee (20k)" },
+                { id: "lunch", label: "Lunch (50k)" },
+                { id: "vip", label: "VIP (100k)" },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -385,10 +474,10 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                 type="button"
                 onClick={handleQuickUnlockAll}
                 className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-semibold cursor-pointer transition-all shadow-sm"
-                title="Unlock all 100 items immediately with demo key"
+                title="Unlock all 1,000 items instantly to preview"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Unlock All 100 Items (VIP Demo)</span>
+                <span>Unlock all 1,000 items (VIP Demo)</span>
               </button>
             </div>
           )}
@@ -397,7 +486,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Aside Footer: Character Equipped Preview Widget */}
         <div className="p-3 border-t border-[#26262b] bg-[#121215] text-xs space-y-2">
           <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
-            <span>Equipped Character</span>
+            <span>Current Avatar</span>
             <span
               className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold ${
                 storeState.isSupporter
@@ -412,23 +501,31 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           <div className="flex items-center gap-3 p-2 rounded-xl bg-[#1d1d23] border border-[#2b2b34] shadow-inner">
             <div className="w-14 h-14 rounded-lg bg-[#141418] border border-[#33333d] flex items-center justify-center shrink-0 overflow-hidden">
               <div className="scale-75">
-                <SkinPreview skinId={storeState.equippedSkin} />
+                <Item3DPreview itemId={storeState.equippedSkin} className="w-20 h-20" />
               </div>
             </div>
             <div className="space-y-0.5 flex-1 min-w-0">
               <div className="font-bold text-white text-xs truncate">
-                {COSMETIC_CATALOG.skins.find((s) => s.id === storeState.equippedSkin)?.name || "Classic Bot"}
+                {(COSMETIC_CATALOG.skins || []).find((s) => s.id === storeState.equippedSkin)?.name || "Classic Bot"}
               </div>
               <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
                 <span>Pet:</span>
-                <span className="text-pink-300 font-semibold">
-                  {COSMETIC_CATALOG.pets.find((p) => p.id === storeState.equippedPet)?.name || "None"}
+                <span className="text-pink-300 font-semibold truncate">
+                  {(COSMETIC_CATALOG.pets || []).find((p) => p.id === storeState.equippedPet)?.name || "None selected"}
                 </span>
               </div>
               <div className="text-[10px] text-cyan-400 truncate flex items-center gap-1">
                 <span>Props:</span>
-                <span className="font-bold">{storeState.equippedProps?.length || 0} active</span>
+                <span className="font-bold">{storeState.equippedProps?.length || 0} equipped</span>
               </div>
+              {storeState.equippedAura && storeState.equippedAura !== "none" && (
+                <div className="text-[10px] text-amber-300 truncate flex items-center gap-1">
+                  <span>Aura:</span>
+                  <span className="font-semibold truncate">
+                    {(COSMETIC_CATALOG.auras || []).find((a) => a.id === storeState.equippedAura)?.name || storeState.equippedAura}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -441,32 +538,38 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-[#007acc]/20 text-cyan-300 border border-[#007acc]/40">
-                CATALOG 100
+                CATALOG 1,000
               </span>
               <h1 className="text-base font-bold text-white flex items-center gap-2">
                 {activeTab === "all" && <Grid className="w-4 h-4 text-cyan-400" />}
                 {activeTab === "skins" && <Bot className="w-4 h-4 text-pink-400" />}
                 {activeTab === "props" && <Laptop className="w-4 h-4 text-emerald-400" />}
                 {activeTab === "pets" && <Gift className="w-4 h-4 text-purple-400" />}
-                {activeTab === "ambient" && <Volume2 className="w-4 h-4 text-amber-400" />}
+                {activeTab === "auras" && <Sparkles className="w-4 h-4 text-amber-400" />}
+                {activeTab === "trophies" && <Trophy className="w-4 h-4 text-yellow-400" />}
+                {activeTab === "ambient" && <Volume2 className="w-4 h-4 text-cyan-400" />}
                 {activeTab === "donate" && <Coffee className="w-4 h-4 text-amber-400" />}
                 <span>
-                  {activeTab === "all" && "All 100 Tech Items & Character Effects"}
-                  {activeTab === "skins" && "Agent Skins (30 Outfits & Helmets)"}
-                  {activeTab === "props" && "Desk Props & Hardware (50 Gadgets)"}
-                  {activeTab === "pets" && "Pets & Cyber Companions (20 Companions)"}
-                  {activeTab === "ambient" && "Ambient Audio Soundscapes (6 Scapes)"}
+                  {activeTab === "all" && "All 1,000 Tech Items & 3D Effects"}
+                  {activeTab === "skins" && "Agent 3D Skins (250 Armor & Visor Models)"}
+                  {activeTab === "props" && "Desk Props & Hardware (350 Devices & Rigs)"}
+                  {activeTab === "pets" && "Pets & Cyber Companions (200 Pets & Drones)"}
+                  {activeTab === "auras" && "Auras & Character Effects (100 Energy Spectrums)"}
+                  {activeTab === "trophies" && "Trophies & Silicon Badges (100 3D Medals)"}
+                  {activeTab === "ambient" && "Lo-Fi Ambient Audio (6 Soundscapes)"}
                   {activeTab === "donate" && "Buy Me a Coffee (VietQR Bank Transfer)"}
                 </span>
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              {activeTab === "all" && "Complete collection: 30 Skins, 50 Tech Props, 20 Pets with real-time character preview mocks"}
-              {activeTab === "skins" && "Customize your AI agents on the visual workstation office canvas"}
-              {activeTab === "props" && "Decorate workstations with dual monitors, quantum computers, and RGB keypads"}
-              {activeTab === "pets" && "Keep cozy kittens, loyal shibas, owls, and hover drones beside agent desks"}
-              {activeTab === "ambient" && "Procedurally synthesized background audio soundscapes"}
-              {activeTab === "donate" && "Scan via VietQR MB Bank to unlock VIP perks & support development"}
+              {activeTab === "all" && "Collection of 1,000 high-precision 3D isometric items: cast shadows, directional lighting, and microchip details."}
+              {activeTab === "skins" && "Customize chibi robot avatars for AI programming agents on the visual canvas."}
+              {activeTab === "props" && "Decorate workstations with dual displays, server racks, espresso machines, and cyber bonsai."}
+              {activeTab === "pets" && "Companion robot pets and hover drones to keep you company during complex debugging sessions."}
+              {activeTab === "auras" && "Plasma radiation effects, orbital rings, and radiant particles encircling your agent."}
+              {activeTab === "trophies" && "Optical crystal blocks and silicon wafers commemorating open source development contributions."}
+              {activeTab === "ambient" && "Procedural ambient synthetic soundscapes designed for deep programming focus."}
+              {activeTab === "donate" && "Scan VietQR to unlock all VIP perks and support ongoing project development."}
             </p>
           </div>
 
@@ -482,7 +585,7 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                     ? "bg-[#007acc] text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
-                title="Comfortable Grid (3-4 columns)"
+                title="Standard grid layout (3-4 columns)"
               >
                 <Grid className="w-3.5 h-3.5" />
               </button>
@@ -494,14 +597,18 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                     ? "bg-[#007acc] text-white"
                     : "text-slate-400 hover:text-white"
                 }`}
-                title="Dense Showcase Grid (5-6 columns to view all items at once)"
+                title="Compact grid layout (5-6 columns)"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <span className="text-xs font-mono text-cyan-300 bg-[#202026] px-3 py-1 rounded-md border border-[#2f2f38]">
-              {totalFilteredCount} Items
+              {activeTab === "ambient"
+                ? `${(COSMETIC_CATALOG.soundscapes || []).length} Audio Tracks`
+                : activeTab === "donate"
+                ? "3 Tiers"
+                : `${totalItemsCount} Items`}
             </span>
 
             {activeTab !== "donate" && (
@@ -519,10 +626,12 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
         {/* Quick Category Tabs Bar */}
         <div className="px-6 py-2 bg-[#1b1b20] border-b border-[#26262b] flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
           {[
-            { id: "all", label: "Tất cả (100)", icon: Grid },
-            { id: "skins", label: "Skins (30)", icon: Bot },
-            { id: "props", label: "Tech Props (50)", icon: Laptop },
-            { id: "pets", label: "Pets (20)", icon: Gift },
+            { id: "all", label: "All (1,000)", icon: Grid },
+            { id: "skins", label: "Skins (250)", icon: Bot },
+            { id: "props", label: "Props (350)", icon: Laptop },
+            { id: "pets", label: "Pets (200)", icon: Gift },
+            { id: "auras", label: "Auras (100)", icon: Sparkles },
+            { id: "trophies", label: "Trophies (100)", icon: Trophy },
             { id: "ambient", label: "Ambient (6)", icon: Volume2 },
             { id: "donate", label: "VietQR Vault", icon: Coffee },
           ].map((cat) => {
@@ -547,123 +656,335 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
 
         {/* Scrollable Catalog Grid View */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto space-y-8">
+          <div className="max-w-7xl mx-auto space-y-6">
 
-            {/* TAB: ALL ITEMS OR SKINS */}
-            {(activeTab === "all" || activeTab === "skins") && (
-              <section className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#26262b]">
+            {/* TAB: AMBIENT SOUNDSCAPES */}
+            {activeTab === "ambient" && (
+              <section className="space-y-4">
+                <div className="border-b border-[#26262b] pb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
-                      <Bot className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                      <Volume2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Agent Skins & Outfits</span>
-                        <span className="text-xs font-mono font-normal text-pink-300 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/30">
-                          {filteredSkins.length} Skins
-                        </span>
-                      </h3>
-                      <p className="text-[11px] text-slate-400">Chibi robot suits, cyber visors, ninja masks, and mecha frames</p>
+                      <h3 className="text-sm font-bold text-white">Procedural Focus Audio</h3>
+                      <p className="text-xs text-slate-400">Relaxing background ambient soundscapes to reduce coding fatigue</p>
                     </div>
                   </div>
-                  {activeTab === "all" && (
-                    <button
-                      onClick={() => setActiveTab("skins")}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <span>View Only Skins</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
 
-                <div className={gridClasses}>
-                  {filteredSkins.map((skin) => {
-                    const isEquipped = storeState.equippedSkin === skin.id;
-                    const isUnlocked =
-                      skin.tier === "free" ||
-                      storeState.isSupporter ||
-                      storeState.unlockedItems.includes(skin.id);
-
-                    const unlockTier =
-                      skin.tier === "meal" || skin.tier === "lunch"
-                        ? "lunch"
-                        : skin.tier === "vip"
-                        ? "vip"
-                        : "coffee";
-                    const unlockPrice =
-                      skin.tier === "meal" || skin.tier === "lunch"
-                        ? "50k ₫"
-                        : skin.tier === "vip"
-                        ? "100k ₫"
-                        : skin.tier === "free"
-                        ? "Free"
-                        : "20k ₫";
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(COSMETIC_CATALOG.soundscapes || []).map((sound) => {
+                    const isSelected = storeState.ambientSound === sound.id;
+                    const isPlaying = playingAudio === sound.id;
 
                     return (
                       <div
-                        key={skin.id}
+                        key={sound.id}
+                        className={`p-4 rounded-xl border transition-all bg-[#1c1c22] ${
+                          isSelected
+                            ? "border-amber-500/60 shadow-lg shadow-amber-950/20 ring-1 ring-amber-500/40"
+                            : "border-[#2b2b35] hover:border-slate-600"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-bold text-white text-sm">{sound.name}</h4>
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+                              isSelected
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                : "bg-[#25252e] text-slate-400"
+                            }`}
+                          >
+                            {isSelected ? "EQUIPPED" : "READY"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed mb-4 min-h-[36px]">
+                          {sound.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-[#272730]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isPlaying) {
+                                stopAmbient();
+                                setPlayingAudio(null);
+                              } else {
+                                startAmbient(sound.id, storeState.ambientVolume);
+                                setPlayingAudio(sound.id);
+                              }
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                              isPlaying
+                                ? "bg-red-500/20 text-red-300 border border-red-500/40"
+                                : "bg-[#252530] text-slate-200 hover:text-white border border-[#373745]"
+                            }`}
+                          >
+                            {isPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                            <span>{isPlaying ? "Stop" : "Preview"}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAmbientSound(sound.id);
+                              if (sound.id !== "none") {
+                                startAmbient(sound.id, storeState.ambientVolume);
+                                setPlayingAudio(sound.id);
+                              } else {
+                                stopAmbient();
+                                setPlayingAudio(null);
+                              }
+                            }}
+                            disabled={isSelected}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                              isSelected
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 opacity-70"
+                                : "bg-[#007acc] hover:bg-[#0088e0] text-white font-bold"
+                            }`}
+                          >
+                            {isSelected ? "Active" : "Activate"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* TAB: DONATE VIETQR VAULT */}
+            {activeTab === "donate" && (
+              <section className="space-y-6">
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#222028] to-[#1a1a24] border border-amber-500/30 shadow-xl">
+                  <div className="max-w-3xl space-y-2">
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      VIETQR MB BANK
+                    </span>
+                    <h2 className="text-xl font-bold text-white">Supporter Vault - Fuel the Developers</h2>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      AGMon is built independently with high-quality open-source spirit.
+                      Every donation via VietQR helps support server infrastructure, sustain development, and unlocks all 1,000 3D isometric items.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column: Tiers Selection */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Coffee className="w-4 h-4 text-amber-400" />
+                      <span>Choose Supporter Tier</span>
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {DONATE_TIERS.map((tier) => {
+                        const isSelected = selectedTier.id === tier.id;
+                        return (
+                          <div
+                            key={tier.id}
+                            onClick={() => setSelectedTier(tier)}
+                            className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                              isSelected
+                                ? "bg-[#25222e] border-amber-500 shadow-lg shadow-amber-950/30 ring-1 ring-amber-500"
+                                : "bg-[#1c1c22] border-[#2c2c36] hover:border-slate-500"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                                  {tier.tag}
+                                </span>
+                                {isSelected && <Check className="w-4 h-4 text-amber-400" />}
+                              </div>
+                              <h4 className="font-bold text-white text-sm">{tier.title}</h4>
+                              <div className="text-lg font-bold text-amber-400 font-mono mt-1">
+                                {tier.amount.toLocaleString("vi-VN")} VND
+                              </div>
+                              <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                                {tier.description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Activation Code Form */}
+                    <div className="p-4 rounded-xl bg-[#1c1c22] border border-[#2b2b35] space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Key className="w-4 h-4 text-cyan-400" />
+                        <h4 className="text-xs font-bold text-white">Have an activation key (Supporter Key)?</h4>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Enter your activation key or try the demo key <code className="text-cyan-300 bg-[#252530] px-1.5 py-0.5 rounded font-mono font-bold">AGMON-COFFEE-VIP</code> to unlock immediately.
+                      </p>
+
+                      <form onSubmit={handleUnlockCode} className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. AGMON-COFFEE-VIP"
+                          value={unlockCodeInput}
+                          onChange={(e) => setUnlockCodeInput(e.target.value)}
+                          className="flex-1 px-3 py-2 bg-[#141418] border border-[#33333d] rounded-lg text-xs text-white uppercase font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                        />
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-lg cursor-pointer transition-all shadow-md"
+                        >
+                          Activate
+                        </button>
+                      </form>
+
+                      {unlockFeedback && (
+                        <div
+                          className={`p-2.5 rounded-lg text-xs flex items-center gap-2 ${
+                            unlockFeedback.success
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                              : "bg-red-500/20 text-red-300 border border-red-500/40"
+                          }`}
+                        >
+                          {unlockFeedback.success ? (
+                            <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                          )}
+                          <span>{unlockFeedback.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Dynamic VietQR Card */}
+                  <div className="p-5 rounded-2xl bg-[#1c1c24] border border-amber-500/30 flex flex-col items-center justify-between text-center space-y-4 shadow-xl">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
+                        Scan to Transfer
+                      </span>
+                      <h4 className="text-base font-bold text-white">MB Bank (Military Bank)</h4>
+                      <p className="text-xs text-slate-400">Open any banking app to scan this VietQR code</p>
+                    </div>
+
+                    {/* QR Code Container */}
+                    <div className="p-3 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                      <img
+                        src={vietQrUrl}
+                        alt="VietQR MB Bank Donation"
+                        className="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-lg"
+                      />
+                    </div>
+
+                    {/* Account Info Box (No account name displayed per user instruction) */}
+                    <div className="w-full space-y-2">
+                      <div className="p-2.5 rounded-xl bg-[#141418] border border-[#2b2b35] flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Account Number:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-amber-300 text-sm">{VIETQR_CONFIG.accountNo}</span>
+                          <button
+                            type="button"
+                            onClick={handleCopyAccount}
+                            className="p-1 rounded hover:bg-[#272733] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Copy account number"
+                          >
+                            {copiedBank ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-[#141418] border border-[#2b2b35] flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Amount:</span>
+                        <span className="font-mono font-bold text-emerald-400 text-sm">
+                          {selectedTier.amount.toLocaleString("vi-VN")} VND
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* TAB: ITEM GRID (ALL, SKINS, PROPS, PETS, AURAS, TROPHIES) */}
+            {activeTab !== "ambient" && activeTab !== "donate" && (
+              <section className="space-y-4">
+                {/* Items Grid */}
+                <div className={gridClasses}>
+                  {paginatedItems.map((item) => {
+                    const isEquipped = isItemEquipped(item);
+                    const isUnlocked = isItemUnlocked(item);
+
+                    return (
+                      <div
+                        key={item.id}
                         className={`p-3 rounded-2xl border flex flex-col justify-between transition-all group bg-[#1d1d22] hover:bg-[#22222a] ${
                           isEquipped
                             ? "border-[#007acc] shadow-lg shadow-[#007acc]/15 ring-1 ring-[#007acc]"
                             : "border-[#2c2c36] hover:border-cyan-500/50 hover:shadow-md hover:shadow-cyan-950/20"
                         }`}
                       >
-                        {/* High-Fidelity SVG Artwork Preview */}
+                        {/* 3D Isometric Art Preview */}
                         <div className="mb-2.5">
-                          <SkinPreview skinId={skin.id} />
+                          <Item3DPreview item={item} />
                         </div>
 
+                        {/* Title and details */}
                         <div className="space-y-1 flex-1">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1">
                             <span className="font-bold text-white text-xs truncate">
-                              {skin.name}
+                              {item.name}
                             </span>
                             <span
-                              className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold border ${
-                                skin.tier === "free"
+                              className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold border shrink-0 ${
+                                item.tier === "free"
                                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                                  : skin.tier === "vip"
+                                  : item.tier === "vip"
                                   ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
                                   : "bg-amber-500/20 text-amber-300 border-amber-500/40"
                               }`}
                             >
-                              {skin.tier}
+                              {item.tier}
                             </span>
                           </div>
                           <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">
-                            {skin.description}
+                            {item.description}
                           </p>
                         </div>
 
+                        {/* Equip Action Bar */}
                         <div className="mt-3 pt-2.5 border-t border-[#2a2a34] flex items-center justify-between">
                           <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">
-                            {isEquipped ? "IN USE" : isUnlocked ? "OWNED" : "LOCKED"}
+                            {isEquipped ? "EQUIPPED" : isUnlocked ? "UNLOCKED" : "LOCKED"}
                           </span>
 
                           {isUnlocked ? (
                             <button
                               type="button"
-                              onClick={() => equipSkin(skin.id)}
-                              disabled={isEquipped}
+                              onClick={() => handleItemEquipToggle(item)}
+                              disabled={isEquipped && item.category !== "props"}
                               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 isEquipped
-                                  ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 cursor-default"
-                                  : "bg-[#007acc] hover:bg-[#0062a3] text-white shadow-sm"
+                                  ? item.category === "props"
+                                    ? "bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30"
+                                    : "bg-[#007acc]/20 text-[#007acc] border border-[#007acc]/30 opacity-70 cursor-default"
+                                  : "bg-[#007acc] hover:bg-[#0088e0] text-white shadow-sm"
                               }`}
                             >
-                              {isEquipped ? "Equipped" : "Equip"}
+                              {isEquipped
+                                ? item.category === "props"
+                                  ? "Remove"
+                                  : "Equipped"
+                                : item.category === "props"
+                                ? "Place on Desk"
+                                : "Equip"}
                             </button>
                           ) : (
                             <button
                               type="button"
-                              onClick={() => handleUnlockTier(unlockTier)}
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
-                              title={`Donate ${unlockPrice} to unlock ${skin.name}`}
+                              onClick={() => handleUnlockTier(item.tier)}
+                              className="px-2.5 py-1 bg-[#252530] hover:bg-amber-500/20 hover:border-amber-500/40 border border-[#373748] text-amber-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                             >
-                              <Lock className="w-3 h-3" />
-                              <span>Unlock ({unlockPrice})</span>
+                              <Lock className="w-3 h-3 text-amber-400" />
+                              <span>Unlock</span>
                             </button>
                           )}
                         </div>
@@ -671,549 +992,91 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                     );
                   })}
                 </div>
-              </section>
-            )}
 
-            {/* TAB: ALL ITEMS OR TECH PROPS */}
-            {(activeTab === "all" || activeTab === "props") && (
-              <section className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#26262b]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                      <Laptop className="w-4 h-4" />
+                {/* Empty State */}
+                {paginatedItems.length === 0 && (
+                  <div className="text-center py-16 space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-[#202028] border border-[#33333f] flex items-center justify-center text-slate-500 mx-auto">
+                      <Search className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Tech Desk Props & Gadgets</span>
-                        <span className="text-xs font-mono font-normal text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          {filteredProps.length} Props
-                        </span>
-                      </h3>
-                      <p className="text-[11px] text-slate-400">Desktop computers, servers, holograms, arcade machines, and desk tech</p>
-                    </div>
-                  </div>
-                  {activeTab === "all" && (
-                    <button
-                      onClick={() => setActiveTab("props")}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <span>View Only Props</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                <div className={gridClasses}>
-                  {filteredProps.map((prop) => {
-                    const isEquipped = storeState.equippedProps?.includes(prop.id);
-                    const isUnlocked =
-                      prop.tier === "free" ||
-                      storeState.isSupporter ||
-                      storeState.unlockedItems.includes(prop.id);
-
-                    const unlockTier =
-                      prop.tier === "meal" || prop.tier === "lunch"
-                        ? "lunch"
-                        : prop.tier === "vip"
-                        ? "vip"
-                        : "coffee";
-                    const unlockPrice =
-                      prop.tier === "meal" || prop.tier === "lunch"
-                        ? "50k ₫"
-                        : prop.tier === "vip"
-                        ? "100k ₫"
-                        : prop.tier === "free"
-                        ? "Free"
-                        : "20k ₫";
-
-                    return (
-                      <div
-                        key={prop.id}
-                        className={`p-3 rounded-2xl border flex flex-col justify-between transition-all group bg-[#1d1d22] hover:bg-[#22222a] ${
-                          isEquipped
-                            ? "border-emerald-500 shadow-lg shadow-emerald-500/15 ring-1 ring-emerald-500"
-                            : "border-[#2c2c36] hover:border-cyan-500/50 hover:shadow-md hover:shadow-cyan-950/20"
-                        }`}
-                      >
-                        {/* High-Fidelity SVG Artwork with Character Mock Preview */}
-                        <div className="mb-2.5">
-                          <PropPreview propId={prop.id} />
-                        </div>
-
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-white text-xs truncate">
-                              {prop.name}
-                            </span>
-                            <span
-                              className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold border ${
-                                prop.tier === "free"
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                                  : prop.tier === "vip"
-                                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
-                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                              }`}
-                            >
-                              {prop.tier}
-                            </span>
-                          </div>
-                          <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">
-                            {prop.description}
-                          </p>
-                        </div>
-
-                        <div className="mt-3 pt-2.5 border-t border-[#2a2a34] flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">
-                            {isEquipped ? "ACTIVE" : isUnlocked ? "OWNED" : "LOCKED"}
-                          </span>
-
-                          {isUnlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => toggleProp(prop.id)}
-                              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                                isEquipped
-                                  ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40"
-                                  : "bg-[#282832] hover:bg-[#343442] text-white"
-                              }`}
-                            >
-                              {isEquipped ? "Remove" : "Place on Desk"}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleUnlockTier(unlockTier)}
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
-                              title={`Donate ${unlockPrice} to unlock ${prop.name}`}
-                            >
-                              <Lock className="w-3 h-3" />
-                              <span>Unlock ({unlockPrice})</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* TAB: ALL ITEMS OR PETS */}
-            {(activeTab === "all" || activeTab === "pets") && (
-              <section className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#26262b]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                      <Gift className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Pets & Cyber Companions</span>
-                        <span className="text-xs font-mono font-normal text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/30">
-                          {filteredPets.length} Pets
-                        </span>
-                      </h3>
-                      <p className="text-[11px] text-slate-400">Sleepy cats, shibas, owls, drones, and floating slime companions</p>
-                    </div>
-                  </div>
-                  {activeTab === "all" && (
-                    <button
-                      onClick={() => setActiveTab("pets")}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold cursor-pointer"
-                    >
-                      <span>View Only Pets</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                <div className={gridClasses}>
-                  {filteredPets.map((pet) => {
-                    const isEquipped = storeState.equippedPet === pet.id;
-                    const isUnlocked =
-                      pet.tier === "free" ||
-                      storeState.isSupporter ||
-                      storeState.unlockedItems.includes(pet.id);
-
-                    const unlockTier =
-                      pet.tier === "meal" || pet.tier === "lunch"
-                        ? "lunch"
-                        : pet.tier === "vip"
-                        ? "vip"
-                        : "coffee";
-                    const unlockPrice =
-                      pet.tier === "meal" || pet.tier === "lunch"
-                        ? "50k ₫"
-                        : pet.tier === "vip"
-                        ? "100k ₫"
-                        : pet.tier === "free"
-                        ? "Free"
-                        : "20k ₫";
-
-                    return (
-                      <div
-                        key={pet.id}
-                        className={`p-3 rounded-2xl border flex flex-col justify-between transition-all group bg-[#1d1d22] hover:bg-[#22222a] ${
-                          isEquipped
-                            ? "border-purple-500 shadow-lg shadow-purple-500/15 ring-1 ring-purple-500"
-                            : "border-[#2c2c36] hover:border-cyan-500/50 hover:shadow-md hover:shadow-cyan-950/20"
-                        }`}
-                      >
-                        {/* High-Fidelity SVG Artwork with Character Mock Preview */}
-                        <div className="mb-2.5">
-                          <PetPreview petId={pet.id} />
-                        </div>
-
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-white text-xs truncate">
-                              {pet.name}
-                            </span>
-                            <span
-                              className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold border ${
-                                pet.tier === "free"
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                                  : pet.tier === "vip"
-                                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
-                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                              }`}
-                            >
-                              {pet.tier}
-                            </span>
-                          </div>
-                          <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">
-                            {pet.description}
-                          </p>
-                        </div>
-
-                        <div className="mt-3 pt-2.5 border-t border-[#2a2a34] flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500 uppercase font-mono font-bold">
-                            {isEquipped ? "EQUIPPED" : isUnlocked ? "OWNED" : "LOCKED"}
-                          </span>
-
-                          {isUnlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => equipPet(pet.id)}
-                              disabled={isEquipped}
-                              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                                isEquipped
-                                  ? "bg-purple-600/30 text-purple-300 border border-purple-500/40 cursor-default"
-                                  : "bg-[#007acc] hover:bg-[#0062a3] text-white shadow-sm"
-                              }`}
-                            >
-                              {isEquipped ? "Equipped" : "Equip Pet"}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleUnlockTier(unlockTier)}
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
-                              title={`Donate ${unlockPrice} to unlock ${pet.name}`}
-                            >
-                              <Lock className="w-3 h-3" />
-                              <span>Unlock ({unlockPrice})</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* TAB: AMBIENT SOUNDSCAPES */}
-            {activeTab === "ambient" && (
-              <div className="space-y-4 text-xs">
-                {/* Volume Controller Card */}
-                <div className="p-5 bg-[#1d1d23] border border-[#2d2d38] rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
-                  <div>
-                    <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                      <Volume2 className="w-4 h-4 text-cyan-400" />
-                      <span>Web Audio Ambient Soundscapes</span>
-                    </h4>
-                    <p className="text-slate-400 text-xs mt-1">
-                      Synthesized procedural relaxation background soundscapes for deep programming focus.
+                    <h4 className="text-sm font-bold text-white">No matching items found</h4>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      No items matched &quot;{searchQuery}&quot; or the selected filters.
                     </p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-[#15151a] px-3.5 py-2 rounded-xl border border-[#33333f]">
-                    <VolumeX className="w-4 h-4 text-slate-400" />
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={storeState.ambientVolume ?? 0.35}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        setAmbientVolume(v);
-                        setAmbientSound(storeState.ambientSound, v);
-                      }}
-                      className="w-28 accent-[#007acc] cursor-pointer"
-                    />
-                    <Volume2 className="w-4 h-4 text-slate-300" />
-                    <span className="font-mono text-cyan-300 text-xs w-8 text-right font-bold">
-                      {Math.round((storeState.ambientVolume ?? 0.35) * 100)}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Soundscapes Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {COSMETIC_CATALOG.soundscapes.map((sound) => {
-                    const isActive = storeState.ambientSound === sound.id;
-                    return (
-                      <div
-                        key={sound.id}
-                        className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
-                          isActive
-                            ? "bg-cyan-950/20 border-cyan-500 shadow-md shadow-cyan-900/20 ring-1 ring-cyan-500"
-                            : "bg-[#1d1d23] border-[#2c2c36] hover:border-slate-500"
-                        }`}
-                      >
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-white text-sm">{sound.name}</span>
-                            {isActive && <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />}
-                          </div>
-                          <p className="text-slate-400 text-xs leading-relaxed">{sound.description}</p>
-                        </div>
-
-                        <div className="mt-4 pt-2.5 border-t border-[#2a2a34] flex items-center justify-end">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isActive) {
-                                stopAmbient();
-                                setAmbientSound("none");
-                              } else {
-                                startAmbient(sound.id, storeState.ambientVolume);
-                                setAmbientSound(sound.id);
-                              }
-                            }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                              isActive
-                                ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30"
-                                : "bg-[#007acc] hover:bg-[#0062a3] text-white shadow-sm"
-                            }`}
-                          >
-                            {isActive ? (
-                              <>
-                                <Square className="w-3 h-3 fill-rose-300" />
-                                <span>Stop Audio</span>
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-3 h-3 fill-white" />
-                                <span>Play Soundscape</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* TAB: VIETQR SUPPORTER VAULT */}
-            {activeTab === "donate" && (
-              <div className="space-y-5 text-xs">
-                {/* Donor Tier Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {DONATE_TIERS.map((tier) => {
-                    const isSelected = selectedTier.id === tier.id;
-                    return (
-                      <div
-                        key={tier.id}
-                        onClick={() => setSelectedTier(tier)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                          isSelected
-                            ? "bg-[#007acc]/15 border-[#007acc] text-white shadow-lg shadow-[#007acc]/15 ring-1 ring-[#007acc]"
-                            : "bg-[#1d1d23] border-[#2c2c36] text-slate-300 hover:border-slate-500"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-bold text-sm text-white">{tier.title}</span>
-                            <Badge variant={isSelected ? "primary" : "secondary"} badgeSize="xs">
-                              {tier.tag}
-                            </Badge>
-                          </div>
-                          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                            {tier.description}
-                          </p>
-                        </div>
-                        <div className="mt-4 pt-2.5 border-t border-[#2a2a34] flex items-baseline justify-between">
-                          <span className="text-base font-extrabold text-amber-300 font-mono">
-                            {tier.amount.toLocaleString()} ₫
-                          </span>
-                          <span className="text-slate-500 text-[10px] font-mono">
-                            {tier.amountUsd}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* VietQR Code & Banking Details (clean qr_only, no account name) */}
-                <div className="bg-[#18181c] border border-[#2a2a34] rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-center shadow-lg">
-                  {/* Clean QR Image */}
-                  <div className="bg-white p-3.5 rounded-2xl shrink-0 shadow-2xl flex flex-col items-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={vietQrUrl}
-                      alt="VietQR donation code"
-                      className="w-48 h-48 object-contain"
-                      loading="lazy"
-                    />
-                    <span className="text-[9px] font-bold text-slate-700 tracking-wider uppercase mt-2">
-                      Scan with Banking App
-                    </span>
-                  </div>
-
-                  {/* Bank Details */}
-                  <div className="flex-1 space-y-3.5 w-full">
-                    <div className="flex items-center gap-2">
-                      <QrCode className="w-5 h-5 text-emerald-400" />
-                      <span className="font-bold text-white text-sm">
-                        Support via VietQR / Bank Transfer
-                      </span>
-                    </div>
-
-                    <div className="bg-[#1f1f26] p-3.5 rounded-xl border border-[#2c2c38] space-y-2 font-mono text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Bank:</span>
-                        <span className="text-white font-semibold">{VIETQR_CONFIG.bankName}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Account No:</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-amber-300 font-bold">{VIETQR_CONFIG.accountNo}</span>
-                          <button
-                            type="button"
-                            onClick={handleCopyAccount}
-                            className="p-1 rounded hover:bg-[#2b2b36] text-slate-400 hover:text-white"
-                            title="Copy account number"
-                          >
-                            {copiedBank ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Amount:</span>
-                        <span className="text-emerald-400 font-bold">
-                          {selectedTier.amount.toLocaleString()} VND
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Memo:</span>
-                        <span className="text-cyan-300 font-semibold">
-                          AGMON {selectedTier.id.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* External Donation Links */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <a
-                        href="https://github.com/sponsors"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#202028] hover:bg-[#262630] border border-[#333340] text-slate-300 hover:text-white text-xs font-semibold transition-colors shadow-sm"
-                      >
-                        <Heart className="w-3.5 h-3.5 text-rose-400" />
-                        <span>GitHub Sponsors</span>
-                        <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
-                      </a>
-
-                      <a
-                        href="https://buymeacoffee.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#202028] hover:bg-[#262630] border border-[#333340] text-slate-300 hover:text-white text-xs font-semibold transition-colors shadow-sm"
-                      >
-                        <Coffee className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Buy Me a Coffee</span>
-                        <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Voucher / Supporter Key Activation Box */}
-                <div className="bg-[#18181c] border border-[#2a2a34] rounded-2xl p-5 space-y-3 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-white flex items-center gap-2 text-xs">
-                      <Key className="w-4 h-4 text-amber-400" />
-                      <span>Redeem Supporter Key / Unlock Code</span>
-                    </span>
                     <button
                       type="button"
-                      onClick={() => setUnlockCodeInput("AGMON-COFFEE-VIP")}
-                      className="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono underline cursor-pointer"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setTierFilter("all");
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-[#252530] border border-[#373746] text-xs text-slate-300 hover:text-white"
                     >
-                      Fill demo: AGMON-COFFEE-VIP
+                      Clear filters
                     </button>
                   </div>
+                )}
 
-                  <form onSubmit={handleUnlockCode} className="flex gap-2">
-                    <Input
-                      inputSize="sm"
-                      placeholder="Enter activation code (e.g. AGMON-COFFEE-VIP)..."
-                      value={unlockCodeInput}
-                      onChange={(e) => setUnlockCodeInput(e.target.value)}
-                      wrapperClassName="flex-1 font-mono uppercase"
-                    />
-                    <Button type="submit" variant="primary" size="sm">
-                      Activate
-                    </Button>
-                  </form>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="pt-4 border-t border-[#26262b] flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <span className="text-slate-400 font-mono text-[11px]">
+                      Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+                      {Math.min(currentPage * ITEMS_PER_PAGE, totalItemsCount)} of {totalItemsCount} items
+                    </span>
 
-                  {unlockFeedback && (
-                    <div
-                      className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
-                        unlockFeedback.success
-                          ? "bg-emerald-950/80 border border-emerald-500/40 text-emerald-300"
-                          : "bg-rose-950/80 border border-rose-500/40 text-rose-300"
-                      }`}
-                    >
-                      {unlockFeedback.success ? (
-                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#202026] border border-[#2f2f38] text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Prev</span>
+                      </button>
+
+                      {/* Numeric page buttons */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum = i + 1;
+                        if (totalPages > 5 && currentPage > 3) {
+                          pageNum = currentPage - 3 + i;
+                          if (pageNum > totalPages) pageNum = totalPages - (4 - i);
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-7 h-7 rounded-lg text-xs font-mono font-bold transition-colors ${
+                              currentPage === pageNum
+                                ? "bg-[#007acc] text-white"
+                                : "bg-[#202026] text-slate-400 hover:text-white border border-[#2f2f38]"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+
+                      {totalPages > 5 && currentPage < totalPages - 2 && (
+                        <span className="text-slate-500 px-1">...</span>
                       )}
-                      <span>{unlockFeedback.message}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#202026] border border-[#2f2f38] text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              </section>
             )}
 
           </div>
-        </div>
-
-        {/* Footer Disclaimer */}
-        <div className="px-6 py-3 border-t border-[#26262b] bg-[#121215] flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>Free Software Guarantee</span>
-            </span>
-            <span className="hidden sm:inline text-slate-500 text-[11px]">
-              - 100% of AGMon core engineering features remain completely free
-            </span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-mono">
-            AGMon v0.4.0 Supporter Vault (100 Tech Items)
-          </span>
         </div>
       </main>
     </div>

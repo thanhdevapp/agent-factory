@@ -1,11 +1,17 @@
-import { skins } from './skins';
-import { props } from './props';
-import { pets } from './pets';
+import { skins } from './skins.js';
+import { props } from './props.js';
+import { pets } from './pets.js';
+import { auras } from './auras.js';
+import { trophies } from './trophies.js';
+
+export { skins, props, pets, auras, trophies };
 
 export const COSMETIC_CATALOG = {
   skins,
   props,
   pets,
+  auras,
+  trophies,
   soundscapes: [
     {
       id: "none",
@@ -37,5 +43,14 @@ export const COSMETIC_CATALOG = {
       name: "Server Room Hum",
       description: "Steady cooling fan hum and datacenter airflow for absolute isolation.",
     },
-  ]
+  ],
 };
+
+// Fast index map for O(1) item lookup across 1000 items
+export const CATALOG_LOOKUP = new Map();
+[...skins, ...props, ...pets, ...auras, ...trophies].forEach(item => {
+  CATALOG_LOOKUP.set(item.id, item);
+});
+
+export const getItemById = (id) => CATALOG_LOOKUP.get(id) || null;
+export const TOTAL_CATALOG_COUNT = skins.length + props.length + pets.length + auras.length + trophies.length;

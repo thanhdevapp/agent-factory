@@ -648,7 +648,7 @@ export default function VSCodeWorkbench({
                         </div>
                       )}
 
-                      {/* Tab 7: Supporter Store (100 Tech Items & Effects) */}
+                      {/* Tab 7: Supporter Store (1,000 Tech Items & 3D Effects) */}
                       {(activeTabId === "store" || activeTab?.type === "store") && (
                         <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
                           <SupporterStoreView

@@ -19,6 +19,7 @@ import {
   FolderTree,
   Bot,
   ShoppingBag,
+  Blocks,
 } from "lucide-react";
 import FileExplorer from "./FileExplorer";
 
@@ -58,6 +59,8 @@ export default function LeftSidebar({
     return workstations.filter(
       (w) =>
         w.account?.toLowerCase().includes(q) ||
+        w.sessionTitle?.toLowerCase().includes(q) ||
+        w.lastText?.toLowerCase().includes(q) ||
         w.connectionId?.toLowerCase().includes(q) ||
         w.provider?.toLowerCase().includes(q) ||
         w.model?.toLowerCase().includes(q) ||
@@ -68,6 +71,7 @@ export default function LeftSidebar({
   // Group by client type / provider
   const groupedAgents = useMemo(() => {
     const groups = {
+      extensions: [],
       geminiApp: [],
       geminiCli: [],
       claude: [],
@@ -77,11 +81,20 @@ export default function LeftSidebar({
     filteredWorkstations.forEach((w) => {
       const p = (w.provider || "").toLowerCase();
       const ct = (w.clientType || "").toLowerCase();
-      if (ct === "app" || p.includes("app")) {
+      const cli = (w.cli || "").toLowerCase();
+      const conn = (w.connectionId || "").toLowerCase();
+      const model = (w.model || "").toLowerCase();
+
+      const isExtension = ct === "extension" || ct === "ide" || conn.includes("extension");
+      const isClaude = cli === "claude" || p.includes("claude") || p.includes("anthropic") || model.includes("claude");
+
+      if (isExtension) {
+        groups.extensions.push(w);
+      } else if (ct === "app" || p.includes("app") || conn.includes("app")) {
         groups.geminiApp.push(w);
-      } else if (p.includes("claude")) {
+      } else if (isClaude) {
         groups.claude.push(w);
-      } else if (p.includes("gemini") || ct === "cli") {
+      } else if (p.includes("gemini") || cli === "antigravity" || ct === "cli") {
         groups.geminiCli.push(w);
       } else {
         groups.other.push(w);
@@ -97,8 +110,18 @@ export default function LeftSidebar({
     const isBusy = state === "streaming" || state === "busy" || state === "working";
     const isError = state === "error";
 
-    // Tag colors
+    // Tag colors & fallback
+    const workspaceName = agent.account || "agent-factory";
+    const sessionTitle = agent.sessionTitle || workspaceName;
     const isApp = agent.clientType === "app" || (agent.provider || "").includes("(app)");
+    const isExt =
+      agent.clientType === "extension" ||
+      (agent.provider || "").includes("extension") ||
+      (agent.connectionId || "").toLowerCase().includes("extension");
+
+    const previewText = agent.lastText
+      ? `${agent.lastTextRole === "assistant" ? "AI: " : agent.lastTextRole === "user" ? "You: " : ""}${agent.lastText}`
+      : `${workspaceName} · ${agent.model || "AI Agent"}${agent.activeTool ? ` · ${agent.activeTool}` : ""}`;
 
     return (
       <div
@@ -107,13 +130,13 @@ export default function LeftSidebar({
           onSelectAgent?.(agent.connectionId);
           onOpenAgentTab?.(agent);
         }}
-        className={`group flex items-center justify-between px-3 py-1.5 cursor-pointer text-xs transition-colors border-l-2 ${
+        className={`group flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors border-l-2 ${
           isSelected
             ? "bg-[#37373d] text-white border-[#007acc]"
             : "hover:bg-[#2a2d2e] text-[#cccccc] border-transparent"
         }`}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
           {/* Status Indicator */}
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
@@ -125,39 +148,34 @@ export default function LeftSidebar({
             }`}
           />
 
-          {/* Agent Label / Model */}
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium truncate text-[11px] text-slate-200">
-                {agent.account || `Desk #${agent.deskIndex + 1}`}
+          {/* 2 Lines: Session title on line 1, Last message preview on line 2 */}
+          <div className="flex flex-col min-w-0 flex-1">
+            {/* Line 1: Session Title + Type Badge */}
+            <div className="flex items-center justify-between gap-1.5 min-w-0">
+              <span className="font-medium truncate text-[11px] text-slate-200" title={sessionTitle}>
+                {sessionTitle}
               </span>
 
-              {/* Client Tag: APP vs CLI */}
-              {isApp ? (
-                <span className="bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
+              {/* Client Tag: EXT vs APP vs CLI */}
+              {isExt ? (
+                <span className="shrink-0 bg-sky-950/80 text-sky-300 border border-sky-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
+                  EXT
+                </span>
+              ) : isApp ? (
+                <span className="shrink-0 bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
                   APP
                 </span>
               ) : (
-                <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
+                <span className="shrink-0 bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
                   CLI
                 </span>
               )}
             </div>
 
-            {/* Model & current tool */}
-            <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
-              <span className="text-slate-400 truncate">
-                {agent.model || "gemini-3.8-flash"}
-              </span>
-              {agent.activeTool && (
-                <>
-                  <span className="text-slate-600">·</span>
-                  <span className="text-cyan-400 truncate font-mono">
-                    {agent.activeTool}
-                  </span>
-                </>
-              )}
-            </div>
+            {/* Line 2: Last Message Preview */}
+            <p className="truncate text-[10px] leading-4 text-slate-400 mt-0.5" title={previewText}>
+              {previewText}
+            </p>
           </div>
         </div>
 
@@ -190,7 +208,7 @@ export default function LeftSidebar({
             </button>
           )}
           <span className="text-[10px] text-slate-500 font-mono group-hover:text-slate-300">
-            {agent.tokensTotal ? `${Math.round(agent.tokensTotal / 1000)}k` : "0k"}
+            {agent.totalLabel || "0k"}
           </span>
         </div>
       </div>
@@ -292,6 +310,17 @@ export default function LeftSidebar({
                 </div>
               ) : (
                 <>
+                  {/* Extensions & IDEs (Claude VS Code, Antigravity IDE, etc.) */}
+                  {groupedAgents.extensions?.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-sky-400/90 flex items-center gap-1">
+                        <Blocks className="w-2.5 h-2.5" />
+                        <span>Extensions & IDEs ({groupedAgents.extensions.length})</span>
+                      </div>
+                      {groupedAgents.extensions.map(renderAgentRow)}
+                    </div>
+                  )}
+
                   {/* Gemini App Agents */}
                   {groupedAgents.geminiApp.length > 0 && (
                     <div className="mb-2">
@@ -441,13 +470,13 @@ export default function LeftSidebar({
             type="button"
             onClick={onOpenStore}
             className="w-full flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-amber-500/15 to-amber-600/10 hover:from-amber-500/25 hover:to-amber-600/20 border border-amber-500/30 text-amber-300 transition-all cursor-pointer text-xs"
-            title="Open Supporter Store: 100 Tech Items & Effects"
+            title="Open Supporter Store: 1,000 Tech Items & 3D Effects"
           >
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-amber-400" />
               <div className="text-left">
                 <div className="font-bold text-white text-[11px] leading-tight">Supporter Store</div>
-                <div className="text-[10px] text-amber-400/80">100 Tech Items & Effects</div>
+                <div className="text-[10px] text-amber-400/80">1,000 Tech Items & 3D Effects</div>
               </div>
             </div>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40">
