@@ -74,7 +74,7 @@ export default function LeftSidebar({
     return groups;
   }, [filteredWorkstations]);
 
-  const renderAgentRow = (agent) => {
+  const renderAgentRow = (agent, idx) => {
     const isSelected = selectedId === agent.connectionId;
     const state = agent.state || "idle";
     const isBusy = state === "streaming" || state === "busy" || state === "working";
@@ -85,7 +85,7 @@ export default function LeftSidebar({
 
     return (
       <div
-        key={agent.connectionId}
+        key={`${agent.connectionId || "agent"}-${idx}`}
         onClick={() => {
           onSelectAgent?.(agent.connectionId);
           onOpenAgentTab?.(agent);
