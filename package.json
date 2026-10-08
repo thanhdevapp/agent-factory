@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
+    "diff": "^9.0.0",
     "lucide-react": "^1.52.0",
+    "mermaid": "^12.1.0",
     "next": "^16.1.6",
     "pixi.js": "^8.22.0",
     "postcss": "^8.5.6",

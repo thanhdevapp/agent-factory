@@ -1,8 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Terminal, FileText, Search, Globe, Box, Cpu, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  Terminal, 
+  FileText, 
+  Search, 
+  Globe, 
+  Box, 
+  Cpu, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Loader2,
+  GitFork,
+  HelpCircle,
+  FileDiff
+} from "lucide-react";
 import ToolOutputView from "./ToolOutputView.js";
+import DiffViewer from "./DiffViewer.js";
+import SubagentTree from "./SubagentTree.js";
+import AskQuestionCard from "./AskQuestionCard.js";
+import JsonInspector from "./JsonInspector.js";
 
 const TOOL_ICONS = {
   bash: Terminal,
@@ -13,7 +32,7 @@ const TOOL_ICONS = {
   search: Search,
   browser: Globe,
   gitnexus: Cpu,
-  agent: Cpu,
+  agent: GitFork,
   mcp: Box,
 };
 
@@ -26,7 +45,7 @@ const TYPE_STYLES = {
   search: "border-purple-500/30 bg-purple-950/20 text-purple-300",
   browser: "border-cyan-500/30 bg-cyan-950/20 text-cyan-300",
   gitnexus: "border-purple-500/30 bg-purple-950/20 text-purple-300",
-  agent: "border-orange-500/30 bg-orange-950/20 text-orange-300",
+  agent: "border-indigo-500/30 bg-indigo-950/20 text-indigo-300",
   mcp: "border-violet-500/30 bg-violet-950/20 text-violet-300",
 };
 
@@ -35,12 +54,31 @@ export default function ToolCallCard({ tool, onImageClick }) {
 
   if (!tool) return null;
 
+  const toolName = (tool.name || "").toLowerCase();
   const type = tool.type || "bash";
-  const Icon = TOOL_ICONS[type] || Terminal;
+  const Icon = (toolName.includes("subagent") || toolName.includes("agent"))
+    ? GitFork
+    : toolName.includes("question") 
+      ? HelpCircle
+      : toolName.includes("replace") || toolName.includes("diff")
+        ? FileDiff
+        : (TOOL_ICONS[type] || Terminal);
+
   const styleClass = TYPE_STYLES[type] || TYPE_STYLES.bash;
 
   const isRunning = tool.status === "running";
   const isError = tool.status === "error";
+
+  // Check special tool types
+  const isDiffTool = toolName === "replace_file_content" || 
+    (tool.args?.TargetContent !== undefined && tool.args?.ReplacementContent !== undefined) ||
+    (tool.args?.oldStr !== undefined && tool.args?.newStr !== undefined);
+
+  const isSubagentTool = toolName === "invoke_subagent" || 
+    toolName === "define_subagent" || 
+    tool.args?.Subagents !== undefined;
+
+  const isAskQuestionTool = toolName === "ask_question" || Array.isArray(tool.args?.questions);
 
   // Summarize main argument
   let detailSummary = tool.action || tool.name;
@@ -56,7 +94,7 @@ export default function ToolCallCard({ tool, onImageClick }) {
   }
 
   return (
-    <div className={`my-1.5 rounded-lg border ${styleClass} overflow-hidden text-xs transition-all`}>
+    <div className={`my-2 rounded-xl border ${styleClass} overflow-hidden text-xs transition-all shadow-md`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/40 transition-colors"
@@ -96,18 +134,37 @@ export default function ToolCallCard({ tool, onImageClick }) {
         </div>
       </button>
 
-      {/* Expanded parameters and output */}
+      {/* Special Inline Cards when expanded */}
       {isOpen && (
-        <div className="p-3 border-t border-slate-800/60 bg-slate-950/60 space-y-2">
-          {tool.args && Object.keys(tool.args).length > 0 && (
-            <div className="space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Arguments:</span>
-              <pre className="p-2 rounded bg-black/60 border border-slate-800 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap">
-                {JSON.stringify(tool.args, null, 2)}
-              </pre>
-            </div>
+        <div className="p-3 border-t border-slate-800/60 bg-slate-950/70 space-y-3">
+          {/* 1. Subagent Tree View */}
+          {isSubagentTool && (
+            <SubagentTree 
+              subagents={tool.args?.Subagents || tool.args} 
+              toolName={tool.name} 
+            />
           )}
 
+          {/* 2. Ask Question HITL Card */}
+          {isAskQuestionTool && (
+            <AskQuestionCard args={tool.args} />
+          )}
+
+          {/* 3. Code Diff Viewer for file edits */}
+          {isDiffTool && (
+            <DiffViewer
+              oldStr={tool.args?.TargetContent || tool.args?.oldStr || ""}
+              newStr={tool.args?.ReplacementContent || tool.args?.newStr || ""}
+              title={tool.args?.TargetFile || tool.args?.file_path || "Code Replacement"}
+            />
+          )}
+
+          {/* 4. Interactive JSON Inspector for general arguments */}
+          {!isAskQuestionTool && !isSubagentTool && tool.args && Object.keys(tool.args).length > 0 && (
+            <JsonInspector data={tool.args} title={`Arguments (${tool.name})`} />
+          )}
+
+          {/* 5. Tool Output View */}
           {tool.output && (
             <ToolOutputView output={tool.output} onImageClick={onImageClick} />
           )}

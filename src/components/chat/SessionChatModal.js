@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   X,
   Maximize2,
@@ -23,10 +23,13 @@ import {
   Wrench,
   Brain,
   Activity,
+  Search,
 } from "lucide-react";
 import { useSessionTranscript } from "../../lib/useSessionTranscript.js";
 import ChatMessageItem from "./ChatMessageItem.js";
 import ImageLightboxModal from "./ImageLightboxModal.js";
+import SessionSearch from "./SessionSearch.js";
+import ContextGauge from "./ContextGauge.js";
 
 const MODE_LABELS = {
   streaming: "Working",
@@ -85,6 +88,7 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
   const [autoScroll, setAutoScroll] = useState(true);
   const [showInfoDrawer, setShowInfoDrawer] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const chatBottomRef = useRef(null);
   const telemetryEndRef = useRef(null);
 
@@ -99,6 +103,48 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
     targetTraceId,
     isAgentActive
   );
+
+  // Shortcut Ctrl/Cmd + F để mở nhanh thanh tìm kiếm transcript
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Format searchable steps list cho SessionSearch
+  const searchableSteps = useMemo(() => {
+    return turns.map((t) => ({
+      id: t.id,
+      content: t.content || "",
+      thinking: t.thinking || "",
+      tool_calls: (t.toolCalls || []).map((tc) => ({
+        toolName: tc.name,
+        description: tc.action,
+        args: typeof tc.args === "string" ? tc.args : JSON.stringify(tc.args || {}),
+      })),
+      output: (t.toolCalls || []).map((tc) => tc.output || "").join("\n"),
+    }));
+  }, [turns]);
+
+  // Cuộn mượt và highlight turn khi người dùng jump tới kết quả tìm kiếm
+  const handleJumpToStep = (matchedIdx) => {
+    const targetTurn = turns[matchedIdx];
+    if (targetTurn) {
+      const el = document.getElementById(`chat-turn-${targetTurn.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-cyan-400", "shadow-cyan-500/20", "transition-all");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-cyan-400", "shadow-cyan-500/20");
+        }, 2500);
+      }
+    }
+  };
 
   // Auto-scroll when new turns or logs arrive
   useEffect(() => {
@@ -207,6 +253,29 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5">
+          {/* Context Window Compact Gauge */}
+          <ContextGauge
+            compact
+            inputTokens={session?.tokens?.input || sessionTrace?.tokens?.input || 0}
+            outputTokens={session?.tokens?.output || sessionTrace?.tokens?.output || 0}
+            cachedTokens={session?.tokens?.cached || sessionTrace?.tokens?.cached || 0}
+            model={session?.model || sessionTrace?.model || "gemini-2.5-pro"}
+            className="hidden md:inline-flex mr-1"
+          />
+
+          {/* Search conversation transcript button */}
+          <button
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className={`p-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              isSearchOpen
+                ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10"
+                : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            }`}
+            title="Search conversation transcript (Ctrl+F)"
+          >
+            <Search className="w-3.5 h-3.5" />
+          </button>
+
           {/* Toggle Info / Telemetry Drawer */}
           <button
             onClick={() => setShowInfoDrawer(!showInfoDrawer)}
@@ -261,6 +330,18 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
         </div>
       </div>
 
+      {/* Floating Session Search Bar */}
+      {isSearchOpen && (
+        <div className="px-5 py-2 bg-slate-900/90 border-b border-slate-800 flex justify-end">
+          <SessionSearch
+            isOpen={isSearchOpen}
+            onClose={() => setIsSearchOpen(false)}
+            steps={searchableSteps}
+            onJumpToStep={handleJumpToStep}
+          />
+        </div>
+      )}
+
       {/* Runaway Loop Alert Banner */}
       {sessionTrace.isLooping && (
         <div className="mx-5 my-2.5 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2.5 text-xs text-rose-300 flex items-start gap-2 animate-pulse shrink-0">
@@ -276,7 +357,7 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
 
       {/* Integrated Session Details & Telemetry Drawer */}
       {showInfoDrawer && (
-        <div className="px-5 py-3 border-b border-slate-800 bg-slate-900/90 text-xs space-y-2 animate-in fade-in slide-in-from-top-1 shrink-0">
+        <div className="px-5 py-3 border-b border-slate-800 bg-slate-900/90 text-xs space-y-3 animate-in fade-in slide-in-from-top-1 shrink-0">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg bg-slate-950/70 p-2 border border-slate-800">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Provider / Pod</span>
@@ -303,6 +384,14 @@ export default function SessionChatModal({ sessionTrace, onClose }) {
               </p>
             </div>
           </div>
+
+          {/* Context Gauge Detail Card */}
+          <ContextGauge
+            inputTokens={session?.tokens?.input || sessionTrace?.tokens?.input || 0}
+            outputTokens={session?.tokens?.output || sessionTrace?.tokens?.output || 0}
+            cachedTokens={session?.tokens?.cached || sessionTrace?.tokens?.cached || 0}
+            model={session?.model || sessionTrace?.model || "gemini-2.5-pro"}
+          />
 
           {/* Active Command / File Box */}
           {sessionTrace.currentCommand && (

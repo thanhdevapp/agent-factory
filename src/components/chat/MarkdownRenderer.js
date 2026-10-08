@@ -4,6 +4,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Maximize2, ImageIcon } from "lucide-react";
 import CodeBlock from "./CodeBlock.js";
+import MermaidBlock from "./MermaidBlock.js";
+import DiffViewer from "./DiffViewer.js";
+import ArtifactPreview from "./ArtifactPreview.js";
 
 function resolveImageSrc(src) {
   if (!src) return "";
@@ -54,12 +57,39 @@ export default function MarkdownRenderer({ content = "", onImageClick }) {
           },
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || "");
+            const lang = match ? match[1].toLowerCase() : "";
             const textContent = String(children).replace(/\n$/, "");
 
             if (!inline && (match || textContent.includes("\n"))) {
+              // 1. Mermaid diagrams
+              if (lang === "mermaid") {
+                return <MermaidBlock code={textContent} />;
+              }
+
+              // 2. Git Diff
+              if (lang === "diff") {
+                return <DiffViewer diffText={textContent} />;
+              }
+
+              // 3. HTML / SVG Artifact Sandbox Preview
+              if ((lang === "html" || lang === "svg") && (
+                textContent.includes("<!DOCTYPE") || 
+                textContent.includes("<html") || 
+                textContent.includes("<svg") ||
+                textContent.includes("<body") ||
+                textContent.length > 80
+              )) {
+                return (
+                  <ArtifactPreview 
+                    htmlCode={textContent} 
+                    title={lang === "svg" ? "SVG Vector Graphic" : "HTML Interactive Artifact"} 
+                  />
+                );
+              }
+
               return (
                 <CodeBlock
-                  language={match ? match[1] : "text"}
+                  language={lang || "text"}
                   code={textContent}
                 />
               );

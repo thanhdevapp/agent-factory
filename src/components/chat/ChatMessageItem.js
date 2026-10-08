@@ -32,7 +32,10 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
 
   if (isUser) {
     return (
-      <div className="flex gap-3 justify-end my-4 animate-in fade-in slide-in-from-bottom-1">
+      <div 
+        id={`chat-turn-${turn.id}`}
+        className="flex gap-3 justify-end my-4 animate-in fade-in slide-in-from-bottom-1 scroll-mt-20"
+      >
         <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-cyan-900/60 to-slate-800/80 border border-cyan-500/30 p-3.5 shadow-lg">
           <div className="flex items-center justify-between gap-2 mb-1.5 text-[11px] text-cyan-300/80">
             <span className="font-semibold uppercase tracking-wider">User Request</span>
@@ -84,7 +87,10 @@ export default function ChatMessageItem({ turn, agentColor = "38bdf8", filter = 
   const showResponse = (filter === "all" || filter === "prompts") && turn.content;
 
   return (
-    <div className="flex gap-3 my-4 animate-in fade-in slide-in-from-bottom-1">
+    <div 
+      id={`chat-turn-${turn.id}`}
+      className="flex gap-3 my-4 animate-in fade-in slide-in-from-bottom-1 scroll-mt-20"
+    >
       <div
         className="w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-md"
         style={{ borderColor: hexColor, backgroundColor: `${hexColor}20` }}
