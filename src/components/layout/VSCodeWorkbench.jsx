@@ -427,6 +427,8 @@ export default function VSCodeWorkbench({
                 ];
               });
               setActiveTabId("telemetry");
+            } else if (view === "store") {
+              handleOpenStore();
             } else {
               setLayout((p) => ({
                 ...p,
