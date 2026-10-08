@@ -48,6 +48,22 @@ export default function AgentGraphView({
   // State chọn session để focus cây đồ thị
   const [focusedId, setFocusedId] = useState(selectedTraceId || traces[0]?.traceId || traces[0]?.connectionId);
 
+  // Danh sách các session duy nhất cho dropdown switcher
+  const uniqueSessionOptions = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const t of traces) {
+      const id = t.traceId || t.connectionId;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      result.push({
+        id,
+        label: `${t.account || t.connectionId} (${t.model || "Gemini"})`,
+      });
+    }
+    return result;
+  }, [traces]);
+
   useEffect(() => {
     if (selectedTraceId) {
       setFocusedId(selectedTraceId);
@@ -169,14 +185,11 @@ export default function AgentGraphView({
             onChange={(e) => setFocusedId(e.target.value)}
             className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-300 font-mono focus:outline-none focus:border-indigo-500/50 cursor-pointer"
           >
-            {traces.map((t) => {
-              const id = t.traceId || t.connectionId;
-              return (
-                <option key={id} value={id}>
-                  {t.account || t.connectionId} ({t.model || "Gemini"})
-                </option>
-              );
-            })}
+            {uniqueSessionOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
