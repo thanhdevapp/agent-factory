@@ -12,7 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  ShoppingBag,
 } from "lucide-react";
+import FileIcon from "../common/FileIcon";
 
 export default function EditorTabs({
   tabs = [],
@@ -33,6 +35,8 @@ export default function EditorTabs({
     if (tab.type === "network") return <GitFork className="w-3.5 h-3.5 text-indigo-400" />;
     if (tab.type === "telemetry") return <Activity className="w-3.5 h-3.5 text-cyan-400" />;
     if (tab.type === "reports") return <BarChart3 className="w-3.5 h-3.5 text-amber-400" />;
+    if (tab.type === "store") return <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />;
+    if (tab.type === "file") return <FileIcon filename={tab.filePath || tab.title} size={14} />;
     return <Cpu className="w-3.5 h-3.5 text-purple-400" />;
   };
 

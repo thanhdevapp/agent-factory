@@ -15,6 +15,8 @@ import CommandPalette from "./CommandPalette";
 import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
 import TokenReportView from "../reports/TokenReportView";
+import CodeFileEditor from "../editor/CodeFileEditor";
+import SupporterStoreView from "../store/SupporterStoreView";
 import SupporterStoreModal from "../store/SupporterStoreModal";
 import ThemeSettingsModal from "../theme/ThemeSettingsModal";
 import { initThemeEngine } from "../../lib/themeStore";
@@ -51,6 +53,7 @@ export default function VSCodeWorkbench({
   const [isHydrated, setIsHydrated] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [activeTabId, setActiveTabId] = useState("canvas");
+  const [activeLeftSidebarTab, setActiveLeftSidebarTab] = useState("agents");
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -236,6 +239,44 @@ export default function VSCodeWorkbench({
     setActiveTabId("network");
   }, []);
 
+  const handleOpenStore = useCallback(() => {
+    setTabs((prev) => {
+      if (prev.find((t) => t.id === "store")) return prev;
+      return [
+        ...prev,
+        { id: "store", title: "Supporter Store", type: "store", closable: true },
+      ];
+    });
+    setActiveTabId("store");
+  }, []);
+
+  // Open any code or text file in a dedicated Monaco Editor tab (adapted from BuilderKit)
+  const handleOpenFile = useCallback((file) => {
+    if (!file || !file.path) return;
+    const tabId = `file-${file.path}`;
+    const fileName = file.name || file.path.split("/").pop();
+    setTabs((prev) => {
+      const exists = prev.find((t) => t.id === tabId);
+      if (exists) return prev;
+      return [
+        ...prev,
+        {
+          id: tabId,
+          title: fileName,
+          type: "file",
+          filePath: file.path,
+          closable: true,
+        },
+      ];
+    });
+    setActiveTabId(tabId);
+  }, []);
+
+  const handleOpenFilesExplorer = useCallback(() => {
+    setLayout((p) => ({ ...p, isLeftSidebarVisible: true }));
+    setActiveLeftSidebarTab("files");
+  }, []);
+
   // Keyboard shortcuts (Cmd+B, Cmd+J, Cmd+Alt+B, Cmd+Shift+P)
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -315,7 +356,7 @@ export default function VSCodeWorkbench({
         onToggleNotif={onToggleNotif}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onOpenReports={handleOpenReports}
-        onOpenStore={() => setIsStoreModalOpen(true)}
+        onOpenStore={handleOpenStore}
         onOpenThemeSettings={() => {
           setThemeModalTab("themes");
           setIsThemeModalOpen(true);
@@ -338,9 +379,11 @@ export default function VSCodeWorkbench({
         {/* Activity Bar (48px) */}
         <ActivityBar
           activeView={layout.activeActivityView}
+          isLeftSidebarVisible={layout.isLeftSidebarVisible}
+          activeLeftSidebarTab={activeLeftSidebarTab}
           isRightSidebarVisible={layout.isRightSidebarVisible}
           activeRightSidebarTab={layout.activeRightSidebarTab || "chat"}
-          onOpenStore={() => setIsStoreModalOpen(true)}
+          onOpenStore={handleOpenStore}
           onViewChange={(view) => {
             if (view === "chat") {
               setLayout((p) => {
@@ -352,6 +395,22 @@ export default function VSCodeWorkbench({
                   activeRightSidebarTab: "chat",
                 };
               });
+            } else if (view === "files") {
+              setLayout((p) => ({
+                ...p,
+                isLeftSidebarVisible:
+                  p.isLeftSidebarVisible && activeLeftSidebarTab === "files" ? false : true,
+                activeActivityView: "files",
+              }));
+              setActiveLeftSidebarTab("files");
+            } else if (view === "explorer") {
+              setLayout((p) => ({
+                ...p,
+                isLeftSidebarVisible:
+                  p.isLeftSidebarVisible && activeLeftSidebarTab === "agents" ? false : true,
+                activeActivityView: "explorer",
+              }));
+              setActiveLeftSidebarTab("agents");
             } else if (view === "office") {
               setActiveTabId("canvas");
             } else if (view === "network") {
@@ -412,6 +471,10 @@ export default function VSCodeWorkbench({
                   onRefresh={onRefresh}
                   onStartReplay={handleStartReplay}
                   onViewConversation={handleOpenConversation}
+                  onOpenFile={handleOpenFile}
+                  onOpenStore={handleOpenStore}
+                  activeSidebarTab={activeLeftSidebarTab}
+                  onActiveSidebarTabChange={setActiveLeftSidebarTab}
                 />
               </Panel>
               <Separator
@@ -574,6 +637,26 @@ export default function VSCodeWorkbench({
                           />
                         </div>
                       )}
+
+                      {/* Tab 6: Monaco Code / Text File Editor (adapted from BuilderKit) */}
+                      {activeTab?.type === "file" && (
+                        <div className="absolute inset-0 overflow-hidden bg-[#1e1e1e] z-20">
+                          <CodeFileEditor
+                            filePath={activeTab.filePath}
+                            onClose={() => handleCloseTab(activeTabId)}
+                          />
+                        </div>
+                      )}
+
+                      {/* Tab 7: Supporter Store (100 Tech Items & Effects) */}
+                      {(activeTabId === "store" || activeTab?.type === "store") && (
+                        <div className="absolute inset-0 overflow-hidden bg-[#181818] z-20">
+                          <SupporterStoreView
+                            hideHeader={false}
+                            onClose={() => handleCloseTab("store")}
+                          />
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -670,6 +753,7 @@ export default function VSCodeWorkbench({
         onOpenChatSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: true, activeRightSidebarTab: "chat" }))
         }
+        onOpenFilesExplorer={handleOpenFilesExplorer}
         onOpenThemeSettings={() => {
           setThemeModalTab("themes");
           setIsThemeModalOpen(true);

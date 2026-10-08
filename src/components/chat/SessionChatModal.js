@@ -8,7 +8,7 @@ import SessionChatView from "./SessionChatView.js";
  * Floating / Fullscreen popup dialog for reviewing AI agent live chat & transcript.
  * Supports:
  * 1. True 100% Fullscreen (edge-to-edge, zero margin).
- * 2. 1-click docking into sidebar tab ("Thu vào Sidebar").
+ * 2. 1-click docking into sidebar tab ("Dock to Sidebar").
  * 3. 1-click pop-out to a completely separate OS/Browser window (VS Code style).
  */
 export default function SessionChatModal({

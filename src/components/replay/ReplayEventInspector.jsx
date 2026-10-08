@@ -20,6 +20,7 @@ import {
   FileText,
   X,
   Search,
+  MessageSquare,
 } from "lucide-react";
 import { Button, Badge, Modal } from "@/components/ui";
 
@@ -27,6 +28,7 @@ export default function ReplayEventInspector({
   isOpen,
   onClose,
   replay,
+  onOpenConversation,
 }) {
   const {
     currentKeyframe,
@@ -170,9 +172,24 @@ export default function ReplayEventInspector({
               Next
             </Button>
           </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex items-center gap-2">
+            {onOpenConversation && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onOpenConversation(sessionInfo?.id || replay?.sessionId);
+                }}
+                leftIcon={<MessageSquare className="w-3.5 h-3.5 text-cyan-400" />}
+              >
+                View Conversation
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
       }
     >

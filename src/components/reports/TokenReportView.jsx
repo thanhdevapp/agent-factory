@@ -28,6 +28,8 @@ import {
   ChevronRight,
   X,
   RotateCcw,
+  MessageSquare,
+  Info,
 } from "lucide-react";
 import {
   Button,
@@ -38,7 +40,7 @@ import {
   DateRangePicker,
 } from "@/components/ui";
 
-export default function TokenReportView({ onClose, onStartReplay }) {
+export default function TokenReportView({ onClose, onStartReplay, onViewConversation }) {
   // Time filters
   const [timeRange, setTimeRange] = useState("week"); // 'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | 'custom'
   const [startDate, setStartDate] = useState("");
@@ -977,8 +979,9 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                       return (
                         <tr
                           key={s.id}
-                          onClick={() => setSelectedSessionDetail(s)}
-                          className="hover:bg-[#252526] transition-colors cursor-pointer"
+                          onClick={() => onStartReplay?.(s.id)}
+                          className="hover:bg-[#252526] transition-colors cursor-pointer group"
+                          title="Click to replay this session (Default)"
                         >
                           <td className="py-2.5 px-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">
                             {new Date(s.date).toLocaleDateString()} {new Date(s.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -1014,17 +1017,43 @@ export default function TokenReportView({ onClose, onStartReplay }) {
                             ${s.cost.toFixed(3)}
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onStartReplay?.(s.id);
-                              }}
-                              className="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-[#333333] transition-colors cursor-pointer"
-                              title="Time-Machine: Replay this session"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onStartReplay?.(s.id);
+                                }}
+                                className="p-1 rounded text-cyan-400 hover:text-white hover:bg-[#007acc]/40 transition-colors cursor-pointer"
+                                title="Replay Session (Default)"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                              {onViewConversation && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onViewConversation(s.id);
+                                  }}
+                                  className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+                                  title="View conversation transcript"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSessionDetail(s);
+                                }}
+                                className="p-1 rounded text-slate-500 hover:text-slate-200 hover:bg-[#333333] transition-colors cursor-pointer"
+                                title="Token & Metadata Details"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1110,20 +1139,36 @@ export default function TokenReportView({ onClose, onStartReplay }) {
           size="md"
           footer={
             <div className="flex items-center justify-between w-full">
-              {onStartReplay && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    const id = selectedSessionDetail.id;
-                    setSelectedSessionDetail(null);
-                    onStartReplay(id);
-                  }}
-                  leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
-                >
-                  Time-Machine Replay
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {onStartReplay && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      const id = selectedSessionDetail.id;
+                      setSelectedSessionDetail(null);
+                      onStartReplay(id);
+                    }}
+                    leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+                  >
+                    Replay Session
+                  </Button>
+                )}
+                {onViewConversation && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const id = selectedSessionDetail.id;
+                      setSelectedSessionDetail(null);
+                      onViewConversation(id);
+                    }}
+                    leftIcon={<MessageSquare className="w-3.5 h-3.5 text-cyan-400" />}
+                  >
+                    View Conversation
+                  </Button>
+                )}
+              </div>
               <Button
                 variant="secondary"
                 size="sm"

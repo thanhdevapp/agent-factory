@@ -23,7 +23,6 @@ import {
   Activity,
   Search,
   RotateCcw,
-  ExternalLink,
   PanelRightClose,
   AppWindow,
 } from "lucide-react";
@@ -89,7 +88,6 @@ export default function SessionChatView({
   sessionTrace,
   isSidebar = false,
   onClose,
-  onOpenModal,
   onDockToSidebar,
   onStartReplay,
   isFullscreen = false,
@@ -295,21 +293,10 @@ export default function SessionChatView({
             <button
               onClick={() => openChatInNewWindow(sessionId || targetTraceId)}
               className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
-              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+              title="Open in Detached Window (VS Code style)"
             >
               <AppWindow className="w-3.5 h-3.5" />
             </button>
-
-            {/* Pop-out to Modal */}
-            {onOpenModal && (
-              <button
-                onClick={onOpenModal}
-                className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
-                title="Mở dạng Popup nổi"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-            )}
           </div>
         </div>
       ) : (
@@ -463,7 +450,7 @@ export default function SessionChatView({
               <button
                 onClick={() => onDockToSidebar(sessionTrace)}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-                title="Thu vào Sidebar (Ghim sang thanh bên phụ)"
+                title="Dock into Sidebar"
               >
                 <PanelRightClose className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Sidebar</span>
@@ -477,7 +464,7 @@ export default function SessionChatView({
                 onClose?.();
               }}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
-              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+              title="Open in Detached Window (VS Code style)"
             >
               <AppWindow className="w-3.5 h-3.5 text-cyan-400" />
               <span className="hidden sm:inline">New Window</span>
@@ -492,10 +479,10 @@ export default function SessionChatView({
                     ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10 font-semibold"
                     : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
                 }`}
-                title={isFullscreen ? "Thu nhỏ về dạng popup" : "Toàn màn hình (100% Fullscreen)"}
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               >
                 {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-cyan-300" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{isFullscreen ? "Thu nhỏ" : "Toàn màn hình"}</span>
+                <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
               </button>
             )}
 

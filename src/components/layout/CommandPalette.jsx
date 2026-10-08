@@ -16,9 +16,12 @@ import {
   BarChart3,
   RotateCcw,
   MessageSquare,
-  ExternalLink,
   Coffee,
   AppWindow,
+  Palette,
+  Type,
+  Files,
+  FolderTree,
 } from "lucide-react";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
 
@@ -26,11 +29,13 @@ export default function CommandPalette({
   isOpen = false,
   onClose,
   onOpenStore,
+  onOpenThemeSettings,
+  onOpenFontSettings,
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
   onOpenChatSidebar,
-  onOpenChatModal,
+  onOpenFilesExplorer,
   onToggleSound,
   onToggleNotif,
   onRefresh,
@@ -73,6 +78,15 @@ export default function CommandPalette({
       },
     },
     {
+      id: "open-files-explorer",
+      title: "File: Open Workspace Files Explorer (Code & Artifacts)",
+      icon: Files,
+      action: () => {
+        onOpenFilesExplorer?.();
+        onClose();
+      },
+    },
+    {
       id: "toggle-bottom",
       title: "View: Toggle Bottom Panel (Terminal & Logs)",
       shortcut: "Cmd+J",
@@ -94,7 +108,7 @@ export default function CommandPalette({
     },
     {
       id: "open-chat-sidebar",
-      title: "Chat: View Live Chat & Transcript in Sidebar",
+      title: "Chat: Pin Live Chat to Sidebar",
       icon: MessageSquare,
       action: () => {
         onOpenChatSidebar?.();
@@ -102,20 +116,29 @@ export default function CommandPalette({
       },
     },
     {
-      id: "open-chat-modal",
-      title: "Chat: Open Live Chat in Popup Window",
-      icon: ExternalLink,
+      id: "open-chat-new-window",
+      title: "Chat: Move into New Window (Detached)",
+      icon: AppWindow,
       action: () => {
-        onOpenChatModal?.();
+        openChatInNewWindow();
         onClose();
       },
     },
     {
-      id: "open-chat-new-window",
-      title: "Chat: Move into New Window (Mở Cửa sổ rời độc lập - VS Code style)",
-      icon: AppWindow,
+      id: "preferences-theme",
+      title: "Preferences: Color Theme (VS Code Themes)",
+      icon: Palette,
       action: () => {
-        openChatInNewWindow();
+        onOpenThemeSettings?.();
+        onClose();
+      },
+    },
+    {
+      id: "preferences-fonts",
+      title: "Preferences: Configure Fonts (UI & Monospace)",
+      icon: Type,
+      action: () => {
+        onOpenFontSettings?.();
         onClose();
       },
     },

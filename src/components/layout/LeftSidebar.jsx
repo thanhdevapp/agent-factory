@@ -14,7 +14,13 @@ import {
   Layers,
   Sparkles,
   RotateCcw,
+  MessageSquare,
+  Files,
+  FolderTree,
+  Bot,
+  ShoppingBag,
 } from "lucide-react";
+import FileExplorer from "./FileExplorer";
 
 export default function LeftSidebar({
   workstations = [],
@@ -24,7 +30,16 @@ export default function LeftSidebar({
   stats = {},
   onRefresh,
   onStartReplay,
+  onViewConversation,
+  onOpenFile,
+  onOpenStore,
+  activeSidebarTab: externalActiveTab,
+  onActiveSidebarTabChange,
 }) {
+  const [internalTab, setInternalTab] = useState("agents");
+  const activeSidebarTab = externalActiveTab !== undefined ? externalActiveTab : internalTab;
+  const setActiveSidebarTab = onActiveSidebarTabChange || setInternalTab;
+  const [explorerPath, setExplorerPath] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedSections, setExpandedSections] = useState({
     agents: true,
@@ -147,7 +162,7 @@ export default function LeftSidebar({
         </div>
 
         {/* Tokens pill & Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {onStartReplay && (
             <button
               type="button"
@@ -155,10 +170,23 @@ export default function LeftSidebar({
                 e.stopPropagation();
                 onStartReplay(agent.connectionId);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#3e3e42] text-slate-400 hover:text-cyan-400 transition-all cursor-pointer"
-              title="Time-Machine: Replay this session"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#3e3e42] text-cyan-400 hover:text-white transition-all cursor-pointer"
+              title="Replay Session (Default)"
             >
               <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+          {onViewConversation && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewConversation(agent.connectionId);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#3e3e42] text-slate-400 hover:text-cyan-300 transition-all cursor-pointer"
+              title="View conversation transcript"
+            >
+              <MessageSquare className="w-3 h-3" />
             </button>
           )}
           <span className="text-[10px] text-slate-500 font-mono group-hover:text-slate-300">
@@ -171,48 +199,74 @@ export default function LeftSidebar({
 
   return (
     <div className="flex flex-col h-full w-full bg-[#1e1e1e] text-[#cccccc] select-none overflow-hidden">
-      {/* Sidebar Header */}
-      <div className="h-[35px] min-h-[35px] bg-[#252526] border-b border-[#2b2b2b] px-3 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-[#007acc]" />
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#bbbbbb]">
-            EXPLORER: AGENTS
-          </span>
+      {/* Sidebar Header with 2 Tabs: Agents vs Files */}
+      <div className="h-[35px] min-h-[35px] bg-[#252526] border-b border-[#2b2b2b] px-2 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setActiveSidebarTab("agents")}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+              activeSidebarTab === "agents"
+                ? "bg-[#1e1e1e] text-white border border-[#3e3e42]"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+            title="View active AI Agents & Sessions"
+          >
+            <Bot className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Agents ({workstations.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSidebarTab("files")}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+              activeSidebarTab === "files"
+                ? "bg-[#1e1e1e] text-white border border-[#3e3e42]"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+            title="Browse Workspace & Project Files"
+          >
+            <FolderTree className="w-3.5 h-3.5 text-amber-400" />
+            <span>Files</span>
+          </button>
         </div>
+
         <div className="flex items-center gap-1">
           <button
             onClick={onRefresh}
-            title="Refresh list"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
+            title="Refresh"
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
           >
             <RotateCw className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      {/* Filter / Search Box */}
-      <div className="p-2 border-b border-[#2b2b2b] bg-[#1e1e1e]">
-        <div className="flex items-center gap-1.5 bg-[#252526] border border-[#3e3e42] focus-within:border-[#007acc] rounded px-2 py-1">
-          <Search className="w-3 h-3 text-slate-500 shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter agents by name, model..."
-            className="w-full bg-transparent text-[11px] text-slate-200 outline-none placeholder:text-slate-500"
-          />
-        </div>
-      </div>
+      {activeSidebarTab === "files" ? (
+        <FileExplorer onOpenFile={onOpenFile} initialPath={explorerPath} />
+      ) : (
+        <>
+          {/* Filter / Search Box */}
+          <div className="p-2 border-b border-[#2b2b2b] bg-[#1e1e1e]">
+            <div className="flex items-center gap-1.5 bg-[#252526] border border-[#3e3e42] focus-within:border-[#007acc] rounded px-2 py-1">
+              <Search className="w-3 h-3 text-slate-500 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter agents by name, model..."
+                className="w-full bg-transparent text-[11px] text-slate-200 outline-none placeholder:text-slate-500"
+              />
+            </div>
+          </div>
 
-      {/* Sidebar Tree Accordion List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#2b2b2b]">
-        {/* Section 1: Active Agents */}
-        <div>
-          <button
-            type="button"
-            onClick={() => toggleSection("agents")}
-            className="w-full flex items-center justify-between px-3 py-1.5 bg-[#252526]/60 hover:bg-[#252526] text-[11px] font-semibold text-slate-300 transition-colors"
-          >
+          {/* Sidebar Tree Accordion List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-[#2b2b2b]">
+            {/* Section 1: Active Agents */}
+            <div>
+              <button
+                type="button"
+                onClick={() => toggleSection("agents")}
+                className="w-full flex items-center justify-between px-3 py-1.5 bg-[#252526]/60 hover:bg-[#252526] text-[11px] font-semibold text-slate-300 transition-colors"
+              >
             <div className="flex items-center gap-1.5">
               {expandedSections.agents ? (
                 <ChevronDown className="w-3 h-3 text-slate-400" />
@@ -307,15 +361,36 @@ export default function LeftSidebar({
 
           {expandedSections.folders && (
             <div className="px-3 py-2 space-y-1.5 text-[11px]">
-              <div className="flex items-center gap-2 text-slate-400">
+              <div
+                onClick={() => {
+                  setExplorerPath("~/.gemini/antigravity/brain");
+                  setActiveSidebarTab("files");
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-purple-300 cursor-pointer p-1 rounded hover:bg-[#252526] transition-colors"
+                title="Click to browse Antigravity Brain files"
+              >
                 <FolderOpen className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                 <span className="truncate font-mono text-[10px]">~/.gemini/antigravity/brain</span>
               </div>
-              <div className="flex items-center gap-2 text-slate-400">
+              <div
+                onClick={() => {
+                  setExplorerPath("~/.gemini/antigravity-cli/brain");
+                  setActiveSidebarTab("files");
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-emerald-300 cursor-pointer p-1 rounded hover:bg-[#252526] transition-colors"
+                title="Click to browse Antigravity CLI Brain files"
+              >
                 <Folder className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span className="truncate font-mono text-[10px]">~/.gemini/antigravity-cli/brain</span>
               </div>
-              <div className="flex items-center gap-2 text-slate-400">
+              <div
+                onClick={() => {
+                  setExplorerPath("~/.claude/projects");
+                  setActiveSidebarTab("files");
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-amber-300 cursor-pointer p-1 rounded hover:bg-[#252526] transition-colors"
+                title="Click to browse Claude Projects files"
+              >
                 <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span className="truncate font-mono text-[10px]">~/.claude/projects</span>
               </div>
@@ -359,7 +434,30 @@ export default function LeftSidebar({
             </div>
           )}
         </div>
+
+        {/* Section 4: Supporter Store Quick Entry */}
+        <div className="p-2 border-t border-[#252526] bg-[#1a1a1b]">
+          <button
+            type="button"
+            onClick={onOpenStore}
+            className="w-full flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-amber-500/15 to-amber-600/10 hover:from-amber-500/25 hover:to-amber-600/20 border border-amber-500/30 text-amber-300 transition-all cursor-pointer text-xs"
+            title="Open Supporter Store: 100 Tech Items & Effects"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              <div className="text-left">
+                <div className="font-bold text-white text-[11px] leading-tight">Supporter Store</div>
+                <div className="text-[10px] text-amber-400/80">100 Tech Items & Effects</div>
+              </div>
+            </div>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40">
+              Open
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 }

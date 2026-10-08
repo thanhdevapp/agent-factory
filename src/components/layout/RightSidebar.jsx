@@ -10,10 +10,10 @@ import {
   MessageSquare,
   Copy,
   Check,
-  ExternalLink,
   ChevronRight,
   Bot,
   AppWindow,
+  RotateCcw,
 } from "lucide-react";
 import SessionChatView from "../chat/SessionChatView.js";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
@@ -25,7 +25,6 @@ export default function RightSidebar({
   onTabChange,
   onSelectAgent,
   onClose,
-  onOpenChatModal,
   onStartReplay,
 }) {
   const [copied, setCopied] = useState(false);
@@ -112,21 +111,10 @@ export default function RightSidebar({
           {currentTab === "chat" && selectedAgent && (
             <button
               onClick={() => openChatInNewWindow(selectedAgent.connectionId || selectedAgent.traceId)}
-              title="Mở Cửa sổ rời độc lập (New Window / VS Code style)"
+              title="Open in Detached Window (VS Code style)"
               className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
             >
               <AppWindow className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Pop-out to Modal button when in Live Chat tab */}
-          {currentTab === "chat" && selectedAgent && onOpenChatModal && (
-            <button
-              onClick={onOpenChatModal}
-              title="Mở Live Chat dạng Popup nổi"
-              className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -150,7 +138,6 @@ export default function RightSidebar({
               sessionTrace={selectedAgent}
               isSidebar={true}
               onClose={onClose}
-              onOpenModal={onOpenChatModal}
               onStartReplay={onStartReplay}
             />
           ) : (
@@ -310,27 +297,27 @@ export default function RightSidebar({
                   </div>
                 </div>
 
-                {/* Actions: Support Sidebar View, Popup Modal, and Detached Window */}
+                {/* Actions: Replay Session, Sidebar View, Popup Modal, and Detached Window */}
                 <div className="space-y-1.5 pt-1">
-                  {/* Primary: Switch to Live Chat Sidebar Tab */}
-                  <button
-                    onClick={() => handleTabClick("chat")}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#007acc] hover:bg-[#0062a3] text-white font-medium text-xs transition-colors shadow-sm cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Xem Live Chat (Sidebar)</span>
-                  </button>
-
-                  {/* Secondary: Open Popup Modal */}
-                  {onOpenChatModal && (
+                  {/* Primary: Replay Session (Default) */}
+                  {onStartReplay && (
                     <button
-                      onClick={onOpenChatModal}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-300 hover:text-white text-xs transition-colors border border-[#3e3e42] cursor-pointer"
+                      onClick={() => onStartReplay(selectedAgent.connectionId || selectedAgent.traceId)}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#007acc] hover:bg-[#0062a3] text-white font-medium text-xs transition-colors shadow-sm cursor-pointer"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Mở Popup Nổi</span>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Replay Session</span>
                     </button>
                   )}
+
+                  {/* Secondary: Switch to Live Chat Sidebar Tab */}
+                  <button
+                    onClick={() => handleTabClick("chat")}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-200 hover:text-white font-medium text-xs transition-colors border border-[#3e3e42] cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>View Live Chat (Pin to Sidebar)</span>
+                  </button>
 
                   {/* Tertiary: Open Detached OS/Browser Window (VS Code style) */}
                   <button
@@ -338,7 +325,7 @@ export default function RightSidebar({
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-300 hover:text-white text-xs transition-colors border border-[#3e3e42] cursor-pointer"
                   >
                     <AppWindow className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Mở Cửa Sổ Rời (New Window)</span>
+                    <span>Open in Detached Window</span>
                   </button>
 
                   {/* Copy Connection ID */}
@@ -347,7 +334,7 @@ export default function RightSidebar({
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded bg-[#252526] hover:bg-[#2d2d2e] text-slate-300 text-xs transition-colors border border-[#3e3e42] cursor-pointer"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? "Đã copy Connection ID!" : "Copy Connection ID"}</span>
+                    <span>{copied ? "Connection ID Copied!" : "Copy Connection ID"}</span>
                   </button>
                 </div>
               </>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,12 +14,17 @@ import {
 } from "lucide-react";
 import SessionChatView from "../../components/chat/SessionChatView.js";
 import { useFactoryTraces } from "../../lib/useFactoryTraces";
+import { initThemeEngine } from "../../lib/themeStore";
 
 function StandaloneChatContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || "";
   const [selectedId, setSelectedId] = useState(initialId);
   const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+
+  useEffect(() => {
+    initThemeEngine();
+  }, []);
 
   const { traces } = useFactoryTraces({ mode: "live" });
 

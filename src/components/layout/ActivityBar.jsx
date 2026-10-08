@@ -12,6 +12,7 @@ import {
   GitFork,
   MessageSquare,
   Coffee,
+  Files,
 } from "lucide-react";
 
 export default function ActivityBar({
@@ -19,6 +20,8 @@ export default function ActivityBar({
   onViewChange,
   onOpenStore,
   agentCount = 0,
+  isLeftSidebarVisible = true,
+  activeLeftSidebarTab = "agents",
   isRightSidebarVisible = false,
   activeRightSidebarTab = "chat",
   isBottomPanelVisible = false,
@@ -31,6 +34,11 @@ export default function ActivityBar({
       title: "Explorer: Agents & Sessions (Ctrl+Shift+E)",
       icon: FolderTree,
       badge: agentCount > 0 ? agentCount : undefined,
+    },
+    {
+      id: "files",
+      title: "Workspace Files: File Tree & Code Editor",
+      icon: Files,
     },
     {
       id: "chat",
@@ -75,6 +83,10 @@ export default function ActivityBar({
           const isActive =
             item.id === "chat"
               ? isRightSidebarVisible && activeRightSidebarTab === "chat"
+              : item.id === "files"
+              ? isLeftSidebarVisible && activeLeftSidebarTab === "files"
+              : item.id === "explorer"
+              ? isLeftSidebarVisible && activeLeftSidebarTab === "agents"
               : activeView === item.id;
           const Icon = item.icon;
           return (

@@ -1,11 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import TokenReportView from "../../components/reports/TokenReportView";
 import Link from "next/link";
 import { Bot, ArrowLeft } from "lucide-react";
+import { initThemeEngine } from "../../lib/themeStore";
 
 export default function ReportsPage() {
+  useEffect(() => {
+    initThemeEngine();
+  }, []);
+
   return (
     <main className="h-screen w-screen overflow-hidden bg-[#181818] flex flex-col">
       {/* Mini top bar for standalone route navigation */}

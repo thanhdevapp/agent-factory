@@ -2,114 +2,41 @@
 
 /**
  * Supporter Store & Cosmetic Customization Engine
- * Manages supporter status, item inventory (Skins, Pets, Props), and Ambient soundscapes.
+ * Manages supporter status, item inventory (100 Skins, Pets, Props), and Ambient soundscapes.
  * Persists in localStorage and broadcasts sync events to PixiJS Canvas.
  */
 
+import { COSMETIC_CATALOG } from "./catalog/index.js";
+
+export { COSMETIC_CATALOG };
 export const SUPPORTER_STORAGE_KEY = "agmon_supporter_data";
 export const SUPPORTER_CHANGE_EVENT = "agmon:supporter-change";
 
-// Item Catalog
-export const COSMETIC_CATALOG = {
-  skins: [
-    {
-      id: "classic",
-      name: "Classic Bot",
-      description: "Original chibi robot featuring a safety helmet and live status display.",
-      tier: "free",
-      previewColor: "#38bdf8",
-    },
-    {
-      id: "cat",
-      name: "Pixel Cat Coder",
-      description: "Playful hacker cat with sleek triangular ears and cool whiskers.",
-      tier: "coffee",
-      previewColor: "#f472b6",
-    },
-    {
-      id: "ninja",
-      name: "Cyber Ninja",
-      description: "Tech assassin with glowing neon visor and dark stealth scarf.",
-      tier: "meal",
-      previewColor: "#a855f7",
-    },
-    {
-      id: "hacker",
-      name: "Retro Hacker",
-      description: "Anonymous coder in dark Matrix-style cyberpunk hoodie.",
-      tier: "vip",
-      previewColor: "#22c55e",
-    },
-  ],
-  pets: [
-    {
-      id: "none",
-      name: "None",
-      description: "Clean desk space without pets.",
-      tier: "free",
-    },
-    {
-      id: "cat",
-      name: "Cozy Sleepy Cat",
-      description: "Peaceful kitten sleeping beside the agent desk with gentle breathing.",
-      tier: "coffee",
-    },
-    {
-      id: "shiba",
-      name: "Dozing Shiba",
-      description: "Loyal Shiba Inu watching over the workspace with half-closed eyes.",
-      tier: "meal",
-    },
-  ],
-  props: [
-    {
-      id: "coffee_machine",
-      name: "Mini Espresso Machine",
-      description: "Rests on desk corner, puffs warm steam while agent processes commands.",
-      tier: "coffee",
-    },
-    {
-      id: "bonsai",
-      name: "Feng Shui Bonsai",
-      description: "Lush miniature plant bringing calm focus to the workstation.",
-      tier: "coffee",
-    },
-    {
-      id: "rgb_keyboard",
-      name: "RGB Mechanical Keyboard",
-      description: "Underglow keyboard lighting pulsating with keystrokes.",
-      tier: "meal",
-    },
-  ],
-  soundscapes: [
-    {
-      id: "none",
-      name: "Mute",
-      description: "Silent mode for deep uninterrupted focus.",
-    },
-    {
-      id: "rain",
-      name: "Gentle Rain",
-      description: "Soft raindrops tapping on the windowpane for relaxation and focus.",
-    },
-    {
-      id: "coffee_shop",
-      name: "Lo-Fi Coffee Shop",
-      description: "Warm coffee shop atmosphere with faint murmur and gentle cup clinks.",
-    },
-  ],
-};
+// Collect all free items by default
+const FREE_SKIN_IDS = COSMETIC_CATALOG.skins.filter((s) => s.tier === "free").map((s) => s.id);
+const FREE_PET_IDS = COSMETIC_CATALOG.pets.filter((p) => p.tier === "free").map((p) => p.id);
+const FREE_PROP_IDS = COSMETIC_CATALOG.props.filter((pr) => pr.tier === "free").map((pr) => pr.id);
 
 const DEFAULT_STATE = {
   isSupporter: false,
   supporterTier: "none", // 'none' | 'coffee' | 'meal' | 'vip'
-  equippedSkin: "classic",
-  equippedPet: "none",
+  equippedSkin: "skin_0",
+  equippedPet: "pet_0",
   equippedProps: [],
   ambientSound: "none",
   ambientVolume: 0.35,
-  unlockedItems: ["classic", "none"],
+  unlockedItems: Array.from(new Set(["skin_0", "pet_0", "classic", "none", ...FREE_SKIN_IDS, ...FREE_PET_IDS, ...FREE_PROP_IDS])),
 };
+
+// Normalize legacy IDs (e.g. classic -> skin_0, none -> pet_0)
+function normalizeState(state) {
+  if (!state) return DEFAULT_STATE;
+  const s = { ...DEFAULT_STATE, ...state };
+  if (s.equippedSkin === "classic" || !s.equippedSkin) s.equippedSkin = "skin_0";
+  if (s.equippedPet === "none" || !s.equippedPet) s.equippedPet = "pet_0";
+  if (!Array.isArray(s.unlockedItems)) s.unlockedItems = DEFAULT_STATE.unlockedItems;
+  return s;
+}
 
 // Read state from localStorage
 export function getSupporterState() {
@@ -118,7 +45,7 @@ export function getSupporterState() {
     const raw = localStorage.getItem(SUPPORTER_STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_STATE, ...parsed };
+    return normalizeState(parsed);
   } catch {
     return DEFAULT_STATE;
   }
@@ -162,15 +89,15 @@ export function unlockWithCode(code) {
       isSupporter: true,
       supporterTier: "vip",
       unlockedItems: allUnlocked,
-      equippedSkin: current.equippedSkin === "classic" ? "cat" : current.equippedSkin,
-      equippedPet: current.equippedPet === "none" ? "cat" : current.equippedPet,
-      equippedProps: Array.from(new Set([...current.equippedProps, "coffee_machine", "bonsai"])),
+      equippedSkin: current.equippedSkin === "classic" || !current.equippedSkin ? "skin_0" : current.equippedSkin,
+      equippedPet: current.equippedPet === "none" || !current.equippedPet ? "pet_0" : current.equippedPet,
+      equippedProps: Array.from(new Set([...current.equippedProps, "prop_0", "prop_1"])),
     };
 
     saveAndNotify(nextState);
     return {
       success: true,
-      message: "Congratulations! You have unlocked all VIP items and Supporter status.",
+      message: "Congratulations! You have unlocked all 100 VIP items and Supporter status.",
       state: nextState,
     };
   }
@@ -181,7 +108,8 @@ export function unlockWithCode(code) {
 // Equip Skin
 export function equipSkin(skinId) {
   const current = getSupporterState();
-  if (!current.unlockedItems.includes(skinId) && !current.isSupporter && skinId !== "classic") {
+  const isFree = COSMETIC_CATALOG.skins.find((s) => s.id === skinId)?.tier === "free";
+  if (!current.unlockedItems.includes(skinId) && !current.isSupporter && !isFree && skinId !== "skin_0") {
     return false;
   }
   const next = { ...current, equippedSkin: skinId };
@@ -192,7 +120,8 @@ export function equipSkin(skinId) {
 // Equip Pet
 export function equipPet(petId) {
   const current = getSupporterState();
-  if (!current.unlockedItems.includes(petId) && !current.isSupporter && petId !== "none") {
+  const isFree = COSMETIC_CATALOG.pets.find((p) => p.id === petId)?.tier === "free";
+  if (!current.unlockedItems.includes(petId) && !current.isSupporter && !isFree && petId !== "pet_0") {
     return false;
   }
   const next = { ...current, equippedPet: petId };
@@ -203,7 +132,8 @@ export function equipPet(petId) {
 // Toggle Desk Prop
 export function toggleProp(propId) {
   const current = getSupporterState();
-  if (!current.unlockedItems.includes(propId) && !current.isSupporter) {
+  const isFree = COSMETIC_CATALOG.props.find((p) => p.id === propId)?.tier === "free";
+  if (!current.unlockedItems.includes(propId) && !current.isSupporter && !isFree) {
     return false;
   }
   const props = new Set(current.equippedProps);

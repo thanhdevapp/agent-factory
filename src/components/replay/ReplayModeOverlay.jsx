@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  MessageSquare,
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import TimeMachineToolbar from "./TimeMachineToolbar.jsx";
@@ -25,6 +26,7 @@ import ReplayEventInspector from "./ReplayEventInspector.jsx";
 export default function ReplayModeOverlay({
   replay,
   onExit,
+  onOpenConversation,
   className = "",
   children,
 }) {
@@ -123,6 +125,18 @@ export default function ReplayModeOverlay({
 
         {/* Right action buttons */}
         <div className="flex items-center gap-2">
+          {onOpenConversation && (
+            <Button
+              variant="secondary"
+              size="xs"
+              onClick={() => onOpenConversation(sessionInfo?.id || replay?.sessionId)}
+              leftIcon={<MessageSquare className="w-3 h-3 text-cyan-400" />}
+              title="View full conversation transcript for this session"
+            >
+              View Conversation
+            </Button>
+          )}
+
           <Button
             variant="secondary"
             size="xs"
@@ -184,13 +198,31 @@ export default function ReplayModeOverlay({
                     {currentKeyframe.summary || currentKeyframe.content?.slice(0, 150) || "Executing task..."}
                   </p>
 
-                  {/* Active Tool Badge */}
-                  {currentKeyframe.activeTool && (
-                    <div className="flex items-center gap-1.5 pt-1 border-t border-[#27272a] text-[11px] font-mono text-cyan-400">
-                      <Wrench className="w-3 h-3 text-[#007acc]" />
-                      <span className="truncate">{currentKeyframe.activeTool}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between pt-1 border-t border-[#27272a] text-[11px]">
+                    {/* Active Tool Badge */}
+                    {currentKeyframe.activeTool ? (
+                      <div className="flex items-center gap-1.5 font-mono text-cyan-400 truncate">
+                        <Wrench className="w-3 h-3 text-[#007acc] shrink-0" />
+                        <span className="truncate">{currentKeyframe.activeTool}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        Step {currentStepIndex + 1}
+                      </span>
+                    )}
+
+                    {onOpenConversation && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenConversation(sessionInfo?.id || replay?.sessionId)}
+                        className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer ml-auto shrink-0"
+                        title="View conversation transcript"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>Conversation</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -210,6 +242,7 @@ export default function ReplayModeOverlay({
         isOpen={isInspectorOpen}
         onClose={() => setIsInspectorOpen(false)}
         replay={replay}
+        onOpenConversation={onOpenConversation}
       />
     </div>
   );
