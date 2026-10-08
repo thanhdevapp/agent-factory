@@ -14,7 +14,11 @@ import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
 import SessionChatModal from "../chat/SessionChatModal";
 import TokenReportView from "../reports/TokenReportView";
-import { loadWorkbenchLayout, saveWorkbenchLayout } from "./layoutStore";
+import {
+  DEFAULT_WORKBENCH_LAYOUT,
+  loadWorkbenchLayout,
+  saveWorkbenchLayout,
+} from "./layoutStore";
 
 export default function VSCodeWorkbench({
   traces = [],
@@ -32,8 +36,9 @@ export default function VSCodeWorkbench({
   notifEnabled = false,
   onToggleNotif,
 }) {
-  // Load layout from localStorage
-  const [layout, setLayout] = useState(() => loadWorkbenchLayout());
+  // Initialize with DEFAULT_WORKBENCH_LAYOUT for SSR & hydration consistency
+  const [layout, setLayout] = useState(DEFAULT_WORKBENCH_LAYOUT);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [activeTabId, setActiveTabId] = useState("canvas");
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -44,10 +49,25 @@ export default function VSCodeWorkbench({
     { id: "canvas", title: "Virtual Office", type: "canvas", closable: false },
   ]);
 
-  // Persist layout changes
+  // Load layout from localStorage only after initial client mount
   useEffect(() => {
-    saveWorkbenchLayout(layout);
-  }, [layout]);
+    const saved = loadWorkbenchLayout();
+    setLayout(saved);
+    if (saved.activeEditorTab) {
+      setActiveTabId(saved.activeEditorTab);
+    }
+    if (saved.openedTabs && Array.isArray(saved.openedTabs) && saved.openedTabs.length > 0) {
+      setTabs(saved.openedTabs);
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Persist layout changes only after initial hydration
+  useEffect(() => {
+    if (isHydrated) {
+      saveWorkbenchLayout(layout);
+    }
+  }, [layout, isHydrated]);
 
   // Selected workstation object (fallback to traces list if not found in workstations)
   const selectedAgent = useMemo(() => {

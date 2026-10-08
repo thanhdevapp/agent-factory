@@ -28,7 +28,12 @@ export default function BottomPanel({
   const [filterText, setFilterText] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
   const [clearedAt, setClearedAt] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const logContainerRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setCurrentTab(activeTab);
@@ -39,16 +44,27 @@ export default function BottomPanel({
     const list = [];
     const now = Date.now();
 
+    const formatLogTime = (ts) => {
+      if (!mounted) return "--:--:--";
+      if (ts) {
+        if (typeof ts === "string" && ts.includes(":")) return ts;
+        const d = new Date(ts);
+        if (!isNaN(d.getTime())) return d.toLocaleTimeString();
+      }
+      return new Date().toLocaleTimeString();
+    };
+
     traces.forEach((t) => {
       const account = t.account || "Agent";
       const model = t.model || "gemini-3.8-flash";
       const clientType = t.clientType || (t.provider?.includes("app") ? "app" : "cli");
       const provider = t.provider || "gemini";
+      const logTime = formatLogTime(t.timestamp);
 
       if (t.activeTool) {
         list.push({
           id: `${t.connectionId}-tool-${now}`,
-          time: new Date().toLocaleTimeString(),
+          time: logTime,
           level: "TOOL",
           provider,
           clientType,
@@ -62,7 +78,7 @@ export default function BottomPanel({
       if (t.state === "streaming" || t.state === "busy") {
         list.push({
           id: `${t.connectionId}-stream-${now}`,
-          time: new Date().toLocaleTimeString(),
+          time: logTime,
           level: "STREAM",
           provider,
           clientType,
@@ -75,7 +91,7 @@ export default function BottomPanel({
       if (t.state === "error") {
         list.push({
           id: `${t.connectionId}-err-${now}`,
-          time: new Date().toLocaleTimeString(),
+          time: logTime,
           level: "ERROR",
           provider,
           clientType,
@@ -90,7 +106,7 @@ export default function BottomPanel({
     if (list.length === 0) {
       list.push({
         id: "sys-init",
-        time: new Date().toLocaleTimeString(),
+        time: mounted ? new Date().toLocaleTimeString() : "--:--:--",
         level: "SYSTEM",
         provider: "system",
         clientType: "cli",
@@ -103,7 +119,7 @@ export default function BottomPanel({
       return list.filter((l) => l.time > clearedAt);
     }
     return list;
-  }, [traces, clearedAt]);
+  }, [traces, clearedAt, mounted]);
 
   // Filter logs
   const filteredLogs = useMemo(() => {
@@ -261,7 +277,7 @@ export default function BottomPanel({
 
             return (
               <div key={log.id} className="py-1 flex items-start gap-2 hover:bg-[#202020] px-1 rounded">
-                <span className="text-slate-500 shrink-0 text-[10px]">{log.time}</span>
+                <span suppressHydrationWarning className="text-slate-500 shrink-0 text-[10px]">{log.time}</span>
 
                 {/* Level badge */}
                 <span
