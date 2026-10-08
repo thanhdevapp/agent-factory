@@ -256,6 +256,8 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
   const now = Date.now();
   const traces = [];
   const seenSessionIds = new Set();
+  const activeTraceIndexBySessionId = new Map();
+  const activeUpdatedAtBySessionId = new Map();
 
   // 1. Scan active sessions from ~/.claude/sessions/*.json
   try {
@@ -328,7 +330,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         const sessionLabel = name || pid || (sessionId ? sessionId.slice(0, 6) : "session");
         const connectionId = `${label} (${sessionLabel})`;
 
-        traces.push(normalizeTrace({
+        const activeTrace = normalizeTrace({
           traceId: `claude-${pid || (sessionId ? sessionId.slice(0, 6) : "session")}`,
           cli: "claude",
           clientType,
@@ -355,7 +357,25 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           lastTextRole: parsed.lastTextRole || null,
           isLooping: parsed.isLooping || false,
           logs: (parsed.recentLogs || []).slice(-25),
-        }));
+        });
+
+        if (sessionId) {
+          // A single session can be reopened by several surfaces (Desktop,
+          // VS Code) at once — each with its own pid and metadata file but the
+          // SAME transcript. Keep only the most recently updated process.
+          const existingIndex = activeTraceIndexBySessionId.get(sessionId);
+          if (existingIndex !== undefined) {
+            const existingUpdatedAt = activeUpdatedAtBySessionId.get(sessionId) ?? 0;
+            if (existingUpdatedAt >= lastActive) continue;
+            traces.splice(existingIndex, 1, activeTrace);
+            activeUpdatedAtBySessionId.set(sessionId, lastActive);
+            continue;
+          }
+          activeTraceIndexBySessionId.set(sessionId, traces.length);
+          activeUpdatedAtBySessionId.set(sessionId, lastActive);
+        }
+
+        traces.push(activeTrace);
       } catch {
         // ignore single session error
       }
