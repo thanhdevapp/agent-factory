@@ -22,6 +22,7 @@ import {
   Type,
   Files,
   FolderTree,
+  Maximize2,
 } from "lucide-react";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
 
@@ -34,6 +35,7 @@ export default function CommandPalette({
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
+  onToggleZenFullscreen,
   onOpenChatSidebar,
   onOpenFilesExplorer,
   onToggleSound,
@@ -93,6 +95,16 @@ export default function CommandPalette({
       icon: PanelBottom,
       action: () => {
         onToggleBottomPanel();
+        onClose();
+      },
+    },
+    {
+      id: "toggle-zen-fullscreen",
+      title: "View: Toggle Virtual Office Chill Mode (Full Screen)",
+      shortcut: "Shift+F",
+      icon: Maximize2,
+      action: () => {
+        onToggleZenFullscreen?.();
         onClose();
       },
     },

@@ -23,7 +23,7 @@ export function normalizeTrace(raw) {
   return {
     traceId: String(raw.traceId || `trace-${Math.random().toString(36).slice(2, 9)}`),
     cli: raw.cli || "agent", // "antigravity" | "claude" | "cursor" | etc.
-    clientType, // "app" | "cli" | "ide" | "extension"
+    clientType, // "app" | "cli" | "ide" | "extension" | "desktop"
     source: raw.source || clientType,
     connectionId: String(raw.connectionId || "Agent Desk"),
     account: String(raw.account || "Default Workspace"),

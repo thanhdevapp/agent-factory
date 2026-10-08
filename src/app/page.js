@@ -34,7 +34,7 @@ export default function FactoryPage() {
   const office = useMemo(() => buildOffice(traces), [traces]);
 
   return (
-    <main className="h-screen w-screen overflow-hidden bg-[#181818]">
+    <main className="h-screen w-screen overflow-hidden bg-[var(--bg-workbench)]">
       <UpdateNotification />
       <VSCodeWorkbench
         traces={traces}

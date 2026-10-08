@@ -64,7 +64,6 @@ export default function ToolOutputView({ output = "", onImageClick }) {
   };
 
   return (
-  return (
     <div className="mt-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-chat-code)] overflow-hidden text-xs font-mono">
       {/* Header bar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-card-inner)] border-b border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)]">

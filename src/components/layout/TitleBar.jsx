@@ -53,6 +53,8 @@ export default function TitleBar({
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
+  isZenFullscreen = false,
+  onToggleZenFullscreen = null,
 }) {
   return (
     <header className="h-[34px] min-h-[34px] bg-[#1e1e1e] border-b border-[#2b2b2b] flex items-center justify-between px-3 text-[#cccccc] text-xs select-none shrink-0 z-40">
@@ -239,7 +241,7 @@ export default function TitleBar({
           {notifEnabled ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3" />}
         </button>
 
-        {/* Layout Toggles (Left, Bottom, Right) */}
+        {/* Layout Toggles (Left, Bottom, Right, Chill Fullscreen) */}
         <LayoutToggles
           isLeftSidebarVisible={layout?.isLeftSidebarVisible}
           isBottomPanelVisible={layout?.isBottomPanelVisible}
@@ -247,6 +249,8 @@ export default function TitleBar({
           onToggleLeftSidebar={onToggleLeftSidebar}
           onToggleBottomPanel={onToggleBottomPanel}
           onToggleRightSidebar={onToggleRightSidebar}
+          isZenFullscreen={isZenFullscreen}
+          onToggleZenFullscreen={onToggleZenFullscreen}
         />
       </div>
     </header>

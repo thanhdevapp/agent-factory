@@ -63,10 +63,10 @@ export default function RightSidebar({
   return (
     <div
       data-testid="secondary-sidebar-container"
-      className="flex flex-col h-full w-full bg-[#1e1e1e] text-[#cccccc] select-none overflow-hidden"
+      className="flex flex-col h-full w-full bg-[var(--bg-editor)] text-[var(--text-main)] select-none overflow-hidden"
     >
       {/* 1. Header with Tab Switches (Live Chat & Inspector) */}
-      <div className="h-[36px] min-h-[36px] bg-[#252526] border-b border-[#1e1e1e] px-2 flex items-center justify-between shrink-0">
+      <div className="h-[36px] min-h-[36px] bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-2 flex items-center justify-between shrink-0">
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1">
           {/* Tab 1: Live Chat */}
@@ -75,8 +75,8 @@ export default function RightSidebar({
             onClick={() => handleTabClick("chat")}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
               currentTab === "chat"
-                ? "bg-[#1e1e1e] text-cyan-400 border border-[#3e3e42]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#2d2d2d]"
+                ? "bg-[var(--bg-editor)] text-[var(--accent-primary)] border border-[var(--border-card)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
             }`}
             title="View Agent Live Chat & Conversation Transcript"
           >
@@ -98,8 +98,8 @@ export default function RightSidebar({
             onClick={() => handleTabClick("inspector")}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
               currentTab === "inspector"
-                ? "bg-[#1e1e1e] text-cyan-400 border border-[#3e3e42]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-[#2d2d2d]"
+                ? "bg-[var(--bg-editor)] text-[var(--accent-primary)] border border-[var(--border-card)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
             }`}
             title="View Agent specs, telemetry, and token usage"
           >
@@ -115,7 +115,7 @@ export default function RightSidebar({
             <button
               onClick={() => openChatInNewWindow(selectedAgent.connectionId || selectedAgent.traceId)}
               title="Open in Detached Window (VS Code style)"
-              className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
             >
               <AppWindow className="w-3.5 h-3.5" />
             </button>
@@ -125,7 +125,7 @@ export default function RightSidebar({
           <button
             onClick={onClose}
             title="Close Secondary Sidebar (Cmd+Alt+B)"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

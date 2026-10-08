@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { PanelLeft, PanelBottom, PanelRight } from "lucide-react";
+import { PanelLeft, PanelBottom, PanelRight, Maximize2, Minimize2 } from "lucide-react";
 
 /**
  * VS Code Standard Layout Control Buttons
- * Renders 3 toggles: Primary Side Bar (Left), Bottom Panel, Secondary Side Bar (Right)
+ * Renders layout toggles: Primary Side Bar (Left), Bottom Panel, Secondary Side Bar (Right), Fullscreen Chill Mode
  */
 export default function LayoutToggles({
   isLeftSidebarVisible,
@@ -14,6 +14,8 @@ export default function LayoutToggles({
   onToggleLeftSidebar,
   onToggleBottomPanel,
   onToggleRightSidebar,
+  isZenFullscreen = false,
+  onToggleZenFullscreen = null,
 }) {
   const getButtonClass = (isActive) =>
     `inline-flex items-center justify-center p-1 rounded transition-colors ${
@@ -56,6 +58,33 @@ export default function LayoutToggles({
       >
         <PanelRight className="w-3.5 h-3.5" />
       </button>
+
+      {onToggleZenFullscreen && (
+        <>
+          <div className="w-[1px] h-3 bg-[#333333] my-auto mx-0.5" />
+          <button
+            type="button"
+            data-testid="toggle-zen-fullscreen"
+            title={
+              isZenFullscreen
+                ? "Thoát chế độ toàn màn hình Chill Mode (ESC)"
+                : "Chế độ Chill toàn màn hình Virtual Office (Shift+F / ESC để thoát)"
+            }
+            onClick={onToggleZenFullscreen}
+            className={`inline-flex items-center justify-center p-1 rounded transition-colors ${
+              isZenFullscreen
+                ? "bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm"
+                : "border border-transparent text-[#858585] hover:text-[#4fc1ff] hover:bg-[#2a2d2e]"
+            }`}
+          >
+            {isZenFullscreen ? (
+              <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </>
+      )}
     </div>
   );
 }

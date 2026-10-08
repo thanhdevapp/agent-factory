@@ -193,11 +193,11 @@ export default function SessionChatView({
     : MODE_LABELS[sessionTrace.mode] || sessionTrace.state || "Active";
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#1e1e1e] text-[#cccccc] select-none overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-[var(--bg-editor)] text-[var(--text-main)] select-none overflow-hidden">
       {/* 1. Header Area */}
       {isSidebar ? (
         /* Sidebar Variant Header Sub-bar: Compact identity & quick action tools */
-        <div className="border-b border-[#2b2b2b] bg-[#252526] px-3 py-2 flex items-center justify-between gap-2 shrink-0">
+        <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)] px-3 py-2 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <div
               className="w-6 h-6 rounded-md border flex items-center justify-center shrink-0 relative"
@@ -214,7 +214,7 @@ export default function SessionChatView({
 
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-200 text-xs truncate max-w-[130px]">
+                <span className="font-bold text-[var(--text-bright)] text-xs truncate max-w-[130px]">
                   {sessionTrace.account || `Desk #${(sessionTrace.deskIndex ?? 0) + 1}`}
                 </span>
                 <span
@@ -228,7 +228,7 @@ export default function SessionChatView({
                   <span>{isAppClient ? "APP" : "CLI"}</span>
                 </span>
               </div>
-              <div className="text-[10px] text-slate-400 font-mono truncate">
+              <div className="text-[10px] text-[var(--text-muted)] font-mono truncate">
                 {session?.model || sessionTrace.model || "Unavailable"}
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function SessionChatView({
               className={`p-1 rounded text-xs transition-colors cursor-pointer ${
                 isSearchOpen
                   ? "bg-cyan-950 border border-cyan-500/50 text-cyan-300"
-                  : "text-slate-400 hover:text-white hover:bg-[#333333]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
               }`}
               title="Search transcript (Ctrl+F)"
             >
@@ -255,7 +255,7 @@ export default function SessionChatView({
               className={`p-1 rounded text-xs transition-colors cursor-pointer ${
                 showInfoDrawer
                   ? "bg-cyan-950 border border-cyan-500/50 text-cyan-300"
-                  : "text-slate-400 hover:text-white hover:bg-[#333333]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
               }`}
               title="Agent Details & Specs"
             >
@@ -265,7 +265,7 @@ export default function SessionChatView({
             {/* Refresh */}
             <button
               onClick={refresh}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
               title="Refresh transcript"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ export default function SessionChatView({
             {onStartReplay && (
               <button
                 onClick={() => onStartReplay(sessionId || targetTraceId)}
-                className="p-1 rounded text-cyan-400 hover:text-cyan-200 hover:bg-[#333333] transition-colors cursor-pointer"
+                className="p-1 rounded text-cyan-400 hover:text-cyan-200 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                 title="Time-Machine: Replay this session"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -285,7 +285,7 @@ export default function SessionChatView({
             {/* Export */}
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
               title="Export session report (HTML, PDF, Markdown)"
             >
               <Download className="w-3.5 h-3.5" />
@@ -294,7 +294,7 @@ export default function SessionChatView({
             {/* Open in Standalone Detached Window (VS Code style) */}
             <button
               onClick={() => openChatInNewWindow(sessionId || targetTraceId)}
-              className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+              className="p-1 rounded text-[var(--text-muted)] hover:text-cyan-300 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
               title="Open in Detached Window (VS Code style)"
             >
               <AppWindow className="w-3.5 h-3.5" />
@@ -303,7 +303,7 @@ export default function SessionChatView({
         </div>
       ) : (
         /* Modal Variant Header: Full-width modal bar */
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-900/80 rounded-t-2xl shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-titlebar)] rounded-t-2xl shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-inner relative"
@@ -320,7 +320,7 @@ export default function SessionChatView({
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-100 truncate">
+                <h2 className="text-sm font-bold text-[var(--text-bright)] truncate">
                   {sessionTrace.account || "AI Agent Session"}
                 </h2>
                 {/* Client Type badge */}
@@ -351,14 +351,14 @@ export default function SessionChatView({
                       ? "border-rose-500/50 bg-rose-950/60 text-rose-300 animate-pulse"
                       : isAgentActive
                       ? "border-cyan-500/50 bg-cyan-950/60 text-cyan-300"
-                      : "border-slate-700 bg-slate-800/80 text-slate-300"
+                      : "border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-main)]"
                   }`}
                 >
                   {modeText}
                 </span>
               </div>
 
-              <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5 flex items-center gap-1.5">
+              <div className="text-[11px] text-[var(--text-muted)] font-mono truncate mt-0.5 flex items-center gap-1.5">
                 <span>{sessionTrace.connectionId}</span>
                 <span>•</span>
                 <span className="text-cyan-400 uppercase">
@@ -367,7 +367,7 @@ export default function SessionChatView({
                 {session?.cwd && (
                   <>
                     <span>•</span>
-                    <span className="text-slate-400 truncate max-w-44">{session.cwd}</span>
+                    <span className="text-[var(--text-muted)] truncate max-w-44">{session.cwd}</span>
                   </>
                 )}
               </div>
@@ -396,7 +396,7 @@ export default function SessionChatView({
               className={`p-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 isSearchOpen
                   ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10"
-                  : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  : "border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-bright)]"
               }`}
               title="Search transcript (Ctrl+F)"
             >
@@ -409,7 +409,7 @@ export default function SessionChatView({
               className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 showInfoDrawer
                   ? "bg-cyan-950 border-cyan-500/50 text-cyan-300"
-                  : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  : "border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-bright)]"
               }`}
               title="Agent Details & Specs"
             >
@@ -421,7 +421,7 @@ export default function SessionChatView({
             {/* Refresh */}
             <button
               onClick={refresh}
-              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-bright)] transition-colors cursor-pointer"
               title="Refresh transcript"
             >
               <RefreshCw className="w-4 h-4" />
@@ -445,7 +445,7 @@ export default function SessionChatView({
             {/* Export */}
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-main)] text-xs font-medium border border-[var(--border-subtle)] transition-colors cursor-pointer"
               title="Export session report (HTML, PDF, Markdown)"
             >
               <Download className="w-3.5 h-3.5" />
@@ -456,7 +456,7 @@ export default function SessionChatView({
             {onDockToSidebar && (
               <button
                 onClick={() => onDockToSidebar(sessionTrace)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--accent-primary)] text-[var(--text-main)] hover:text-white text-xs font-medium border border-[var(--border-subtle)] transition-colors cursor-pointer"
                 title="Dock into Sidebar"
               >
                 <PanelRightClose className="w-3.5 h-3.5" />
@@ -470,7 +470,7 @@ export default function SessionChatView({
                 openChatInNewWindow(sessionId || targetTraceId);
                 onClose?.();
               }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-[#007acc] text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--accent-primary)] text-[var(--text-main)] hover:text-white text-xs font-medium border border-[var(--border-subtle)] transition-colors cursor-pointer"
               title="Open in Detached Window (VS Code style)"
             >
               <AppWindow className="w-3.5 h-3.5 text-cyan-400" />
@@ -484,7 +484,7 @@ export default function SessionChatView({
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                   isFullscreen
                     ? "bg-cyan-950 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/10 font-semibold"
-                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                    : "border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-main)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-bright)]"
                 }`}
                 title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               >
@@ -496,7 +496,7 @@ export default function SessionChatView({
             {/* Close */}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-rose-400 transition-colors cursor-pointer"
               title="Close window"
             >
               <X className="w-4 h-4" />
@@ -507,7 +507,7 @@ export default function SessionChatView({
 
       {/* 2. Floating Session Search Bar */}
       {isSearchOpen && (
-        <div className={`py-2 border-b border-[#2b2b2b] bg-[#252526] flex justify-end shrink-0 ${isSidebar ? "px-3" : "px-5"}`}>
+        <div className={`py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)] flex justify-end shrink-0 ${isSidebar ? "px-3" : "px-5"}`}>
           <SessionSearch
             isOpen={isSearchOpen}
             onClose={() => setIsSearchOpen(false)}
@@ -603,8 +603,8 @@ export default function SessionChatView({
       )}
 
       {/* 5. Subheader: Filter bar & Live Telemetry toggle */}
-      <div className={`flex items-center justify-between border-b border-[#2b2b2b] bg-[#1e1e1e] text-xs shrink-0 py-1.5 ${isSidebar ? "px-3" : "px-5"}`}>
-        <div className="flex items-center gap-1 bg-[#181818] p-0.5 rounded-lg border border-[#2b2b2b] overflow-x-auto max-w-full">
+      <div className={`flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-editor)] text-xs shrink-0 py-1.5 ${isSidebar ? "px-3" : "px-5"}`}>
+        <div className="flex items-center gap-1 bg-[var(--bg-workbench)] p-0.5 rounded-lg border border-[var(--border-subtle)] overflow-x-auto max-w-full">
           {[
             { id: "all", label: "All", icon: MessageSquare },
             { id: "prompts", label: "Prompts", icon: User },
@@ -619,8 +619,8 @@ export default function SessionChatView({
                 onClick={() => setFilter(tab.id)}
                 className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all whitespace-nowrap cursor-pointer ${
                   filter === tab.id
-                    ? "bg-[#252526] text-cyan-300 shadow-sm font-semibold border border-[#3e3e42]"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-[#252526]/50"
+                    ? "bg-[var(--bg-card)] text-[var(--accent-secondary)] shadow-sm font-semibold border border-[var(--border-card)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
                 }`}
               >
                 <Icon className="w-3 h-3 shrink-0" />
@@ -631,12 +631,12 @@ export default function SessionChatView({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 ml-2">
-          <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer select-none">
+          <label className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] cursor-pointer select-none">
             <input
               type="checkbox"
               checked={autoScroll}
               onChange={(e) => setAutoScroll(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-0 w-3 h-3 cursor-pointer"
+              className="rounded border-[var(--border-card)] bg-[var(--bg-card)] text-[var(--accent-primary)] focus:ring-0 w-3 h-3 cursor-pointer"
             />
             <span className="hidden sm:inline">Auto-scroll</span>
           </label>
@@ -648,13 +648,13 @@ export default function SessionChatView({
         {filter === "telemetry" ? (
           /* VIEW 1: Live Telemetry Drawer */
           <div className="space-y-2 font-mono text-[11px]">
-            <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[#2b2b2b] text-xs text-slate-400">
-              <span className="font-semibold text-slate-200">Terminal Telemetry Stream</span>
+            <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+              <span className="font-semibold text-[var(--text-bright)]">Terminal Telemetry Stream</span>
               <span>Last {logs.length} actions</span>
             </div>
 
             {logs.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-xs">
+              <div className="py-12 text-center text-[var(--text-muted)] text-xs">
                 No telemetry actions recorded yet for this session.
               </div>
             ) : (
@@ -663,9 +663,9 @@ export default function SessionChatView({
                 return (
                   <div
                     key={idx}
-                    className="flex items-start gap-2 p-2 rounded-lg bg-[#141414] border border-[#2b2b2b] hover:border-slate-700 transition-colors"
+                    className="flex items-start gap-2 p-2 rounded-lg bg-[var(--bg-chat-code)] border border-[var(--border-subtle)] hover:border-[var(--border-card)] transition-colors"
                   >
-                    <span className="text-[10px] text-slate-500 whitespace-nowrap pt-0.5">
+                    <span className="text-[10px] text-[var(--text-muted)] opacity-70 whitespace-nowrap pt-0.5">
                       {formatLogTimestamp(log.timestamp)}
                     </span>
                     <span
@@ -674,9 +674,9 @@ export default function SessionChatView({
                       {log.type}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-slate-200 font-medium truncate">{log.summary || log.type}</div>
+                      <div className="text-[var(--text-bright)] font-medium truncate">{log.summary || log.type}</div>
                       {log.detail && (
-                        <div className="text-slate-400 text-[11px] truncate mt-0.5 whitespace-pre-wrap break-all">
+                        <div className="text-[var(--text-muted)] text-[11px] truncate mt-0.5 whitespace-pre-wrap break-all">
                           {log.detail}
                         </div>
                       )}
@@ -691,14 +691,14 @@ export default function SessionChatView({
           /* VIEW 2: AI Conversation Turns */
           <>
             {loading && turns.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 py-12">
+              <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] gap-2 py-12">
                 <RefreshCw className="w-5 h-5 animate-spin text-cyan-400" />
                 <span className="text-xs">Loading session transcript...</span>
               </div>
             )}
 
             {error && turns.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 py-12">
+              <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] gap-2 py-12">
                 <div className="p-3 rounded-lg bg-rose-950/30 border border-rose-800/40 text-rose-300 text-xs text-center max-w-md">
                   <p className="font-semibold mb-1">Unable to load transcript</p>
                   <p className="text-[11px] text-rose-400">{error}</p>
@@ -707,7 +707,7 @@ export default function SessionChatView({
             )}
 
             {!loading && turns.length === 0 && !error && (
-              <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-2 py-12">
+              <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] gap-2 py-12">
                 <Layers className="w-8 h-8 opacity-40" />
                 <span className="text-xs">No conversation history found for this session.</span>
               </div>
@@ -729,7 +729,7 @@ export default function SessionChatView({
       </div>
 
       {/* 7. Footer Metrics */}
-      <div className={`border-t border-[#2b2b2b] bg-[#181818] flex items-center justify-between text-[11px] text-slate-400 font-mono shrink-0 py-2 ${isSidebar ? "px-3" : "px-5 rounded-b-2xl"}`}>
+      <div className={`border-t border-[var(--border-subtle)] bg-[var(--bg-workbench)] flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono shrink-0 py-2 ${isSidebar ? "px-3" : "px-5 rounded-b-2xl"}`}>
         <div className="flex items-center gap-2 truncate">
           <span>{turns.length} turns</span>
           <span>•</span>

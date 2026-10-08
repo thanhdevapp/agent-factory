@@ -129,8 +129,8 @@ export default function SessionSearch({
   if (!isOpen) return null;
 
   return (
-    <div className={`flex items-center gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl px-2.5 py-1.5 shadow-2xl backdrop-blur-md animate-fadeIn z-30 ${className}`}>
-      <Search className="w-4 h-4 text-slate-400 shrink-0" />
+    <div className={`flex items-center gap-1.5 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl px-2.5 py-1.5 shadow-2xl backdrop-blur-md animate-fadeIn z-30 ${className}`}>
+      <Search className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
       
       <input
         ref={inputRef}
@@ -139,22 +139,22 @@ export default function SessionSearch({
         onChange={(e) => setSearchTerm(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search transcript (content, code, tools)..."
-        className="bg-transparent border-none text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none w-56 md:w-64"
+        className="bg-transparent border-none text-xs text-[var(--text-bright)] placeholder:text-[var(--text-muted)] focus:outline-none w-56 md:w-64 font-sans"
       />
 
       {/* Match Counter */}
       {searchTerm.trim() && (
-        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 shrink-0">
+        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-card-inner)] text-[var(--text-main)] border border-[var(--border-subtle)] shrink-0">
           {matches.length > 0 ? `${currentIndex + 1}/${matches.length}` : "0 matches"}
         </span>
       )}
 
       {/* Prev / Next controls */}
-      <div className="flex items-center border-l border-slate-800 pl-1.5 gap-0.5">
+      <div className="flex items-center border-l border-[var(--border-subtle)] pl-1.5 gap-0.5">
         <button
           onClick={handlePrev}
           disabled={matches.length <= 1}
-          className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
           title="Previous match (Shift+Enter)"
         >
           <ChevronUp className="w-3.5 h-3.5" />
@@ -162,7 +162,7 @@ export default function SessionSearch({
         <button
           onClick={handleNext}
           disabled={matches.length <= 1}
-          className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
           title="Next match (Enter)"
         >
           <ChevronDown className="w-3.5 h-3.5" />
@@ -172,7 +172,7 @@ export default function SessionSearch({
       {/* Close button */}
       <button
         onClick={onClose}
-        className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors ml-1"
+        className="p-1 rounded text-[var(--text-muted)] hover:text-rose-400 hover:bg-[var(--bg-hover)] transition-colors ml-1 cursor-pointer"
         title="Close search (Esc)"
       >
         <X className="w-3.5 h-3.5" />

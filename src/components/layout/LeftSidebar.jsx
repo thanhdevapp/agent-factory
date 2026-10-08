@@ -20,6 +20,7 @@ import {
   Bot,
   ShoppingBag,
   Blocks,
+  Monitor,
 } from "lucide-react";
 import FileExplorer from "./FileExplorer";
 import { TOTAL_CATALOG_COUNT } from "@/lib/catalog/index.js";
@@ -73,6 +74,7 @@ export default function LeftSidebar({
   const groupedAgents = useMemo(() => {
     const groups = {
       extensions: [],
+      desktop: [],
       geminiApp: [],
       geminiCli: [],
       claude: [],
@@ -87,10 +89,13 @@ export default function LeftSidebar({
       const model = (w.model || "").toLowerCase();
 
       const isExtension = ct === "extension" || ct === "ide" || conn.includes("extension");
+      const isDesktop = ct === "desktop" || conn.includes("desktop");
       const isClaude = cli === "claude" || p.includes("claude") || p.includes("anthropic") || model.includes("claude");
 
       if (isExtension) {
         groups.extensions.push(w);
+      } else if (isDesktop) {
+        groups.desktop.push(w);
       } else if (ct === "app" || p.includes("app") || conn.includes("app")) {
         groups.geminiApp.push(w);
       } else if (isClaude) {
@@ -119,6 +124,9 @@ export default function LeftSidebar({
       agent.clientType === "extension" ||
       (agent.provider || "").includes("extension") ||
       (agent.connectionId || "").toLowerCase().includes("extension");
+    const isDesktop =
+      agent.clientType === "desktop" ||
+      (agent.connectionId || "").toLowerCase().includes("desktop");
 
     const previewText = agent.lastText
       ? `${agent.lastTextRole === "assistant" ? "AI: " : agent.lastTextRole === "user" ? "You: " : ""}${agent.lastText}`
@@ -157,10 +165,14 @@ export default function LeftSidebar({
                 {sessionTitle}
               </span>
 
-              {/* Client Tag: EXT vs APP vs CLI */}
+              {/* Client Tag: EXT vs DESKTOP vs APP vs CLI */}
               {isExt ? (
                 <span className="shrink-0 bg-sky-950/80 text-sky-300 border border-sky-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
                   EXT
+                </span>
+              ) : isDesktop ? (
+                <span className="shrink-0 bg-orange-950/80 text-orange-300 border border-orange-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
+                  DESK
                 </span>
               ) : isApp ? (
                 <span className="shrink-0 bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[9px] font-bold px-1 rounded uppercase tracking-wider">
@@ -319,6 +331,17 @@ export default function LeftSidebar({
                         <span>Extensions & IDEs ({groupedAgents.extensions.length})</span>
                       </div>
                       {groupedAgents.extensions.map(renderAgentRow)}
+                    </div>
+                  )}
+
+                  {/* Claude Desktop */}
+                  {groupedAgents.desktop?.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-orange-400/90 flex items-center gap-1">
+                        <Monitor className="w-2.5 h-2.5" />
+                        <span>Claude Desktop ({groupedAgents.desktop.length})</span>
+                      </div>
+                      {groupedAgents.desktop.map(renderAgentRow)}
                     </div>
                   )}
 

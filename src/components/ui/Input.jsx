@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const inputVariants = cva(
-  "w-full bg-[#1e1e1e] text-[#cccccc] placeholder:text-[#6e6e6e] border border-[#3e3e42] rounded-[3px] outline-none transition-colors duration-150 focus:border-[#007acc] focus:ring-1 focus:ring-[#007acc] disabled:bg-[#252526] disabled:text-[#6e6e6e] disabled:cursor-not-allowed",
+  "w-full bg-[var(--bg-input,var(--bg-card-inner))] text-[var(--text-main)] placeholder:text-[var(--text-muted)] border border-[var(--border-card)] rounded-[3px] outline-none transition-colors duration-150 focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] disabled:opacity-60 disabled:cursor-not-allowed",
   {
     variants: {
       inputSize: {

@@ -45,7 +45,7 @@ export const Modal = ({
     >
       <div
         className={cn(
-          "relative w-full bg-[#252526] border border-[#3e3e42] rounded-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#cccccc]",
+          "relative w-full bg-[var(--bg-editor)] border border-[var(--border-card)] rounded-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[var(--text-main)]",
           modalSizes[size],
           className
         )}
@@ -55,22 +55,22 @@ export const Modal = ({
       >
         {/* Header */}
         {(title || description) && (
-          <div className="flex items-start justify-between px-4 py-3 border-b border-[#3e3e42] bg-[#1e1e1e]">
+          <div className="flex items-start justify-between px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-card)]">
             <div className="flex flex-col gap-0.5">
               {title && (
-                <h3 className="text-[13px] font-semibold text-white m-0 tracking-normal">
+                <h3 className="text-[13px] font-semibold text-[var(--text-bright)] m-0 tracking-normal">
                   {title}
                 </h3>
               )}
               {description && (
-                <p className="text-[11px] text-[#8c8c8c] m-0">{description}</p>
+                <p className="text-[11px] text-[var(--text-muted)] m-0">{description}</p>
               )}
             </div>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={onClose}
-              className="text-[#8c8c8c] hover:text-white"
+              className="text-[var(--text-muted)] hover:text-[var(--text-bright)] hover:bg-[var(--bg-hover)]"
               title="Close (Esc)"
             >
               <X className="w-3.5 h-3.5" />
@@ -83,7 +83,7 @@ export const Modal = ({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#3e3e42] bg-[#1e1e1e]">
+          <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]">
             {footer}
           </div>
         )}

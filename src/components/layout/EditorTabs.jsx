@@ -21,6 +21,8 @@ export default function EditorTabs({
   activeTabId = "canvas",
   onSelectTab,
   onCloseTab,
+  isZenFullscreen = false,
+  onToggleZenFullscreen = null,
 }) {
   const containerRef = useRef(null);
 
@@ -93,6 +95,21 @@ export default function EditorTabs({
 
       {/* Right Tab Controls */}
       <div className="flex items-center px-2 gap-1 bg-[#252526] border-l border-[#1e1e1e] shrink-0 h-full">
+        {onToggleZenFullscreen && activeTabId === "canvas" && (
+          <button
+            type="button"
+            data-testid="editor-zen-fullscreen-btn"
+            onClick={onToggleZenFullscreen}
+            title={
+              isZenFullscreen
+                ? "Thoát toàn màn hình (ESC)"
+                : "Chế độ Chill toàn màn hình Virtual Office (Shift+F / ESC để thoát)"
+            }
+            className="p-1 mr-0.5 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#333333] transition-colors cursor-pointer"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button
           onClick={() => {
             if (containerRef.current) {

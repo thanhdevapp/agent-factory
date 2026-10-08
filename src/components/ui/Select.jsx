@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const selectVariants = cva(
-  "w-full appearance-none bg-[#1e1e1e] text-[#cccccc] border border-[#3e3e42] rounded-[3px] outline-none transition-colors duration-150 focus:border-[#007acc] focus:ring-1 focus:ring-[#007acc] disabled:bg-[#252526] disabled:text-[#6e6e6e] disabled:cursor-not-allowed cursor-pointer pr-7",
+  "w-full appearance-none bg-[var(--bg-input,var(--bg-card-inner))] text-[var(--text-main)] border border-[var(--border-card)] rounded-[3px] outline-none transition-colors duration-150 focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer pr-7",
   {
     variants: {
       selectSize: {
@@ -55,14 +55,14 @@ export const Select = React.forwardRef(
                     key={String(opt.value)}
                     value={opt.value}
                     disabled={opt.disabled}
-                    className="bg-[#1e1e1e] text-[#cccccc] py-1"
+                    className="bg-[var(--bg-card)] text-[var(--text-main)] py-1"
                   >
                     {opt.label}
                   </option>
                 ))
               : children}
           </select>
-          <div className="absolute right-2 flex items-center pointer-events-none text-[#8c8c8c]">
+          <div className="absolute right-2 flex items-center pointer-events-none text-[var(--text-muted)]">
             <ChevronDown className="w-3.5 h-3.5" />
           </div>
         </div>

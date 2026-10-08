@@ -11,10 +11,10 @@ export default function ThinkingAccordion({ thinking = "" }) {
   const wordCount = thinking.trim().split(/\s+/).length;
 
   return (
-    <div className="my-2.5 rounded-lg border border-purple-900/40 bg-purple-950/20 overflow-hidden transition-all">
+    <div className="my-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 overflow-hidden transition-all">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 text-left bg-purple-950/30 hover:bg-purple-900/30 transition-colors text-xs text-purple-300 font-medium"
+        className="w-full flex items-center justify-between px-3 py-2 text-left bg-purple-500/15 hover:bg-purple-500/20 transition-colors text-xs text-purple-400 dark:text-purple-300 font-medium cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <Brain className="w-3.5 h-3.5 text-purple-400" />
@@ -31,7 +31,7 @@ export default function ThinkingAccordion({ thinking = "" }) {
       </button>
 
       {isOpen && (
-        <div className="p-3 text-xs text-purple-200/90 leading-relaxed font-mono whitespace-pre-wrap border-t border-purple-900/30 max-h-96 overflow-y-auto bg-black/40">
+        <div className="p-3 text-xs text-[var(--text-main)] leading-relaxed font-mono whitespace-pre-wrap border-t border-purple-500/20 max-h-96 overflow-y-auto bg-[var(--bg-chat-code)]">
           {thinking.trim()}
         </div>
       )}

@@ -67,6 +67,20 @@ function normalizeClaudeTool(name, input = {}) {
   return { type: "mcp", detail: name };
 }
 
+/**
+ * Claude Code records where a session was started in `entrypoint`. A session
+ * can carry more than one (a desktop session that later continues in the CLI
+ * logs both), so desktop wins over the generic `cli` value.
+ *
+ * @returns {{ clientType: string, label: string }}
+ */
+function classifyClaudeEntrypoint(...entrypoints) {
+  const seen = new Set(entrypoints.filter(Boolean));
+  if (seen.has("claude-desktop")) return { clientType: "desktop", label: "Claude Desktop" };
+  if (seen.has("claude-vscode") || seen.has("vscode")) return { clientType: "extension", label: "Claude Extension" };
+  return { clientType: "cli", label: "Claude" };
+}
+
 function detectProvider(modelName, clientType = "cli") {
   const m = String(modelName || "").toLowerCase();
   let base = null;
@@ -113,7 +127,7 @@ async function parseClaudeTranscript(transcriptPath) {
     lastTimestamp: 0,
     toolInvocations: [],
     recentLogs: [],
-    entrypoint: null,
+    entrypoints: new Set(),
     cwd: null,
     slug: null,
     sessionId: null,
@@ -131,7 +145,7 @@ async function parseClaudeTranscript(transcriptPath) {
         const entryTime = entry.timestamp ? new Date(entry.timestamp).getTime() : Date.now();
         if (entry.timestamp) result.lastTimestamp = entryTime;
         if (entry.sessionId && !result.sessionId) result.sessionId = entry.sessionId;
-        if (entry.entrypoint && !result.entrypoint) result.entrypoint = entry.entrypoint;
+        if (entry.entrypoint) result.entrypoints.add(entry.entrypoint);
         if (entry.cwd && !result.cwd) result.cwd = entry.cwd;
         if (entry.slug && !result.slug) result.slug = entry.slug;
 
@@ -281,12 +295,10 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
 
         const parsed = transcriptPath ? await parseClaudeTranscript(transcriptPath) : {};
 
-        const isExtension =
-          entrypoint === "claude-vscode" ||
-          entrypoint === "vscode" ||
-          parsed.entrypoint === "claude-vscode";
-
-        const clientType = isExtension ? "extension" : "cli";
+        const { clientType, label } = classifyClaudeEntrypoint(
+          entrypoint,
+          ...(parsed.entrypoints || [])
+        );
 
         let state = "done";
         if (alive) {
@@ -313,9 +325,8 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           workspaceName;
 
         const model = parsed.model || null;
-        const connectionId = isExtension
-          ? `Claude Extension (${name || pid || (sessionId ? sessionId.slice(0, 6) : "ext")})`
-          : `Claude (${name || pid || (sessionId ? sessionId.slice(0, 6) : "cli")})`;
+        const sessionLabel = name || pid || (sessionId ? sessionId.slice(0, 6) : "session");
+        const connectionId = `${label} (${sessionLabel})`;
 
         traces.push(normalizeTrace({
           traceId: `claude-${pid || (sessionId ? sessionId.slice(0, 6) : "session")}`,
@@ -384,11 +395,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           const isPending = (now - mtime) < 15 * 60 * 1000;
           const state = isRecent ? "streaming" : isPending ? "idle" : "done";
 
-          const isExtension =
-            parsed.entrypoint === "claude-vscode" ||
-            parsed.entrypoint === "vscode";
-
-          const clientType = isExtension ? "extension" : "cli";
+          const { clientType, label } = classifyClaudeEntrypoint(...(parsed.entrypoints || []));
           const workspaceName = parsed.cwd
             ? path.basename(parsed.cwd)
             : (extractWorkspaceFromFolder(pf) || fallbackWorkspace);
@@ -401,9 +408,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
             workspaceName;
 
           const model = parsed.model || null;
-          const connectionId = isExtension
-            ? `Claude Extension (${parsed.slug || fileSessionId.slice(0, 6)})`
-            : `Claude (${parsed.slug || fileSessionId.slice(0, 6)})`;
+          const connectionId = `${label} (${parsed.slug || fileSessionId.slice(0, 6)})`;
 
           traces.push(normalizeTrace({
             traceId: `claude-${fileSessionId.slice(0, 6)}`,

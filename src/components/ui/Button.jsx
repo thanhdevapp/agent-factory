@@ -9,13 +9,13 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-[#007acc] hover:bg-[#0062a3] active:bg-[#005085] text-white shadow-sm",
+          "bg-[var(--accent-primary)] hover:opacity-90 active:opacity-80 text-[var(--text-on-accent,#ffffff)] shadow-sm",
         secondary:
-          "bg-[#2d2d2d] hover:bg-[#3c3c3c] active:bg-[#252526] text-[#cccccc] border border-[#3e3e42]",
+          "bg-[var(--bg-card-inner)] hover:bg-[var(--bg-hover)] active:opacity-80 text-[var(--text-main)] border border-[var(--border-card)]",
         outline:
-          "bg-transparent hover:bg-[#3c3c3c] active:bg-[#2a2d2e] text-[#cccccc] border border-[#3e3e42]",
+          "bg-transparent hover:bg-[var(--bg-hover)] active:opacity-80 text-[var(--text-main)] border border-[var(--border-card)]",
         ghost:
-          "bg-transparent hover:bg-[#3c3c3c] active:bg-[#2a2d2e] text-[#cccccc]",
+          "bg-transparent hover:bg-[var(--bg-hover)] active:opacity-80 text-[var(--text-main)]",
         danger:
           "bg-[#c72e24] hover:bg-[#a0251d] active:bg-[#8a1f18] text-white shadow-sm",
         success:

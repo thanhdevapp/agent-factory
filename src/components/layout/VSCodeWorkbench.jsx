@@ -59,6 +59,36 @@ export default function VSCodeWorkbench({
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [themeModalTab, setThemeModalTab] = useState("themes");
   const [isSupporter, setIsSupporter] = useState(false);
+  const [isZenFullscreen, setIsZenFullscreen] = useState(false);
+
+  // Toggle Zen Fullscreen Chill Mode (with native browser fullscreen integration)
+  const handleToggleZenFullscreen = useCallback((forcedState) => {
+    setIsZenFullscreen((prev) => {
+      const next = typeof forcedState === "boolean" ? forcedState : !prev;
+      if (next) {
+        setActiveTabId("canvas");
+        if (typeof document !== "undefined" && document.documentElement?.requestFullscreen && !document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } else {
+        if (typeof document !== "undefined" && document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  // Synchronize state when browser native fullscreen changes (e.g. user hits ESC natively)
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (typeof document !== "undefined" && !document.fullscreenElement && isZenFullscreen) {
+        setIsZenFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, [isZenFullscreen]);
 
   // Initialize and synchronize supporter store and ambient audio
   useEffect(() => {
@@ -318,11 +348,28 @@ export default function VSCodeWorkbench({
         setLayout((prev) => ({ ...prev, isRightSidebarVisible: !prev.isRightSidebarVisible }));
         return;
       }
+
+      // Escape -> Exit Zen Fullscreen Chill Mode
+      if (e.key === "Escape" && isZenFullscreen) {
+        e.preventDefault();
+        handleToggleZenFullscreen(false);
+        return;
+      }
+
+      // Shift+F -> Toggle Zen Fullscreen Chill Mode
+      if (e.shiftKey && (e.key === "f" || e.key === "F") && !modKey && !e.altKey) {
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if (tag !== "input" && tag !== "textarea") {
+          e.preventDefault();
+          handleToggleZenFullscreen();
+          return;
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isZenFullscreen, handleToggleZenFullscreen]);
 
   // When separator is dragged, dispatch resize event to keep Pixi.js Canvas crisp
   const handlePanelResize = useCallback(() => {
@@ -380,6 +427,8 @@ export default function VSCodeWorkbench({
         onToggleRightSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: !p.isRightSidebarVisible }))
         }
+        isZenFullscreen={isZenFullscreen}
+        onToggleZenFullscreen={handleToggleZenFullscreen}
       />
 
       {/* 2. Middle Body: ActivityBar + Horizontal Resizable Panels */}
@@ -507,6 +556,8 @@ export default function VSCodeWorkbench({
                   activeTabId={activeTabId}
                   onSelectTab={setActiveTabId}
                   onCloseTab={handleCloseTab}
+                  isZenFullscreen={isZenFullscreen}
+                  onToggleZenFullscreen={handleToggleZenFullscreen}
                 />
 
                 {/* Editor Content */}
@@ -537,6 +588,10 @@ export default function VSCodeWorkbench({
                             traces={effectiveTraces}
                             selectedId={selectedId}
                             onSelect={(id) => handleSelectAgent(id)}
+                            isZenFullscreen={isZenFullscreen}
+                            onToggleZenFullscreen={handleToggleZenFullscreen}
+                            soundEnabled={soundEnabled}
+                            onToggleSound={onToggleSound}
                           />
                         )}
                       </div>
@@ -547,26 +602,34 @@ export default function VSCodeWorkbench({
                       <div
                         className={`absolute inset-0 transition-opacity ${
                           activeTabId === "canvas" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                        } ${
+                          isZenFullscreen
+                            ? "!fixed !inset-0 !z-40 !w-screen !h-screen !rounded-none !border-none"
+                            : ""
                         }`}
                       >
                         <OfficeCanvas
                           traces={effectiveTraces}
                           selectedId={selectedId}
                           onSelect={(id) => handleSelectAgent(id)}
+                          isZenFullscreen={isZenFullscreen}
+                          onToggleZenFullscreen={handleToggleZenFullscreen}
+                          soundEnabled={soundEnabled}
+                          onToggleSound={onToggleSound}
                         />
                       </div>
 
                       {/* Tab 2: Telemetry Stream */}
                       {activeTabId === "telemetry" && (
-                        <div className="absolute inset-0 p-4 overflow-auto font-mono text-xs bg-[#181818] text-slate-300">
-                          <div className="mb-3 flex items-center justify-between pb-2 border-b border-[#333333]">
-                            <h3 className="font-bold text-sm text-cyan-400">Realtime Telemetry Snapshots</h3>
-                            <span className="text-slate-500">
+                        <div className="absolute inset-0 p-4 overflow-auto font-mono text-xs bg-[var(--bg-editor)] text-[var(--text-main)]">
+                          <div className="mb-3 flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                            <h3 className="font-bold text-sm text-[var(--accent-primary)]">Realtime Telemetry Snapshots</h3>
+                            <span className="text-[var(--text-muted)]">
                               {effectiveTraces.length} active sessions
                               {effectiveTraces.length > 30 ? " (latest 30)" : ""}
                             </span>
                           </div>
-                          <pre className="bg-[#121212] p-4 rounded border border-[#2b2b2b] text-[11px] text-emerald-400 leading-relaxed overflow-x-auto">
+                          <pre className="bg-[var(--bg-chat-code)] p-4 rounded border border-[var(--border-card)] text-[11px] text-[var(--text-chat-code)] leading-relaxed overflow-x-auto">
                             {telemetryJsonPreview}
                           </pre>
                         </div>
@@ -574,21 +637,21 @@ export default function VSCodeWorkbench({
 
                       {/* Tab 3: Specific Agent View */}
                       {activeTab?.type === "agent" && (
-                        <div className="absolute inset-0 p-4 overflow-auto bg-[#1e1e1e] text-slate-200">
+                        <div className="absolute inset-0 p-4 overflow-auto bg-[var(--bg-editor)] text-[var(--text-main)]">
                           <div className="max-w-3xl mx-auto space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-[#252526] rounded-lg border border-[#333333]">
+                            <div className="flex items-center justify-between p-4 bg-[var(--bg-card)] rounded-lg border border-[var(--border-card)]">
                               <div>
-                                <h2 className="text-base font-bold text-white">
+                                <h2 className="text-base font-bold text-[var(--text-bright)]">
                                   {activeTab.title}
                                 </h2>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-[var(--text-muted)]">
                                   Connection ID: {activeTab.agentData?.connectionId}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleStartReplay(activeTab.agentData?.connectionId)}
-                                  className="px-3.5 py-1.5 bg-[#007acc] hover:bg-[#0062a3] text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                  className="px-3.5 py-1.5 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--text-on-accent,#ffffff)] rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm"
                                   title="Replay Session (Default)"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
@@ -596,17 +659,17 @@ export default function VSCodeWorkbench({
                                 </button>
                                 <button
                                   onClick={() => handleOpenConversation(activeTab.agentData?.connectionId)}
-                                  className="px-3.5 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-slate-200 hover:text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                  className="px-3.5 py-1.5 bg-[var(--bg-card-inner)] hover:bg-[var(--bg-hover)] border border-[var(--border-card)] text-[var(--text-main)] hover:text-[var(--text-bright)] rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                                   title="Pin live chat transcript to Right Sidebar"
                                 >
-                                  <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                                  <MessageSquare className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
                                   <span>Pin to Sidebar</span>
                                 </button>
                                 <button
                                   onClick={() => {
                                     openChatInNewWindow(activeTab.agentData?.connectionId);
                                   }}
-                                  className="px-3.5 py-1.5 bg-[#252526] hover:bg-[#333333] border border-[#3e3e42] text-cyan-400 hover:text-white rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                                  className="px-3.5 py-1.5 bg-[var(--bg-card-inner)] hover:bg-[var(--bg-hover)] border border-[var(--border-card)] text-[var(--accent-primary)] hover:text-[var(--text-bright)] rounded text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                                   title="Open in Detached Window (VS Code style)"
                                 >
                                   <AppWindow className="w-3.5 h-3.5" />
@@ -760,6 +823,7 @@ export default function VSCodeWorkbench({
         onToggleRightSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: !p.isRightSidebarVisible }))
         }
+        onToggleZenFullscreen={handleToggleZenFullscreen}
         onOpenChatSidebar={() =>
           setLayout((p) => ({ ...p, isRightSidebarVisible: true, activeRightSidebarTab: "chat" }))
         }
