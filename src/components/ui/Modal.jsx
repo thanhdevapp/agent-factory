@@ -8,6 +8,7 @@ const modalSizes = {
   md: "max-w-[550px]",
   lg: "max-w-[750px]",
   xl: "max-w-[950px]",
+  full: "w-[96vw] max-w-[1550px] h-[92vh] max-h-[92vh]",
 };
 
 export const Modal = ({

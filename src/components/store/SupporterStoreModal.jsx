@@ -21,16 +21,16 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Coffee Shop & Supporter Vault"
+      title="Supporter Store & Vault (100 Tech Items & Effects)"
       description="Support the developer to maintain the project and unlock custom AGMon virtual office decorations"
-      size="lg"
+      size="full"
       footer={
         <div className="flex items-center justify-between w-full text-xs text-slate-400">
           <div className="flex items-center gap-2">
             {storeState.isSupporter ? (
               <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span>Status: VIP Supporter Activated</span>
+                <span>Status: VIP Supporter Activated (All 100 items unlocked)</span>
               </span>
             ) : (
               <span>100% of AGMon core engineering features remain completely free</span>
@@ -42,8 +42,8 @@ export default function SupporterStoreModal({ isOpen, onClose }) {
         </div>
       }
     >
-      <div className="h-[65vh] -mx-4 -mt-2 -mb-4 overflow-hidden rounded-md border border-[#333333]">
-        <SupporterStoreView hideHeader={true} />
+      <div className="h-[80vh] -mx-4 -mt-2 -mb-4 overflow-hidden rounded-md border border-[#333333]">
+        <SupporterStoreView hideHeader={true} onClose={onClose} />
       </div>
     </Modal>
   );

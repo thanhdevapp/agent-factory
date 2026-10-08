@@ -768,7 +768,7 @@ export default function VSCodeWorkbench({
         onSetMode={onModeChange}
         onSelectPreset={onPresetChange}
         onOpenReports={handleOpenReports}
-        onOpenStore={() => setIsStoreModalOpen(true)}
+        onOpenStore={handleOpenStore}
         onStartReplay={handleStartReplay}
       />
 
