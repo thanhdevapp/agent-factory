@@ -1,5 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function StoreRedirectPage() {
-  redirect("/?store=1");
+import React from "react";
+import SupporterStoreView from "@/components/store/SupporterStoreView";
+
+export default function StorePage() {
+  return (
+    <div className="flex h-screen w-full bg-[#181818]">
+      <SupporterStoreView hideHeader={false} />
+    </div>
+  );
 }
