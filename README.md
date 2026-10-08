@@ -2,6 +2,20 @@
 
 AGMon is a standalone, real-time AI Agent Office & Activity Visualizer. It watches local CLI and desktop coding agent logs (Antigravity CLI & App, Claude Code & Desktop, OpenAI Codex CLI & Desktop) and visualizes active agent workstations, tool badges, and token packet streams flowing to provider server pods in an isometric 2.5D canvas.
 
+![Virtual Office Canvas](screens/virtual-office-canvas.png)
+
+---
+
+## Preview
+
+| Session Chat & Inspector | Zen Fullscreen Chill Mode |
+| :---: | :---: |
+| ![Session Chat & Inspector](screens/session-chat-inspector.png) | ![Zen Fullscreen Chill Mode](screens/zen-chill-mode.png) |
+
+| Customization Store | Live Workstations & Telemetry |
+| :---: | :---: |
+| ![Customization Store](screens/customization-store.png) | ![Virtual Office Canvas](screens/virtual-office-canvas.png) |
+
 ---
 
 ## Quick Start with npx

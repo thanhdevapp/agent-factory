@@ -10,6 +10,7 @@
     "bin",
     "src",
     "public",
+    "screens",
     ".next",
     "jsconfig.json",
     "next.config.mjs",
