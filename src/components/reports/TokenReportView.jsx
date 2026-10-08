@@ -26,6 +26,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
+import DarkDateRangePicker from "./DarkDateRangePicker";
 
 export default function TokenReportView({ onClose }) {
   // Time filters
@@ -312,11 +313,14 @@ export default function TokenReportView({ onClose }) {
               { id: "month", label: "30 Ngày (Tháng)" },
               { id: "year", label: "Năm nay" },
               { id: "all", label: "Toàn bộ" },
-              { id: "custom", label: "Tùy chọn ngày..." },
             ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTimeRange(t.id)}
+                onClick={() => {
+                  setTimeRange(t.id);
+                  setStartDate("");
+                  setEndDate("");
+                }}
                 className={`px-2.5 py-1 rounded font-medium transition-colors ${
                   timeRange === t.id
                     ? "bg-[#007acc] text-white shadow-sm"
@@ -326,6 +330,38 @@ export default function TokenReportView({ onClose }) {
                 {t.label}
               </button>
             ))}
+
+            {/* Custom Dark Date Range Picker (Radix UI Popover) */}
+            <div className="flex items-center gap-1.5 pl-1.5 border-l border-[#3e3e42]">
+              <DarkDateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                isActive={timeRange === "custom"}
+                onChange={({ startDate: s, endDate: e }) => {
+                  setStartDate(s);
+                  setEndDate(e);
+                  if (s || e) {
+                    setTimeRange("custom");
+                  } else {
+                    setTimeRange("week");
+                  }
+                }}
+              />
+              {timeRange === "custom" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTimeRange("week");
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="p-1 text-slate-400 hover:text-white hover:bg-[#2a2d2e] rounded transition-colors"
+                  title="Xóa khoảng ngày tùy chỉnh"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Granularity Selector */}
@@ -355,31 +391,6 @@ export default function TokenReportView({ onClose }) {
             </div>
           </div>
         </div>
-
-        {/* Custom Date Range Inputs (when 'custom' is active) */}
-        {timeRange === "custom" && (
-          <div className="flex items-center gap-3 p-2 bg-[#252526] rounded-lg border border-[#3e3e42] text-xs">
-            <span className="text-slate-400 font-medium">Khoảng ngày:</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[11px]">Từ ngày:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-[#1e1e1e] border border-[#3e3e42] text-slate-200 text-xs rounded px-2 py-1 outline-none"
-              />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[11px]">Đến ngày:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-[#1e1e1e] border border-[#3e3e42] text-slate-200 text-xs rounded px-2 py-1 outline-none"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Multi-Criteria Filters Bar */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#2a2a2c] text-xs">
