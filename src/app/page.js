@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Bot, Volume2, VolumeX, Bell, BellOff, RotateCw } from "lucide-react";
 import OfficeCanvas from "../components/factory/office-canvas";
 import { useFactoryTraces } from "../lib/useFactoryTraces";
 import { buildOffice } from "../components/factory/scene/office-layout";
-import AgentPanel from "../components/factory/AgentPanel";
+import SessionChatModal from "../components/chat/SessionChatModal";
 import UpdateNotification from "../components/UpdateNotification";
 import { isAudioMuted, toggleAudio } from "../lib/soundFx";
 import { isNotificationsEnabled, toggleNotifications } from "../lib/notifications";
@@ -46,7 +47,7 @@ export default function FactoryPage() {
         {/* Brand */}
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 shadow-lg shadow-emerald-500/20">
-            <span className="text-lg">🤖</span>
+            <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -85,19 +86,7 @@ export default function FactoryPage() {
             title="Làm mới kết nối & dữ liệu ngay lập tức"
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 transition-all"
           >
-            <svg
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RotateCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`} />
           </button>
 
           {/* Sound FX Toggle Button */}
@@ -113,7 +102,7 @@ export default function FactoryPage() {
                 : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
             }`}
           >
-            <span className="text-xs">{soundEnabled ? "🔊" : "🔇"}</span>
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-300" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
           </button>
 
           {/* Desktop Notifications Toggle Button */}
@@ -129,7 +118,7 @@ export default function FactoryPage() {
                 : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200"
             }`}
           >
-            <span className="text-xs">{notifEnabled ? "🔔" : "🔕"}</span>
+            {notifEnabled ? <Bell className="w-4 h-4 text-sky-300" /> : <BellOff className="w-4 h-4 text-slate-400" />}
           </button>
 
           {/* Live Button */}
@@ -194,8 +183,13 @@ export default function FactoryPage() {
           onSelect={(id) => setSelectedId(id)}
         />
 
-        {/* Selected Agent Inspector */}
-        <AgentPanel ws={selected} onClose={() => setSelectedId(null)} />
+        {/* AI Conversation Window directly on selection */}
+        {selected && (
+          <SessionChatModal
+            sessionTrace={selected}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </section>
     </main>
   );

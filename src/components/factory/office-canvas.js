@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { mountOfficeScene } from "./office-scene";
 
 export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedId = null }) {
   const hostRef = useRef(null);
   const sceneRef = useRef(null);
+  const [zoomPct, setZoomPct] = useState(100);
   const latest = useRef({ onSelect, selectedId, traces });
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedI
         const mounted = await mountOfficeScene(canvas, latest.current.traces, {
           selectedId: latest.current.selectedId,
           onSelect: (id) => latest.current.onSelect?.(id),
+          onZoomChange: (pct) => setZoomPct(pct),
         });
 
         if (disposed) {
@@ -90,6 +93,39 @@ export default function OfficeCanvas({ traces = [], onStats, onSelect, selectedI
           {error}
         </div>
       )}
+
+      {/* Floating Canvas Camera Controls */}
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 rounded-lg border border-slate-800/80 bg-slate-950/80 p-1 backdrop-blur-md shadow-xl text-slate-400">
+        <button
+          onClick={() => sceneRef.current?.zoomOut?.()}
+          title="Thu nhỏ để xem không gian rộng hơn (Zoom out)"
+          className="p-1.5 rounded-md hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+        >
+          <ZoomOut className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => sceneRef.current?.reset100?.()}
+          title="Tỷ lệ chuẩn 100% (1:1 tự nhiên, không phóng to)"
+          className="px-2 py-1 rounded-md text-[11px] font-mono hover:bg-slate-800 hover:text-slate-200 transition-colors font-semibold text-slate-300 cursor-pointer"
+        >
+          {zoomPct}%
+        </button>
+        <button
+          onClick={() => sceneRef.current?.zoomIn?.()}
+          title="Phóng to (Zoom in)"
+          className="p-1.5 rounded-md hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+        >
+          <ZoomIn className="w-3.5 h-3.5" />
+        </button>
+        <div className="w-[1px] h-3.5 bg-slate-800 my-auto" />
+        <button
+          onClick={() => sceneRef.current?.fit?.()}
+          title="Vừa vặn màn hình (Fit view)"
+          className="p-1.5 rounded-md hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 }

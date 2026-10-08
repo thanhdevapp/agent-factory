@@ -52,12 +52,13 @@ function normalizeClaudeTool(name, input = {}) {
 
 function detectProvider(modelName) {
   const m = String(modelName || "").toLowerCase();
-  if (m.includes("claude")) return "anthropic";
-  if (m.includes("gemini")) return "gemini";
-  if (m.includes("gpt") || m.includes("o1") || m.includes("o3")) return "openai";
-  if (m.includes("minimax")) return "minimax";
-  if (m.includes("deepseek")) return "deepseek";
-  return "anthropic";
+  let base = "anthropic";
+  if (m.includes("claude")) base = "anthropic";
+  else if (m.includes("gemini")) base = "gemini";
+  else if (m.includes("gpt") || m.includes("o1") || m.includes("o3")) base = "openai";
+  else if (m.includes("minimax")) base = "minimax";
+  else if (m.includes("deepseek")) base = "deepseek";
+  return `${base} (cli)`;
 }
 
 export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
@@ -209,6 +210,8 @@ export async function getClaudeTraces(maxAgeMs = 3 * 60 * 60 * 1000) {
         traces.push(normalizeTrace({
           traceId: `claude-${pid || sessionId.slice(0, 6)}`,
           cli: "claude",
+          clientType: "cli",
+          source: "cli",
           connectionId: `Claude (${name || pid})`,
           account: workspaceName,
           model,

@@ -30,10 +30,11 @@ function vgrad(...stops) {
 //   streaming  typing, scanline eyes          pending   one arm waving, waiting
 //   happy      ^ ^ eyes, smile, bounce        sleeping  closed eyes, drifting z's
 //   error      X eyes, shaking, smoke, arms up
-export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming" }) {
+export function createCharacter({ color, depth = 1, scale = 1, seed = 0, trimColor, mode = "streaming", clientType = "cli" }) {
   const root = new Container();
-  const trims = [0xb5528f, 0x3fb6a8, 0xe08a3c, 0x7c63d8, 0x4a8ee0];
-  const trim = trimColor ?? trims[seed % trims.length];
+  const isApp = clientType === "app";
+  const defaultTrim = isApp ? 0x8b5cf6 : 0x10b981; // purple for app, emerald for cli
+  const trim = trimColor ?? defaultTrim;
   const SHELL = 0xf3f5f9;
   const SHADE = 0xc9d0dc;
 
@@ -217,6 +218,8 @@ export function createDesk({
   color,
   label = "",
   meta = "",
+  provider = "",
+  clientType = "cli",
   elapsedMs = 0,
   cost = 0,
   cachedPct = 0,
@@ -227,6 +230,7 @@ export function createDesk({
   const root = new Container();
   const W = 150;
   const H = 96;
+  const isApp = clientType === "app" || String(provider || "").toLowerCase().includes("app");
 
   const desk = new Graphics();
   // Soft layered ground shadow (offset down-right, as if lit from top-left).
@@ -265,6 +269,26 @@ export function createDesk({
   screen.roundRect(W / 2 - 29, 20, 8, 6, 2).fill({ color: 0x2d3541 });
   root.addChild(screen);
 
+  // Monitor badge: APP (violet) vs CLI (emerald)
+  const badgeLabel = isApp ? "APP" : "CLI";
+  const badgeColor = isApp ? 0xd8b4fe : 0x6ee7b7;
+  const badgeBg = isApp ? 0x3b0764 : 0x064e3b;
+  const badgeBorder = isApp ? 0xa855f7 : 0x059669;
+
+  const monTag = new Graphics();
+  monTag.roundRect(W / 2 - 46, -13, 26, 11, 2.5).fill({ color: badgeBg, alpha: 0.9 });
+  monTag.roundRect(W / 2 - 46, -13, 26, 11, 2.5).stroke({ width: 0.8, color: badgeBorder, alpha: 0.95 });
+  root.addChild(monTag);
+
+  const monTagText = new Text({
+    text: badgeLabel,
+    style: { fontFamily: MONO, fontSize: 7, fill: badgeColor, fontWeight: "900" },
+  });
+  monTagText.anchor.set(0.5, 0.5);
+  monTagText.x = W / 2 - 33;
+  monTagText.y = -7.5;
+  root.addChild(monTagText);
+
   const keys = new Graphics();
   keys.roundRect(W / 2 + 14, 29, 34, 8, 3).fill({ color: 0x0b0e13 });
   keys.roundRect(W / 2 + 14, 27, 34, 8, 3).fill(vgrad(0x3b4554, 0x232a35));
@@ -288,20 +312,22 @@ export function createDesk({
   }
 
   const name = new Text({
-    text: clip(label, 20),
-    style: { fontFamily: SANS, fontSize: 12, fill: 0xe6edf6, fontWeight: "700" },
+    text: clip(label, 18),
+    style: { fontFamily: SANS, fontSize: 11.5, fill: isApp ? 0xf5d0fe : 0xe6edf6, fontWeight: "700" },
   });
   name.anchor.set(0.5, 0);
   name.x = W / 2;
-  name.y = 43;
+  name.y = 42;
 
+  const providerUpper = provider ? provider.toUpperCase() : "";
+  const subText = providerUpper ? `${providerUpper} · ${clip(meta, 18)}` : clip(meta, 28);
   const sub = new Text({
-    text: clip(meta, 28),
-    style: { fontFamily: MONO, fontSize: 9, fill: 0x93a1b5 },
+    text: clip(subText, 28),
+    style: { fontFamily: MONO, fontSize: 8.5, fill: isApp ? 0xd8b4fe : 0x93a1b5 },
   });
   sub.anchor.set(0.5, 0);
   sub.x = W / 2;
-  sub.y = 58;
+  sub.y = 57;
 
   const secs = elapsedMs >= 1000 ? `${(elapsedMs / 1000).toFixed(1)}s` : `${elapsedMs}ms`;
   const stats = new Text({

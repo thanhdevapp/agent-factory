@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles, X } from "lucide-react";
 
 export default function UpdateNotification() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -58,8 +59,9 @@ export default function UpdateNotification() {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full border border-emerald-500/40 bg-slate-900/95 px-4 py-2 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 duration-300">
       <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-      <span className="text-xs text-slate-200">
-        🚀 Đã có phiên bản mới {newVersion ? `(${newVersion})` : ""}
+      <span className="text-xs text-slate-200 flex items-center gap-1.5">
+        <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+        <span>Đã có phiên bản mới {newVersion ? `(${newVersion})` : ""}</span>
       </span>
       <button
         onClick={handleApplyUpdate}
@@ -69,10 +71,10 @@ export default function UpdateNotification() {
       </button>
       <button
         onClick={() => setUpdateAvailable(false)}
-        className="text-slate-400 hover:text-slate-200 text-xs ml-1"
+        className="text-slate-400 hover:text-slate-200 p-1 ml-1 rounded hover:bg-slate-800 transition-colors"
         aria-label="Dismiss"
       >
-        ✕
+        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   );

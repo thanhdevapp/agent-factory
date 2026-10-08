@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Smartphone, Terminal, AlertTriangle, MessageSquare } from "lucide-react";
 
 const MODE_LABELS = {
   streaming: "Working",
@@ -59,7 +60,7 @@ function InspectorRow({ label, value, color, mono = false }) {
   );
 }
 
-export default function AgentPanel({ ws, onClose }) {
+export default function AgentPanel({ ws, onClose, onOpenChat }) {
   const [activeTab, setActiveTab] = useState("overview"); // "overview" | "terminal"
   const [autoScroll, setAutoScroll] = useState(true);
   const terminalEndRef = useRef(null);
@@ -80,12 +81,31 @@ export default function AgentPanel({ ws, onClose }) {
       {/* Header */}
       <div className="mb-3 flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span
               className="inline-block h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: ws.isLooping ? "#f43f5e" : hex }}
             />
             <div className="truncate text-sm font-bold text-slate-100">{ws.account}</div>
+            <span
+              className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase border flex items-center gap-1 ${
+                (ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app"))
+                  ? "bg-purple-950/80 border-purple-700/80 text-purple-300 shadow-sm shadow-purple-900/40"
+                  : "bg-emerald-950/80 border-emerald-700/80 text-emerald-300 shadow-sm shadow-emerald-900/40"
+              }`}
+            >
+              {(ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app")) ? (
+                <>
+                  <Smartphone className="w-2.5 h-2.5" />
+                  <span>APP</span>
+                </>
+              ) : (
+                <>
+                  <Terminal className="w-2.5 h-2.5" />
+                  <span>CLI</span>
+                </>
+              )}
+            </span>
           </div>
           <div
             className="text-[11px] font-semibold uppercase tracking-wider mt-0.5"
@@ -108,7 +128,7 @@ export default function AgentPanel({ ws, onClose }) {
       {/* Runaway Loop Alert */}
       {ws.isLooping && (
         <div className="mb-3 rounded-lg border border-rose-500/40 bg-rose-500/10 p-2.5 text-xs text-rose-300 flex items-start gap-2 animate-pulse">
-          <span className="text-base leading-none">⚠️</span>
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="font-bold text-rose-200">Runaway Loop Alert</div>
             <div className="text-[11px] text-rose-300/80 mt-0.5">
@@ -166,6 +186,11 @@ export default function AgentPanel({ ws, onClose }) {
       {activeTab === "overview" && (
         <div className="space-y-0.5">
           <InspectorRow label="Agent / Desk" value={ws.connectionId} />
+          <InspectorRow
+            label="Client Type"
+            value={(ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app")) ? "Desktop Application (GUI)" : "Terminal CLI"}
+            color={(ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app")) ? "#c084fc" : "#34d399"}
+          />
           <InspectorRow label="Provider" value={ws.provider?.toUpperCase()} color="#38bdf8" />
           <InspectorRow label="Model" value={ws.model} />
           <InspectorRow label="Elapsed" value={fmtMs(ws.elapsedMs)} />
@@ -225,6 +250,17 @@ export default function AgentPanel({ ws, onClose }) {
             <span>Real-time SSE stream</span>
           </div>
         </div>
+      )}
+
+      {/* Open AI Chat View Button */}
+      {onOpenChat && (
+        <button
+          onClick={() => onOpenChat(ws)}
+          className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-lg transition-all hover:border-cyan-400 group cursor-pointer"
+        >
+          <MessageSquare className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+          <span>Open AI Conversation Window</span>
+        </button>
       )}
 
       <div className="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-500 text-center">

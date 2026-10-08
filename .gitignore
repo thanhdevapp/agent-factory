@@ -19,4 +19,5 @@ yarn-debug.log*
 
 # tarballs & test artifacts
 *.tgz
-verify-*.png
+/*.png
+/.playwright-mcp/

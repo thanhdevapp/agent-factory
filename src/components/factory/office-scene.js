@@ -4,11 +4,13 @@ import { createCharacter, createDesk, createBadge } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
 
-const MAX_ZOOM = 1.6;
-const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 1.0; // Strictly capped at 1.0: large screens display more area instead of enlarging elements!
+const MIN_ZOOM = 0.25;
 
-// World rectangle the camera frames (floor).
-const FLOOR = { x: -60, y: 40, w: 2150, h: 980 };
+// Base world rectangle the camera frames (floor).
+const FLOOR_BASE_W = 2150;
+const FLOOR_BASE_H = 980;
+const FLOOR = { x: -60, y: 40, w: FLOOR_BASE_W, h: FLOOR_BASE_H };
 
 const DESK_W = 150;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -30,6 +32,11 @@ const MODE_INTENSITY = { streaming: 0.8, pending: 0.3, happy: 0.2, sleeping: 0, 
 export async function mountOfficeScene(canvas, traces, options = {}) {
   let selectedId = options.selectedId ?? null;
   let onSelect = options.onSelect;
+
+  let isPanning = false;
+  let panStart = { x: 0, y: 0 };
+  let worldStart = { x: 0, y: 0 };
+  let hasMoved = false;
 
   const app = new Application();
   await app.init({
@@ -55,27 +62,36 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
   // ---- floor -------------------------------------------------------------
   const floor = new Graphics();
-  floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).fill(
-    new FillGradient({
-      type: "linear",
-      start: { x: 0, y: 0 },
-      end: { x: 0, y: 1 },
-      colorStops: [{ offset: 0, color: 0x0b1018 }, { offset: 1, color: 0x161f2c }],
-      textureSpace: "local",
-    }),
-  );
-  for (let x = FLOOR.x + 100; x < FLOOR.x + FLOOR.w; x += 100) {
-    floor.moveTo(x, FLOOR.y + 14).lineTo(x, FLOOR.y + FLOOR.h - 14).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+  function drawFloor(w = FLOOR_BASE_W, h = FLOOR_BASE_H) {
+    FLOOR.w = w;
+    FLOOR.h = h;
+    floor.clear();
+    floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).fill(
+      new FillGradient({
+        type: "linear",
+        start: { x: 0, y: 0 },
+        end: { x: 0, y: 1 },
+        colorStops: [{ offset: 0, color: 0x0b1018 }, { offset: 1, color: 0x161f2c }],
+        textureSpace: "local",
+      }),
+    );
+    for (let x = FLOOR.x + 100; x < FLOOR.x + FLOOR.w; x += 100) {
+      floor.moveTo(x, FLOOR.y + 14).lineTo(x, FLOOR.y + FLOOR.h - 14).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+    }
+    for (let y = FLOOR.y + 100; y < FLOOR.y + FLOOR.h; y += 100) {
+      floor.moveTo(FLOOR.x + 14, y).lineTo(FLOOR.x + FLOOR.w - 14, y).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
+    }
+    floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: 0x263244, alpha: 0.9 });
+    // Zone panels: agents | router | providers
+    floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: 0xfde047, alpha: 0.035 });
+    floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: 0x22d3ee, alpha: 0.035 });
   }
-  for (let y = FLOOR.y + 100; y < FLOOR.y + FLOOR.h; y += 100) {
-    floor.moveTo(FLOOR.x + 14, y).lineTo(FLOOR.x + FLOOR.w - 14, y).stroke({ width: 1, color: 0x1a2330, alpha: 0.7 });
-  }
-  floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: 0x263244, alpha: 0.9 });
-  // Zone panels: agents | router | providers
-  floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: 0xfde047, alpha: 0.035 });
-  floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: 0x22d3ee, alpha: 0.035 });
+  drawFloor(FLOOR_BASE_W, FLOOR_BASE_H);
   floor.eventMode = "static";
-  floor.on("pointertap", () => select(null));
+  floor.on("pointertap", () => {
+    if (hasMoved) return;
+    select(null);
+  });
   floorLayer.addChild(floor);
 
   // ---- central rack (Core Hub) with a dispatcher robot behind it -----------
@@ -161,10 +177,15 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
     for (const [i, ws] of ordered.entries()) {
       const isLooping = Boolean(ws.isLooping);
+      const isApp = ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app");
+      const clientType = ws.clientType || (isApp ? "app" : "cli");
+
       const desk = createDesk({
         color: ws.color,
         label: ws.account,
         meta: `${ws.model || ""} · ${ws.totalLabel}`,
+        provider: ws.provider,
+        clientType,
         elapsedMs: ws.elapsedMs,
         cost: ws.cost,
         cachedPct: ws.cachedPct,
@@ -175,12 +196,19 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       desk.root.x = ws.x;
       desk.root.y = ws.y;
       desk.root.on("pointertap", (e) => {
+        if (hasMoved) return;
         e.stopPropagation();
         select(ws.connectionId === selectedId ? null : ws.connectionId);
       });
 
       // Agent first: it sits behind the desk so the desk hides its torso.
-      const character = createCharacter({ color: ws.color, depth: ws.depth, seed: i, mode: ws.mode });
+      const character = createCharacter({
+        color: ws.color,
+        depth: ws.depth,
+        seed: i,
+        mode: ws.mode,
+        clientType,
+      });
       character.root.x = ws.x + 108;
       character.root.baseX = ws.x + 108;
       character.root.baseY = ws.y + 34;
@@ -370,17 +398,85 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   // ---- camera -----------------------------------------------------------
   function fit() {
     if (app.screen.width <= 0 || app.screen.height <= 0) return;
-    const scale = Math.min(
-      app.screen.width / (FLOOR.w + 40),
-      app.screen.height / (FLOOR.h + 40),
+    // Strictly capped at MAX_ZOOM (1.0).
+    // On large screens, scale does NOT increase beyond 1.0,
+    // so elements stay at their natural 1:1 size and the canvas reveals MORE space!
+    const autoScale = Math.min(
+      app.screen.width / (FLOOR_BASE_W + 40),
+      app.screen.height / (FLOOR_BASE_H + 40),
       MAX_ZOOM,
     );
-    world.scale.set(Math.max(MIN_ZOOM, scale));
+    const scale = Math.max(MIN_ZOOM, autoScale);
+    world.scale.set(scale);
+
+    // Dynamic floor sizing: on large displays, expand the office floor
+    // to fill the screen bounds seamlessly
+    const viewW = Math.max(FLOOR_BASE_W, (app.screen.width / scale) - 30);
+    const viewH = Math.max(FLOOR_BASE_H, (app.screen.height / scale) - 30);
+    drawFloor(viewW, viewH);
+
     world.x = (app.screen.width - FLOOR.w * world.scale.x) / 2 - FLOOR.x * world.scale.x;
     world.y = (app.screen.height - FLOOR.h * world.scale.y) / 2 - FLOOR.y * world.scale.y;
+
+    options.onZoomChange?.(Math.round(scale * 100));
   }
 
   app.renderer.on("resize", fit);
+
+  // ---- pan & zoom interactions ------------------------------------------
+  const onPointerDown = (e) => {
+    if (e.button !== 0) return;
+    isPanning = true;
+    hasMoved = false;
+    panStart = { x: e.clientX, y: e.clientY };
+    worldStart = { x: world.x, y: world.y };
+  };
+
+  const onPointerMove = (e) => {
+    if (!isPanning) return;
+    const dx = e.clientX - panStart.x;
+    const dy = e.clientY - panStart.y;
+    if (Math.hypot(dx, dy) > 4) {
+      hasMoved = true;
+    }
+    world.x = worldStart.x + dx;
+    world.y = worldStart.y + dy;
+  };
+
+  const onPointerUp = () => {
+    isPanning = false;
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomDelta = e.deltaY < 0 ? 1.08 : 0.92;
+    const currentScale = world.scale.x;
+    const targetScale = Math.max(MIN_ZOOM, Math.min(1.15, currentScale * zoomDelta));
+    if (Math.abs(targetScale - currentScale) < 0.001) return;
+
+    const worldMouseX = (mouseX - world.x) / currentScale;
+    const worldMouseY = (mouseY - world.y) / currentScale;
+
+    world.scale.set(targetScale);
+    world.x = mouseX - worldMouseX * targetScale;
+    world.y = mouseY - worldMouseY * targetScale;
+
+    options.onZoomChange?.(Math.round(targetScale * 100));
+  };
+
+  const onDblClick = () => {
+    fit();
+  };
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  canvas.addEventListener("wheel", onWheel, { passive: false });
+  canvas.addEventListener("dblclick", onDblClick);
 
   // ---- animation --------------------------------------------------------
   let t = 0;
@@ -508,6 +604,34 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     app,
     rebuild,
     fit,
+    zoomIn() {
+      const next = Math.min(1.15, world.scale.x * 1.15);
+      const cx = app.screen.width / 2;
+      const cy = app.screen.height / 2;
+      const wx = (cx - world.x) / world.scale.x;
+      const wy = (cy - world.y) / world.scale.y;
+      world.scale.set(next);
+      world.x = cx - wx * next;
+      world.y = cy - wy * next;
+      options.onZoomChange?.(Math.round(next * 100));
+    },
+    zoomOut() {
+      const next = Math.max(MIN_ZOOM, world.scale.x * 0.85);
+      const cx = app.screen.width / 2;
+      const cy = app.screen.height / 2;
+      const wx = (cx - world.x) / world.scale.x;
+      const wy = (cy - world.y) / world.scale.y;
+      world.scale.set(next);
+      world.x = cx - wx * next;
+      world.y = cy - wy * next;
+      options.onZoomChange?.(Math.round(next * 100));
+    },
+    reset100() {
+      world.scale.set(1.0);
+      world.x = (app.screen.width - FLOOR_BASE_W * 1.0) / 2 - FLOOR.x * 1.0;
+      world.y = (app.screen.height - FLOOR_BASE_H * 1.0) / 2 - FLOOR.y * 1.0;
+      options.onZoomChange?.(100);
+    },
     setSelected(id) {
       selectedId = id;
       refreshSelection();
@@ -515,7 +639,14 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     setOnSelect(fn) {
       onSelect = fn;
     },
-    destroy: () => app.destroy(true, { children: true }),
+    destroy: () => {
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("dblclick", onDblClick);
+      app.destroy(true, { children: true });
+    },
   };
 }
 

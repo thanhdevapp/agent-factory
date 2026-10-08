@@ -5,9 +5,14 @@
 
 export function normalizeTrace(raw) {
   const tokens = raw.tokens || {};
+  const clientType = raw.clientType || (
+    raw.source === "app" || String(raw.connectionId || "").toLowerCase().includes("app") ? "app" : "cli"
+  );
   return {
     traceId: String(raw.traceId || `trace-${Math.random().toString(36).slice(2, 9)}`),
     cli: raw.cli || "agent", // "antigravity" | "claude" | "cursor" | etc.
+    clientType, // "app" | "cli" | "ide"
+    source: raw.source || clientType,
     connectionId: String(raw.connectionId || "Agent Desk"),
     account: String(raw.account || "Default Workspace"),
     model: String(raw.model || "Unknown Model"),

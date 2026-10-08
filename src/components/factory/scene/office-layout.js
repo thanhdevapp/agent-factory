@@ -58,11 +58,17 @@ export function buildOffice(traces = []) {
     if (!trace?.connectionId) continue;
     let entry = byAccount.get(trace.connectionId);
     if (!entry) {
+      const clientType = trace.clientType || (
+        trace.source === "app" || String(trace.connectionId || "").toLowerCase().includes("app") ? "app" : "cli"
+      );
       entry = {
         connectionId: trace.connectionId,
         account: trace.account || trace.connectionId,
         model: trace.model,
         provider: trace.provider,
+        cli: trace.cli || "agent",
+        clientType,
+        source: trace.source || clientType,
         clientIcon: trace.clientIcon,
         traces: [],
         tokens: { input: 0, output: 0, cached: 0 },

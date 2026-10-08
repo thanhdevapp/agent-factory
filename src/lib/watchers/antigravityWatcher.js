@@ -65,24 +65,68 @@ function normalizeToolCall(tc) {
   return { type: "mcp", detail };
 }
 
+export function extractModelFromTranscript(content) {
+  if (!content) return null;
+  const match = content.match(/Model Selection` from [^ ]+ to (.*?)(?:\.\s+No need|\.\s*\n|<\/USER_SETTINGS_CHANGE>)/i);
+  if (match && match[1]) return match[1].trim();
+  const matchFallback = content.match(/Model Selection`? from .*? to ([^\n<.]+)/i);
+  if (matchFallback && matchFallback[1]) return matchFallback[1].trim();
+  return null;
+}
+
+export function normalizeModel(raw) {
+  if (!raw) return "gemini-3.8-flash";
+  const lower = raw.toLowerCase();
+  if (lower.includes("3.8") && lower.includes("flash")) return "gemini-3.8-flash";
+  if (lower.includes("3.5") && lower.includes("flash")) return "gemini-3.5-flash";
+  if (lower.includes("3.8") && lower.includes("pro")) return "gemini-3.8-pro";
+  if (lower.includes("3.1") && lower.includes("pro")) return "gemini-3.1-pro";
+  if (lower.includes("2.5") && lower.includes("pro")) return "gemini-2.5-pro";
+  if (lower.includes("2.5") && lower.includes("flash")) return "gemini-2.5-flash";
+  if (lower.includes("sonnet") && lower.includes("5.5")) return "claude-sonnet-5.5";
+  if (lower.includes("sonnet") && lower.includes("3.7")) return "claude-3.7-sonnet";
+  if (lower.includes("sonnet") && lower.includes("3.5")) return "claude-3.5-sonnet";
+  return raw.replace(/[()]/g, "").trim().toLowerCase().replace(/\s+/g, "-");
+}
+
 export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
   const homeDir = os.homedir();
-  const brainDir = path.join(homeDir, ".gemini", "antigravity-cli", "brain");
+  const searchDirs = [
+    { dir: path.join(homeDir, ".gemini", "antigravity", "brain"), source: "app" },
+    { dir: path.join(homeDir, ".gemini", "antigravity-cli", "brain"), source: "cli" },
+    { dir: path.join(homeDir, ".gemini", "antigravity-ide", "brain"), source: "ide" },
+  ];
+
+  let defaultCliModel = null;
+  try {
+    const cliSettingsRaw = await fs.readFile(path.join(homeDir, ".gemini", "antigravity-cli", "settings.json"), "utf-8");
+    const cliSettings = JSON.parse(cliSettingsRaw);
+    if (cliSettings.model) defaultCliModel = cliSettings.model;
+  } catch {}
 
   try {
-    const entries = await fs.readdir(brainDir, { withFileTypes: true });
     const now = Date.now();
     const traces = [];
+    const seenConvIds = new Set();
 
-    for (const ent of entries) {
-      if (!ent.isDirectory()) continue;
-      const convId = ent.name;
-      const transcriptPath = path.join(brainDir, convId, ".system_generated", "logs", "transcript.jsonl");
-
+    for (const { dir: brainDir, source } of searchDirs) {
+      let entries;
       try {
-        const stat = await fs.stat(transcriptPath);
-        const mtime = stat.mtimeMs;
-        if (now - mtime > maxAgeMs) continue;
+        entries = await fs.readdir(brainDir, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+
+      for (const ent of entries) {
+        if (!ent.isDirectory()) continue;
+        const convId = ent.name;
+        if (seenConvIds.has(convId)) continue;
+        const transcriptPath = path.join(brainDir, convId, ".system_generated", "logs", "transcript.jsonl");
+
+        try {
+          const stat = await fs.stat(transcriptPath);
+          const mtime = stat.mtimeMs;
+          if (now - mtime > maxAgeMs) continue;
 
         const content = await fs.readFile(transcriptPath, "utf-8");
         const lines = content.trim().split("\n");
@@ -199,13 +243,23 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         const rawFolder = detectedCwd ? path.basename(detectedCwd) : `agy-${convId.slice(0, 6)}`;
         const folderName = rawFolder.replace(/["'\\]/g, "").trim();
 
+        seenConvIds.add(convId);
+        const clientType = source === "app" ? "app" : source === "ide" ? "ide" : "cli";
+        const appLabel = source === "app" ? "Antigravity App" : source === "ide" ? "Antigravity IDE" : "Antigravity";
+        const providerName = source === "app" ? "gemini (app)" : source === "ide" ? "gemini (ide)" : "gemini (cli)";
+
+        const rawModel = extractModelFromTranscript(content) || defaultCliModel;
+        const modelName = normalizeModel(rawModel);
+
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
           cli: "antigravity",
-          connectionId: `Antigravity (${convId.slice(0, 6)})`,
+          clientType,
+          source,
+          connectionId: `${appLabel} (${convId.slice(0, 6)})`,
           account: folderName,
-          model: "gemini-2.5-pro",
-          provider: "gemini",
+          model: modelName,
+          provider: providerName,
           state,
           startedAt: firstTime || (now - elapsedMs),
           elapsedMs,
@@ -226,6 +280,7 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         // file missing or unreadable
       }
     }
+  }
 
     return traces;
   } catch {
