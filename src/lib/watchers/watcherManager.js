@@ -10,15 +10,15 @@ let cachedTraces = [];
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 1500; // 1.5s cache to avoid reading disks too frequently
 
-export async function getAllLiveTraces(force = false) {
+export async function getAllLiveTraces(force = false, maxAgeMs = 24 * 60 * 60 * 1000) {
   const now = Date.now();
   if (!force && now - lastFetchTime < CACHE_TTL_MS && cachedTraces.length > 0) {
     return cachedTraces;
   }
 
   const [agyList, claudeList] = await Promise.all([
-    getAntigravityTraces().catch(() => []),
-    getClaudeTraces().catch(() => []),
+    getAntigravityTraces(maxAgeMs).catch(() => []),
+    getClaudeTraces(maxAgeMs).catch(() => []),
   ]);
 
   const combined = [...agyList, ...claudeList];

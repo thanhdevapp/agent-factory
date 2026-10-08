@@ -7,6 +7,8 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const source = searchParams.get("source") || "live";
   const mockPreset = searchParams.get("mockPreset") || searchParams.get("preset");
+  const hours = Number(searchParams.get("hours") || 24);
+  const maxAgeMs = Math.max(1, hours) * 60 * 60 * 1000;
 
   const encoder = new TextEncoder();
 
@@ -41,7 +43,7 @@ export async function GET(request) {
 
         // Live Mode
         try {
-          const liveTraces = await getAllLiveTraces();
+          const liveTraces = await getAllLiveTraces(false, maxAgeMs);
           const providers = getProvidersFromTraces(liveTraces);
           send({
             traces: liveTraces,

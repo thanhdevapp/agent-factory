@@ -90,7 +90,7 @@ function generateMockTranscript(rawId) {
             summary: "bash: npm test",
             action: "run_command",
             args: { CommandLine: "npm test" },
-            output: "PASS src/lib/wsClient.test.js\n  ✓ connects to server (12ms)\n  ✓ cleans up listeners on disconnect (8ms)\n  ✓ pool avoids leak after 100 reconnects (45ms)\n\nTest Suites: 1 passed, 1 total\nTests:       3 passed, 3 total\nSnapshots:   0 total\nTime:        0.85s",
+            output: "PASS src/lib/wsClient.test.js\n  OK connects to server (12ms)\n  OK cleans up listeners on disconnect (8ms)\n  OK pool avoids leak after 100 reconnects (45ms)\n\nTest Suites: 1 passed, 1 total\nTests:       3 passed, 3 total\nSnapshots:   0 total\nTime:        0.85s",
             status: "completed",
           },
         ],

@@ -158,24 +158,57 @@ export default function RightSidebar({
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block px-1">
                     Active Agents ({workstations.length})
                   </span>
-                  <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  <div className="space-y-1 max-h-[28rem] overflow-y-auto pr-1">
                     {workstations.map((w, idx) => {
                       const isBusy =
                         w.state === "streaming" ||
                         w.state === "busy" ||
                         w.state === "working" ||
                         w.mode === "streaming";
+                      const workspaceName = w.account || "agent-factory";
+                      const sessionTitle = w.sessionTitle || workspaceName;
+                      const isApp = w.clientType === "app" || (w.provider || "").includes("(app)");
+                      const isExt =
+                        w.clientType === "extension" ||
+                        (w.provider || "").includes("extension") ||
+                        (w.connectionId || "").toLowerCase().includes("extension");
+
+                      const previewText = w.lastText
+                        ? `${w.lastTextRole === "assistant" ? "AI: " : w.lastTextRole === "user" ? "You: " : ""}${w.lastText}`
+                        : `${workspaceName} · ${w.model || "AI Agent"}${w.activeTool ? ` · ${w.activeTool}` : ""}`;
+
                       return (
                         <button
-                          key={w.connectionId || idx}
+                          key={w.connectionId || w.traceId || `active-agent-${idx}`}
                           onClick={() => onSelectAgent?.(w.connectionId || w.traceId)}
-                          className="w-full flex items-center justify-between p-2 rounded bg-[#252526] hover:bg-[#2d2d2e] border border-[#333333] hover:border-[#007acc] text-xs transition-colors cursor-pointer text-slate-300"
+                          className="w-full flex items-center gap-2 p-2 rounded bg-[#252526] hover:bg-[#2d2d2e] border border-[#333333] hover:border-[#007acc] text-left transition-colors cursor-pointer text-slate-300"
                         >
-                          <div className="flex items-center gap-2 truncate">
-                            <Bot className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                            <span className="truncate font-medium">
-                              {w.account || `Desk #${(w.deskIndex ?? idx) + 1}`}
-                            </span>
+                          <Bot className="w-3.5 h-3.5 text-cyan-400 shrink-0 self-start mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            {/* Line 1: Session Title + Type Badge */}
+                            <div className="flex items-center justify-between gap-1.5 min-w-0">
+                              <span className="truncate font-medium text-xs text-slate-200" title={sessionTitle}>
+                                {sessionTitle}
+                              </span>
+                              {isExt ? (
+                                <span className="shrink-0 bg-sky-950/80 text-sky-300 border border-sky-500/40 text-[9px] font-bold px-1 rounded uppercase">
+                                  EXT
+                                </span>
+                              ) : isApp ? (
+                                <span className="shrink-0 bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[9px] font-bold px-1 rounded uppercase">
+                                  APP
+                                </span>
+                              ) : (
+                                <span className="shrink-0 bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold px-1 rounded uppercase">
+                                  CLI
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Line 2: Last Message Preview */}
+                            <p className="truncate text-[10px] leading-4 text-slate-400 mt-0.5" title={previewText}>
+                              {previewText}
+                            </p>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {isBusy && (

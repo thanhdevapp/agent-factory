@@ -44,21 +44,56 @@ export async function parseClaudeTranscript(sessionId) {
     const rawMeta = await fs.readFile(path.join(sessionsDir, `${safeId}.json`), "utf-8");
     meta = JSON.parse(rawMeta);
   } catch {
-    // metadata might be missing or session id is project-scoped
+    // Check if safeId matches a PID or name in sessionsDir
+    try {
+      const sessionFiles = await fs.readdir(sessionsDir).catch(() => []);
+      for (const sf of sessionFiles) {
+        if (!sf.endsWith(".json")) continue;
+        const raw = await fs.readFile(path.join(sessionsDir, sf), "utf-8").catch(() => null);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (
+          String(parsed.pid) === safeId ||
+          parsed.sessionId === safeId ||
+          parsed.sessionId?.startsWith(safeId) ||
+          parsed.name === safeId
+        ) {
+          meta = parsed;
+          break;
+        }
+      }
+    } catch {}
   }
+
+  const targetId = meta.sessionId || safeId;
 
   // Find candidate jsonl transcript
   let transcriptPath = null;
   try {
     const projectFolders = await fs.readdir(projectsDir);
     for (const pf of projectFolders) {
-      const candidate = path.join(projectsDir, pf, `${safeId}.jsonl`);
+      // 1. Try exact targetId.jsonl
+      const candidate = path.join(projectsDir, pf, `${targetId}.jsonl`);
       try {
         await fs.access(candidate);
         transcriptPath = candidate;
         break;
       } catch {
         // try next
+      }
+
+      // 2. Try prefix matching or files in folder
+      const files = await fs.readdir(path.join(projectsDir, pf)).catch(() => []);
+      const matched = files.find((f) =>
+        f.endsWith(".jsonl") && (
+          f.startsWith(safeId) ||
+          (meta.sessionId && f.startsWith(meta.sessionId)) ||
+          f.replace(".jsonl", "").startsWith(safeId)
+        )
+      );
+      if (matched) {
+        transcriptPath = path.join(projectsDir, pf, matched);
+        break;
       }
     }
   } catch {

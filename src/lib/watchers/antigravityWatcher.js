@@ -89,13 +89,76 @@ export function normalizeModel(raw) {
   return raw.replace(/[()]/g, "").trim().toLowerCase().replace(/\s+/g, "-");
 }
 
-export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
+function compactText(value, maxLength = 160) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, maxLength) : null;
+}
+
+function cleanUserPrompt(content) {
+  if (!content) return null;
+  let text = String(content);
+  // If there are explicit <USER_REQUEST> tags, extract the actual user request
+  const userRequestMatches = [...text.matchAll(/<USER_REQUEST>([\s\S]*?)<\/USER_REQUEST>/gi)];
+  if (userRequestMatches.length > 0) {
+    text = userRequestMatches[userRequestMatches.length - 1][1];
+  } else {
+    text = text
+      .replace(/<CONTEXT_SUMMARY>[\s\S]*?<\/CONTEXT_SUMMARY>/gi, "")
+      .replace(/<ADDITIONAL_METADATA>[\s\S]*?<\/ADDITIONAL_METADATA>/gi, "")
+      .replace(/<USER_SETTINGS_CHANGE>[\s\S]*?<\/USER_SETTINGS_CHANGE>/gi, "")
+      .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/gi, "");
+  }
+  return compactText(text);
+}
+
+async function discoverAntigravityBrainDirs() {
   const homeDir = os.homedir();
-  const searchDirs = [
-    { dir: path.join(homeDir, ".gemini", "antigravity", "brain"), source: "app" },
-    { dir: path.join(homeDir, ".gemini", "antigravity-cli", "brain"), source: "cli" },
-    { dir: path.join(homeDir, ".gemini", "antigravity-ide", "brain"), source: "ide" },
-  ];
+  const geminiDir = path.join(homeDir, ".gemini");
+  const discovered = [];
+  const seen = new Set();
+
+  const addDir = (dirPath, defaultSource) => {
+    if (seen.has(dirPath)) return;
+    seen.add(dirPath);
+    discovered.push({ dir: dirPath, source: defaultSource });
+  };
+
+  // 1. Standard paths
+  addDir(path.join(geminiDir, "antigravity-cli", "brain"), "cli");
+  addDir(path.join(geminiDir, "antigravity", "brain"), "app");
+  addDir(path.join(geminiDir, "antigravity-ide", "brain"), "ide");
+
+  // 2. Dynamic discovery of any sibling folders in ~/.gemini
+  try {
+    const entries = await fs.readdir(geminiDir, { withFileTypes: true });
+    for (const ent of entries) {
+      if (!ent.isDirectory()) continue;
+      const bPath = path.join(geminiDir, ent.name, "brain");
+      if (seen.has(bPath)) continue;
+      try {
+        const s = await fs.stat(bPath);
+        if (s.isDirectory()) {
+          const lower = ent.name.toLowerCase();
+          const source = lower.includes("ide") ? "ide" : lower.includes("app") || lower === "antigravity" ? "app" : "cli";
+          addDir(bPath, source);
+        }
+      } catch {}
+    }
+  } catch {}
+
+  const validDirs = [];
+  for (const item of discovered) {
+    try {
+      const s = await fs.stat(item.dir);
+      if (s.isDirectory()) validDirs.push(item);
+    } catch {}
+  }
+  return validDirs;
+}
+
+export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
+  const homeDir = os.homedir();
+  const searchDirs = await discoverAntigravityBrainDirs();
 
   let defaultCliModel = null;
   try {
@@ -142,6 +205,9 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         let lastTime = null;
         let activeCommandDetail = null;
         let detectedCwd = null;
+        let sessionTitle = null;
+        let lastText = null;
+        let lastTextRole = null;
         const toolInvocations = [];
         const recentLogs = [];
 
@@ -158,13 +224,24 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
             if (entry.cache_read_tokens) totalCached += entry.cache_read_tokens;
 
             if (entry.type === "USER_INPUT" && entry.content) {
-              const cleanPrompt = String(entry.content).replace(/<USER_REQUEST>|<\/USER_REQUEST>/g, "").trim();
-              recentLogs.push({
-                timestamp: entry.created_at || new Date().toISOString(),
-                type: "prompt",
-                summary: "User Prompt",
-                detail: cleanPrompt.slice(0, 100),
-              });
+              const cleanPrompt = cleanUserPrompt(entry.content);
+              if (cleanPrompt) {
+                sessionTitle ||= compactText(cleanPrompt, 80);
+                lastText = cleanPrompt;
+                lastTextRole = "user";
+                recentLogs.push({
+                  timestamp: entry.created_at || new Date().toISOString(),
+                  type: "prompt",
+                  summary: "User Prompt",
+                  detail: cleanPrompt.slice(0, 100),
+                });
+              }
+            } else if (entry.type === "PLANNER_RESPONSE" && entry.content) {
+              const response = compactText(entry.content);
+              if (response) {
+                lastText = response;
+                lastTextRole = "assistant";
+              }
             }
 
             if (Array.isArray(entry.tool_calls) && entry.tool_calls.length > 0) {
@@ -217,16 +294,16 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
           else state = "streaming";
         }
 
-        // Loop detection: 5 consecutive identical tool calls within 60s
+        // Loop detection: 5 consecutive identical tool calls (same tool and target) within 60s
         let isLooping = false;
         if (toolInvocations.length >= 5) {
           const lastN = toolInvocations.slice(-10);
           for (let s = 0; s <= lastN.length - 5; s++) {
             const window = lastN.slice(s, s + 5);
-            const targetName = window[0].name;
-            const sameName = window.every((w) => w.name === targetName);
+            const targetKey = `${window[0].name}:${window[0].detail}`;
+            const sameCall = window.every((w) => `${w.name}:${w.detail}` === targetKey);
             const timeSpan = (window[window.length - 1].time || 0) - (window[0].time || 0);
-            if (sameName && (timeSpan <= 60000 || timeSpan === 0)) {
+            if (sameCall && (timeSpan <= 60000 || timeSpan === 0)) {
               isLooping = true;
               break;
             }
@@ -251,13 +328,17 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
         const rawModel = extractModelFromTranscript(content) || defaultCliModel;
         const modelName = normalizeModel(rawModel);
 
+        const fallbackWorkspace = path.basename(process.cwd()) || "agent-factory";
+        const finalAccount = folderName || fallbackWorkspace;
+        const finalSessionTitle = sessionTitle || finalAccount;
+
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
           cli: "antigravity",
           clientType,
           source,
           connectionId: `${appLabel} (${convId.slice(0, 6)})`,
-          account: folderName,
+          account: finalAccount,
           model: modelName,
           provider: providerName,
           state,
@@ -273,6 +354,9 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
           tools: Array.from(toolSet),
           activeTool,
           currentCommand: activeCommandDetail,
+          sessionTitle: finalSessionTitle,
+          lastText,
+          lastTextRole,
           isLooping,
           logs: recentLogs.slice(-25),
         }));
@@ -281,6 +365,14 @@ export async function getAntigravityTraces(maxAgeMs = 2 * 60 * 60 * 1000) {
       }
     }
   }
+
+    // Sort: active (streaming/pending) first, then by most recent startedAt
+    traces.sort((a, b) => {
+      const activeA = (a.state === "streaming" || a.state === "pending") ? 1 : 0;
+      const activeB = (b.state === "streaming" || b.state === "pending") ? 1 : 0;
+      if (activeA !== activeB) return activeB - activeA;
+      return (b.startedAt || 0) - (a.startedAt || 0);
+    });
 
     return traces;
   } catch {

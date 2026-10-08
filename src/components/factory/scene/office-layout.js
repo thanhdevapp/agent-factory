@@ -58,8 +58,10 @@ export function buildOffice(traces = []) {
     if (!trace?.connectionId) continue;
     let entry = byAccount.get(trace.connectionId);
     if (!entry) {
+      const lowerConn = String(trace.connectionId || "").toLowerCase();
       const clientType = trace.clientType || (
-        trace.source === "app" || String(trace.connectionId || "").toLowerCase().includes("app") ? "app" : "cli"
+        trace.source === "app" || lowerConn.includes("app") ? "app" :
+        trace.source === "extension" || lowerConn.includes("extension") || trace.source === "ide" || lowerConn.includes("ide") ? "extension" : "cli"
       );
       entry = {
         connectionId: trace.connectionId,
@@ -72,6 +74,7 @@ export function buildOffice(traces = []) {
         clientIcon: trace.clientIcon,
         traces: [],
         tokens: { input: 0, output: 0, cached: 0 },
+        totalTokens: null,
         activeCount: 0,
         errorCount: 0,
         tools: [],
@@ -79,10 +82,13 @@ export function buildOffice(traces = []) {
         fallbackFrom: null,
         queued: 0,
         elapsedMs: 0,
-        cost: 0,
+        cost: null,
         pendingCount: 0,
         isLooping: false,
         logs: [],
+        sessionTitle: trace.sessionTitle || trace.account || "agent-factory",
+        lastText: null,
+        lastTextRole: null,
       };
       byAccount.set(trace.connectionId, entry);
     }
@@ -90,29 +96,46 @@ export function buildOffice(traces = []) {
     if (trace.isLooping) entry.isLooping = true;
     if (Array.isArray(trace.logs) && trace.logs.length > 0) entry.logs = trace.logs;
     if (trace.currentCommand && !entry.currentCommand) entry.currentCommand = trace.currentCommand;
+    if (trace.sessionTitle) entry.sessionTitle = trace.sessionTitle;
+    if (trace.lastText) {
+      entry.lastText = trace.lastText;
+      entry.lastTextRole = trace.lastTextRole;
+    }
     for (const call of trace.toolCalls || []) {
       const toolName = call.tool || call.type;
       if (toolName && !entry.tools.includes(toolName)) entry.tools.push(toolName);
     }
-    entry.tokens.input += trace.tokens?.input || 0;
-    entry.tokens.output += trace.tokens?.output || 0;
-    entry.tokens.cached += trace.tokens?.cached || 0;
+    entry.tokens.input += trace.tokens?.input ?? 0;
+    entry.tokens.output += trace.tokens?.output ?? 0;
+    entry.tokens.cached += trace.tokens?.cached ?? 0;
+    if (Number.isFinite(trace.totalTokens)) {
+      entry.totalTokens = (entry.totalTokens ?? 0) + trace.totalTokens;
+    }
     entry.queued += Math.max(1, trace.concurrent || 1);
-    entry.elapsedMs = Math.max(entry.elapsedMs, trace.elapsedMs || 0);
-    entry.cost += trace.cost || 0;
+    entry.elapsedMs = Math.max(entry.elapsedMs, trace.elapsedMs ?? 0);
+    if (Number.isFinite(trace.cost)) {
+      entry.cost = (entry.cost ?? 0) + trace.cost;
+    }
     if (trace.fallback?.from && !entry.fallbackFrom) entry.fallbackFrom = trace.fallback.from;
     if (trace.state === "error") {
       entry.errorCount += 1;
       entry.errorReason = entry.errorReason || trace.error || "error";
-    } else if (trace.state !== "done") {
+    } else if (trace.state === "streaming" || trace.state === "pending") {
       entry.activeCount += 1;
       if (trace.state === "pending") entry.pendingCount += 1;
     }
   }
 
+  const totalStations = byAccount.size;
+  const cols = totalStations > 35 ? 8 : totalStations > 18 ? 7 : 6;
+  const colGap = totalStations > 35 ? 175 : 200;
+  const rowGap = totalStations > 35 ? 145 : 170;
+  const rackX = Math.max(OFFICE.rackX, OFFICE.originX + cols * colGap + 120);
+  const podX = rackX + 360;
+
   const workstations = [...byAccount.values()].map((entry, i) => {
-    const col = i % OFFICE.agentCols;
-    const row = Math.floor(i / OFFICE.agentCols);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
     // Only even rows get a character: half the desks are empty, which reads as a
     // real office rather than a fully packed grid.
     // Every account has an agent at its desk; what they are doing is `mode`.
@@ -131,10 +154,17 @@ export function buildOffice(traces = []) {
             : entry.elapsedMs >= SLEEP_AFTER_MS
               ? "sleeping"
               : "happy";
-    const totalTokens = entry.tokens.input + entry.tokens.output + entry.tokens.cached;
-    const cachedPct = totalTokens ? Math.round((entry.tokens.cached / totalTokens) * 100) : 0;
+    const totalTokens = entry.totalTokens;
+    const cachedPct = totalTokens && entry.tokens.cached > 0
+      ? Math.round((entry.tokens.cached / totalTokens) * 100)
+      : null;
+    const fallbackWorkspace = entry.account || "agent-factory";
+    const sessionTitle = entry.sessionTitle || fallbackWorkspace;
     return {
       ...entry,
+      deskIndex: i,
+      traceId: entry.traces?.[0]?.traceId || entry.connectionId,
+      sessionTitle,
       occupied,
       state,
       mode,
@@ -146,8 +176,8 @@ export function buildOffice(traces = []) {
       totalTokens: entry.tokens.input + entry.tokens.output + entry.tokens.cached,
       totalLabel: humanSize(entry.tokens.input + entry.tokens.output + entry.tokens.cached),
       count: entry.traces.length,
-      x: OFFICE.originX + col * OFFICE.colGap,
-      y: OFFICE.floorY - row * OFFICE.rowGap,
+      x: OFFICE.originX + col * colGap,
+      y: OFFICE.floorY - row * rowGap,
       // Desks further back are drawn first and slightly smaller.
       depth: 1,
       busy: entry.activeCount,
@@ -163,7 +193,7 @@ export function buildOffice(traces = []) {
     const anyError = clients.some((w) => w.state === "error");
     return {
       provider,
-      x: OFFICE.podX,
+      x: podX,
       y: OFFICE.rackY - ((providers.length - 1) * OFFICE.podGap) / 2 + i * OFFICE.podGap,
       busy,
       load: Math.min(1, busy / OFFICE.podCapacity),
@@ -190,7 +220,7 @@ export function buildOffice(traces = []) {
     pods,
     fallbacks: [...laneMap.values()],
     rack: {
-      x: OFFICE.rackX,
+      x: rackX,
       y: OFFICE.rackY,
       active: workstations.reduce((s, w) => s + w.busy, 0),
     },
