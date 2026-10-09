@@ -3,7 +3,7 @@
 // Everything here derives from build-factory-graph's grouping so the scene and
 // the topology view agree on what an "account" is. No new data model.
 
-import { normalizeProvider } from "@/lib/traceContract";
+import { normalizeProvider } from "../../../lib/traceContract.js";
 
 export const STATE_COLORS = {
   pending: 0xf59e0b,
@@ -160,7 +160,10 @@ export function buildOffice(traces = []) {
     if (Array.isArray(trace.subagents) && trace.subagents.length > 0) {
       for (const sa of trace.subagents) {
         if (!entry.subagents.some((s) => s.id === sa.id || (s.role && s.role === sa.role))) {
-          entry.subagents.push(sa);
+          entry.subagents.push({
+            ...sa,
+            state: sa.state || sa.status || (trace.state === "streaming" ? "streaming" : "done"),
+          });
         }
       }
     }
