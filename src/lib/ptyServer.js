@@ -1,9 +1,31 @@
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 let ptyModule = null;
 let ptyLoadAttempted = false;
+
+function ensureSpawnHelperPermissions() {
+  if (process.platform === "win32") return;
+  try {
+    const ptyPath = require.resolve("node-pty");
+    const ptyRoot = path.dirname(path.dirname(ptyPath));
+    const prebuildsDir = path.join(ptyRoot, "prebuilds");
+    if (fs.existsSync(prebuildsDir)) {
+      for (const arch of fs.readdirSync(prebuildsDir)) {
+        const helper = path.join(prebuildsDir, arch, "spawn-helper");
+        if (fs.existsSync(helper)) {
+          try {
+            fs.chmodSync(helper, 0o755);
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+}
 
 /**
  * Dynamically loads node-pty if available
@@ -12,6 +34,7 @@ export async function getPtyModule() {
   if (ptyLoadAttempted) return ptyModule;
   ptyLoadAttempted = true;
   try {
+    ensureSpawnHelperPermissions();
     const mod = await import("node-pty");
     ptyModule = mod.default || mod;
     return ptyModule;

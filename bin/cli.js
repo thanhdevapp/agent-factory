@@ -105,11 +105,18 @@ function runForeground(port, open = true, isService = false) {
   console.log(`Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
 
   let child;
+  const isBuilt = fs.existsSync(path.join(PKG_ROOT, ".next", "BUILD_ID"));
+  const childEnv = {
+    ...process.env,
+    PORT: String(port),
+    NODE_ENV: process.env.NODE_ENV || (isBuilt ? "production" : "development"),
+  };
+
   if (serverEntry) {
     child = spawn(process.execPath, [serverEntry], {
       cwd: PKG_ROOT,
       stdio: "inherit",
-      env: { ...process.env, PORT: String(port) },
+      env: childEnv,
     });
   } else {
     const cmd = getNextCommand();
@@ -117,7 +124,7 @@ function runForeground(port, open = true, isService = false) {
     child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
       cwd: PKG_ROOT,
       stdio: "inherit",
-      env: { ...process.env, PORT: String(port) },
+      env: childEnv,
     });
   }
 
@@ -145,13 +152,19 @@ function startDaemon(port) {
 
   const out = fs.openSync(LOG_FILE, "a");
   let child;
+  const isBuilt = fs.existsSync(path.join(PKG_ROOT, ".next", "BUILD_ID"));
+  const daemonEnv = {
+    ...process.env,
+    PORT: String(port),
+    NODE_ENV: process.env.NODE_ENV || (isBuilt ? "production" : "development"),
+  };
 
   if (serverEntry) {
     child = spawn(process.execPath, [serverEntry], {
       cwd: PKG_ROOT,
       detached: true,
       stdio: ["ignore", out, out],
-      env: { ...process.env, PORT: String(port) },
+      env: daemonEnv,
     });
   } else {
     const cmd = getNextCommand();
@@ -160,7 +173,7 @@ function startDaemon(port) {
       cwd: PKG_ROOT,
       detached: true,
       stdio: ["ignore", out, out],
-      env: { ...process.env, PORT: String(port) },
+      env: daemonEnv,
     });
   }
 
