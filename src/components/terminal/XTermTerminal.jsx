@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { Terminal as TerminalIcon, AlertTriangle, ExternalLink, RefreshCw, Search } from "lucide-react";
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { Terminal as TerminalIcon, AlertTriangle, ExternalLink, RefreshCw, Search, ChevronUp, ChevronDown, X } from "lucide-react";
 import { triggerHandoff } from "@/lib/handoffClient";
 
 const SESSION_STORAGE_KEY_PREFIX = "agmon_term_history_";
 
-export default function XTermTerminal({
-  cwd = "",
-  onTitleChange,
-  isPoppedOut = false,
-  onPopIn,
-  onClose,
-}) {
+const XTermTerminal = forwardRef(function XTermTerminal(
+  {
+    cwd = "",
+    onTitleChange,
+    isPoppedOut = false,
+    onPopIn,
+    onClose,
+    onFocus,
+  },
+  ref
+) {
   const terminalRef = useRef(null);
   const xtermInstance = useRef(null);
   const fitAddonRef = useRef(null);
@@ -25,6 +29,38 @@ export default function XTermTerminal({
   const searchAddonRef = useRef(null);
 
   const effectiveCwd = cwd || (typeof window !== "undefined" ? window.location.pathname : "");
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      clear: () => {
+        xtermInstance.current?.clear();
+        try {
+          sessionStorage.removeItem(`${SESSION_STORAGE_KEY_PREFIX}${effectiveCwd}`);
+        } catch {}
+      },
+      focus: () => {
+        xtermInstance.current?.focus();
+      },
+      fit: () => {
+        try {
+          fitAddonRef.current?.fit();
+        } catch {}
+      },
+      write: (data) => {
+        xtermInstance.current?.write(data);
+      },
+      sendInput: (data) => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({ type: "input", data }));
+        }
+      },
+      toggleSearch: () => {
+        setShowSearch((prev) => !prev);
+      },
+    }),
+    [effectiveCwd]
+  );
 
   useEffect(() => {
     let disposed = false;
@@ -118,6 +154,24 @@ export default function XTermTerminal({
         term.open(terminalRef.current);
         fitAddon.fit();
         xtermInstance.current = term;
+
+        // Keyboard shortcuts inside terminal: Cmd+K / Ctrl+K to clear, Cmd+F / Ctrl+F to search
+        term.attachCustomKeyEventHandler((e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+            e.preventDefault();
+            setShowSearch((prev) => !prev);
+            return false;
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+            e.preventDefault();
+            term.clear();
+            try {
+              sessionStorage.removeItem(`${SESSION_STORAGE_KEY_PREFIX}${effectiveCwd}`);
+            } catch {}
+            return false;
+          }
+          return true;
+        });
 
         // Restore buffer from session storage if exists
         try {
@@ -291,23 +345,24 @@ export default function XTermTerminal({
           />
           <button
             onClick={() => handleSearch("prev")}
-            className="px-1.5 py-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60"
+            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 transition-colors"
             title="Previous match"
           >
-            ↑
+            <ChevronUp className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => handleSearch("next")}
-            className="px-1.5 py-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60"
+            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 transition-colors"
             title="Next match"
           >
-            ↓
+            <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setShowSearch(false)}
-            className="px-1.5 py-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 ml-1"
+            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 ml-0.5 transition-colors"
+            title="Close search"
           >
-            ✕
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -316,8 +371,13 @@ export default function XTermTerminal({
       <div
         ref={terminalRef}
         className="flex-1 w-full h-full overflow-hidden p-2"
-        onClick={() => xtermInstance.current?.focus()}
+        onClick={() => {
+          xtermInstance.current?.focus();
+          onFocus?.();
+        }}
       />
     </div>
   );
-}
+});
+
+export default XTermTerminal;

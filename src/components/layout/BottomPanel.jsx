@@ -15,6 +15,7 @@ import {
   Play,
   Pause,
   ExternalLink,
+  Columns2,
 } from "lucide-react";
 import XTermTerminal from "../terminal/XTermTerminal";
 
@@ -35,6 +36,44 @@ export default function BottomPanel({
   const [mounted, setMounted] = useState(false);
   const logContainerRef = useRef(null);
 
+  // Terminal split state for docked terminal
+  const [terminalPanes, setTerminalPanes] = useState([
+    { id: "bottom-pane-1", cwd: projectCwd, title: "Terminal 1" },
+  ]);
+  const [activeBottomPaneId, setActiveBottomPaneId] = useState("bottom-pane-1");
+  const bottomTermRefs = useRef({});
+
+  const handleSplitBottomTerminal = () => {
+    if (terminalPanes.length >= 2) return;
+    const newId = `bottom-pane-${Date.now()}`;
+    setTerminalPanes((prev) => [
+      ...prev,
+      { id: newId, cwd: projectCwd, title: "Terminal (Split)" },
+    ]);
+    setActiveBottomPaneId(newId);
+  };
+
+  const handleCloseBottomPane = (paneId, e) => {
+    e?.stopPropagation();
+    if (terminalPanes.length <= 1) return;
+    const remaining = terminalPanes.filter((p) => p.id !== paneId);
+    setTerminalPanes(remaining);
+    if (activeBottomPaneId === paneId) {
+      setActiveBottomPaneId(remaining[0].id);
+    }
+  };
+
+  const handleClearTerminalOrLogs = () => {
+    if (currentTab === "terminal") {
+      const activeTerm = bottomTermRefs.current[activeBottomPaneId];
+      if (activeTerm) {
+        activeTerm.clear();
+      }
+    } else {
+      setClearedAt(Date.now());
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -42,6 +81,18 @@ export default function BottomPanel({
   useEffect(() => {
     setCurrentTab(activeTab);
   }, [activeTab]);
+
+  // Keyboard shortcut Cmd+\ / Ctrl+\ when terminal is active
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (currentTab === "terminal" && (e.ctrlKey || e.metaKey) && e.key === "\\") {
+        e.preventDefault();
+        handleSplitBottomTerminal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentTab, terminalPanes]);
 
   // Generate logs from traces with stable IDs and capped memory
   const logs = useMemo(() => {
@@ -256,37 +307,70 @@ export default function BottomPanel({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
-          {/* Filter Search */}
-          <div className="flex items-center gap-1 bg-[#1e1e1e] border border-[#3e3e42] rounded px-1.5 py-0.5 h-5">
-            <Search className="w-2.5 h-2.5 text-slate-500" />
-            <input
-              type="text"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Filter logs..."
-              className="bg-transparent text-[10px] text-slate-200 outline-none w-20 sm:w-32 placeholder:text-slate-500"
-            />
-          </div>
+          {currentTab === "terminal" ? (
+            <>
+              {/* Split Terminal button */}
+              <button
+                onClick={handleSplitBottomTerminal}
+                disabled={terminalPanes.length >= 2}
+                className={`p-1 rounded text-xs transition-colors ${
+                  terminalPanes.length >= 2
+                    ? "text-cyan-400 bg-cyan-950/40 cursor-default"
+                    : "text-slate-400 hover:text-white hover:bg-[#333333] cursor-pointer"
+                }`}
+                title={
+                  terminalPanes.length >= 2
+                    ? "Terminal Split (2 panes active)"
+                    : "Split Terminal (Cmd+\\)"
+                }
+              >
+                <Columns2 className="w-3 h-3" />
+              </button>
 
-          {/* Auto-scroll toggle */}
-          <button
-            onClick={() => setAutoScroll((p) => !p)}
-            title={autoScroll ? "Pause auto-scroll" : "Resume auto-scroll"}
-            className={`p-1 rounded text-xs transition-colors ${
-              autoScroll ? "text-cyan-400 bg-cyan-950/40" : "text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            {autoScroll ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-          </button>
+              {/* Clear Terminal Buffer */}
+              <button
+                onClick={handleClearTerminalOrLogs}
+                title="Clear terminal buffer (Cmd+K)"
+                className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Filter Search */}
+              <div className="flex items-center gap-1 bg-[#1e1e1e] border border-[#3e3e42] rounded px-1.5 py-0.5 h-5">
+                <Search className="w-2.5 h-2.5 text-slate-500" />
+                <input
+                  type="text"
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  placeholder="Filter logs..."
+                  className="bg-transparent text-[10px] text-slate-200 outline-none w-20 sm:w-32 placeholder:text-slate-500"
+                />
+              </div>
 
-          {/* Clear Logs */}
-          <button
-            onClick={() => setClearedAt(Date.now())}
-            title="Clear log console"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+              {/* Auto-scroll toggle */}
+              <button
+                onClick={() => setAutoScroll((p) => !p)}
+                title={autoScroll ? "Pause auto-scroll" : "Resume auto-scroll"}
+                className={`p-1 rounded text-xs transition-colors ${
+                  autoScroll ? "text-cyan-400 bg-cyan-950/40" : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                {autoScroll ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              </button>
+
+              {/* Clear Logs */}
+              <button
+                onClick={handleClearTerminalOrLogs}
+                title="Clear log console"
+                className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </>
+          )}
 
           {/* Pop out to Floating Drawer */}
           {onPopOutTerminal && currentTab === "terminal" && (
@@ -323,8 +407,76 @@ export default function BottomPanel({
 
       {/* Panel Body: Terminal or Logs */}
       {currentTab === "terminal" ? (
-        <div className="flex-1 w-full h-full min-h-0 bg-[#0a0d14] relative">
-          <XTermTerminal cwd={projectCwd} />
+        <div
+          className={`flex-1 w-full h-full min-h-0 bg-[#0a0d14] relative overflow-hidden ${
+            terminalPanes.length > 1
+              ? "grid grid-cols-2 divide-x divide-[#2b2b2b]"
+              : "flex flex-col"
+          }`}
+        >
+          {terminalPanes.map((pane, pIdx) => {
+            const isPaneActive = activeBottomPaneId === pane.id;
+            const isSplit = terminalPanes.length > 1;
+
+            return (
+              <div
+                key={pane.id}
+                className={`flex flex-col h-full min-h-0 min-w-0 bg-[#0a0d14] relative transition-colors ${
+                  isSplit && isPaneActive ? "ring-1 ring-inset ring-cyan-500/30" : ""
+                }`}
+              >
+                {/* Header bar displayed when split into multiple panes */}
+                {isSplit && (
+                  <div
+                    className={`h-6 min-h-[24px] px-2 flex items-center justify-between border-b text-[10px] font-mono select-none ${
+                      isPaneActive
+                        ? "bg-[#101726] border-cyan-500/40 text-cyan-300"
+                        : "bg-[#0b0e14] border-[#2b2b2b] text-slate-400"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Terminal className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+                      <span className="truncate">
+                        {pane.title || `Pane ${pIdx + 1}`}
+                      </span>
+                      {isPaneActive && (
+                        <span className="px-1 text-[8px] bg-cyan-950/80 text-cyan-300 border border-cyan-600/30 rounded font-semibold">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => handleCloseBottomPane(pane.id, e)}
+                      className="p-0.5 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors"
+                      title="Close split pane"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Terminal Instance */}
+                <div className="flex-1 w-full h-full min-h-0 relative">
+                  <XTermTerminal
+                    ref={(el) => {
+                      if (el) {
+                        bottomTermRefs.current[pane.id] = el;
+                      } else {
+                        delete bottomTermRefs.current[pane.id];
+                      }
+                    }}
+                    cwd={pane.cwd}
+                    onTitleChange={(title) => {
+                      setTerminalPanes((prev) =>
+                        prev.map((p) => (p.id === pane.id ? { ...p, title } : p))
+                      );
+                    }}
+                    onFocus={() => setActiveBottomPaneId(pane.id)}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div
