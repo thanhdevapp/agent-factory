@@ -537,6 +537,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     deskEntries = nextDeskEntries;
     podEntries = nextPodEntries;
     couriers = nextCouriers;
+    droneEntries = nextDroneEntries;
 
     refreshSelection();
 
@@ -760,6 +761,10 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       c.flame.ellipse(0, 16, 7 + Math.sin(t * 0.04) * 1.5, 10 + Math.sin(t * 0.05) * 3).fill({ color: 0xfbbf24, alpha: 0.55 });
       c.flame.ellipse(0, 14, 4, 6).fill({ color: 0xfff1b8, alpha: 0.85 });
       c.drone.root.alpha = Math.min(1, p * 8) * Math.min(1, (1 - p) * 8);
+    }
+
+    for (const de of droneEntries) {
+      de.drone.animate(t, de.ws.x, de.ws.y);
     }
 
     dispatcher.animate(t, rackActive ? 1 : 0);
