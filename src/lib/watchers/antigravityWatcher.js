@@ -17,6 +17,15 @@ const TOOL_MAP = {
   define_subagent: "agent",
 };
 
+function cleanArgString(val) {
+  if (typeof val !== "string") return "";
+  let s = val.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 function normalizeToolCall(tc) {
   if (!tc || !tc.name) return { type: "mcp", detail: null };
   const name = tc.name;
@@ -24,8 +33,8 @@ function normalizeToolCall(tc) {
 
   // 1. MCP Tools inspection
   if (name === "call_mcp_tool") {
-    const srv = String(args.ServerName || "").toLowerCase();
-    const tool = String(args.ToolName || "").toLowerCase();
+    const srv = cleanArgString(args.ServerName).toLowerCase();
+    const tool = cleanArgString(args.ToolName).toLowerCase();
     if (srv.includes("gitnexus") || tool.includes("cypher") || tool.includes("pdg_query") || tool.includes("impact")) {
       return { type: "gitnexus", detail: `GitNexus: ${tool}` };
     }
@@ -37,7 +46,7 @@ function normalizeToolCall(tc) {
 
   // 2. Terminal commands inspection
   if (name === "run_command") {
-    const cmd = String(args.CommandLine || "").trim();
+    const cmd = cleanArgString(args.CommandLine);
     const cmdLower = cmd.toLowerCase();
     if (cmdLower.startsWith("docker") || cmdLower.includes("docker exec") || cmdLower.includes("docker-compose")) {
       return { type: "docker", detail: cmd.length > 50 ? `${cmd.slice(0, 47)}...` : cmd };
@@ -53,7 +62,7 @@ function normalizeToolCall(tc) {
 
   // 3. Native tools mapping
   const mapped = TOOL_MAP[name];
-  const target = args.TargetFile || args.AbsolutePath || args.query || "";
+  const target = cleanArgString(args.TargetFile || args.AbsolutePath || args.query);
   const detail = target ? `${name}: ${path.basename(target)}` : name;
 
   if (mapped) return { type: mapped, detail };
@@ -281,9 +290,10 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
             if (Array.isArray(entry.tool_calls) && entry.tool_calls.length > 0) {
               lastToolEntry = entry;
               for (const tc of entry.tool_calls) {
-                if (tc.args?.Cwd && !detectedCwd) detectedCwd = tc.args.Cwd;
+                const rawCwd = cleanArgString(tc.args?.Cwd);
+                if (rawCwd && !detectedCwd) detectedCwd = rawCwd;
                 if (!detectedCwd && (tc.args?.TargetFile || tc.args?.AbsolutePath)) {
-                  const p = tc.args.TargetFile || tc.args.AbsolutePath;
+                  const p = cleanArgString(tc.args.TargetFile || tc.args.AbsolutePath);
                   if (p.includes("/Projects/")) detectedCwd = p.split("/").slice(0, 5).join("/");
                 }
                 const { type, detail } = normalizeToolCall(tc);
@@ -305,12 +315,12 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
               }
             }
 
-            if (entry.status === "ERROR" || (entry.type === "GENERIC" && entry.content && entry.content.includes("error"))) {
+            if (entry.status === "ERROR") {
               recentLogs.push({
                 timestamp: entry.created_at || new Date().toISOString(),
                 type: "error",
                 summary: "Error",
-                detail: String(entry.content || "Command failed").slice(0, 100),
+                detail: String(entry.error || entry.content || "Command failed").slice(0, 100),
               });
             }
 
@@ -320,12 +330,17 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           }
         }
 
+        const isRecent = (now - mtime) < 90 * 1000;
+        const isPending = (now - mtime) < 15 * 60 * 1000;
+
         let state = "done";
         if (lastToolEntry?.status === "RUNNING") {
           state = "streaming";
         } else if (lastStep?.type === "USER_INPUT") {
           state = "pending";
-        } else if (now - mtime < 45 * 1000) {
+        } else if (isRecent) {
+          state = "streaming";
+        } else if (isPending) {
           state = "idle";
         }
 

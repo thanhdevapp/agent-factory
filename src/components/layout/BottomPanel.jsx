@@ -46,11 +46,13 @@ export default function BottomPanel({
     const formatLogTime = (ts) => {
       if (!mounted) return "--:--:--";
       if (ts) {
-        if (typeof ts === "string" && ts.includes(":")) return ts;
         const d = new Date(ts);
-        if (!isNaN(d.getTime())) return d.toLocaleTimeString();
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString([], { hour12: false });
+        }
+        if (typeof ts === "string") return ts;
       }
-      return new Date().toLocaleTimeString();
+      return new Date().toLocaleTimeString([], { hour12: false });
     };
 
     traces.forEach((t, tIdx) => {
@@ -63,10 +65,18 @@ export default function BottomPanel({
       // 1. Incorporate actual real-time event logs if present
       if (Array.isArray(t.logs) && t.logs.length > 0) {
         t.logs.forEach((logItem, lIdx) => {
-          const rawType = (logItem.type || "").toUpperCase();
-          const level = rawType.includes("ERR") ? "ERROR" : rawType.includes("TOOL") ? "TOOL" : "STREAM";
+          const rawType = (logItem.type || "").toLowerCase();
+          const isError = rawType.includes("err");
+          const isTool = !isError && (
+            rawType.includes("tool") ||
+            ["bash", "read", "edit", "search", "mcp", "docker", "git", "gitnexus", "browser", "agent"].includes(rawType)
+          );
+          const level = isError ? "ERROR" : isTool ? "TOOL" : "STREAM";
+
+          const rawTs = logItem.timestamp ? new Date(logItem.timestamp).getTime() : 0;
           list.push({
             id: `${traceUniqueId}-${logItem.timestamp || lIdx}-${lIdx}`,
+            rawTimestamp: isNaN(rawTs) ? 0 : rawTs,
             time: formatLogTime(logItem.timestamp),
             level,
             provider,
@@ -79,9 +89,11 @@ export default function BottomPanel({
         });
       } else {
         // Fallback to trace state snapshot with stable IDs
+        const fallbackTs = t.startedAt || 0;
         if (t.activeTool) {
           list.push({
             id: `${traceUniqueId}-tool-${t.activeTool}`,
+            rawTimestamp: fallbackTs,
             time: formatLogTime(t.timestamp),
             level: "TOOL",
             provider,
@@ -96,6 +108,7 @@ export default function BottomPanel({
         if (t.state === "streaming" || t.state === "busy") {
           list.push({
             id: `${traceUniqueId}-stream`,
+            rawTimestamp: fallbackTs,
             time: formatLogTime(t.timestamp),
             level: "STREAM",
             provider,
@@ -109,6 +122,7 @@ export default function BottomPanel({
         if (t.state === "error") {
           list.push({
             id: `${traceUniqueId}-err`,
+            rawTimestamp: fallbackTs,
             time: formatLogTime(t.timestamp),
             level: "ERROR",
             provider,
@@ -125,7 +139,8 @@ export default function BottomPanel({
     if (list.length === 0) {
       list.push({
         id: "sys-init",
-        time: mounted ? new Date().toLocaleTimeString() : "--:--:--",
+        rawTimestamp: Date.now(),
+        time: mounted ? new Date().toLocaleTimeString([], { hour12: false }) : "--:--:--",
         level: "SYSTEM",
         provider: "system",
         clientType: "cli",
@@ -134,11 +149,14 @@ export default function BottomPanel({
       });
     }
 
+    // Chronologically sort all logs ascending so latest actions appear at the bottom
+    list.sort((a, b) => (a.rawTimestamp || 0) - (b.rawTimestamp || 0));
+
     // Keep only the most recent 250 log entries to prevent memory and DOM bloat
     const capped = list.length > 250 ? list.slice(-250) : list;
 
     if (clearedAt) {
-      return capped.filter((l) => l.time > clearedAt);
+      return capped.filter((l) => (l.rawTimestamp || 0) > clearedAt);
     }
     return capped;
   }, [traces, clearedAt, mounted]);
@@ -253,7 +271,7 @@ export default function BottomPanel({
 
           {/* Clear Logs */}
           <button
-            onClick={() => setClearedAt(new Date().toLocaleTimeString())}
+            onClick={() => setClearedAt(Date.now())}
             title="Clear log console"
             className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#333333] transition-colors"
           >

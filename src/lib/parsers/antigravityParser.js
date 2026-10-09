@@ -17,19 +17,28 @@ const TOOL_MAP = {
   define_subagent: "agent",
 };
 
+function cleanArgString(val) {
+  if (typeof val !== "string") return "";
+  let s = val.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 export function normalizeToolCategory(name, args = {}) {
   const n = String(name || "").toLowerCase();
 
   if (n === "call_mcp_tool") {
-    const srv = String(args.ServerName || "").toLowerCase();
-    const tool = String(args.ToolName || "").toLowerCase();
+    const srv = cleanArgString(args.ServerName).toLowerCase();
+    const tool = cleanArgString(args.ToolName).toLowerCase();
     if (srv.includes("gitnexus") || tool.includes("cypher") || tool.includes("impact")) return "gitnexus";
     if (srv.includes("playwright") || srv.includes("browser") || tool.startsWith("browser_")) return "browser";
     return "mcp";
   }
 
   if (n === "run_command") {
-    const cmd = String(args.CommandLine || "").trim().toLowerCase();
+    const cmd = cleanArgString(args.CommandLine).toLowerCase();
     if (cmd.startsWith("docker") || cmd.includes("docker exec")) return "docker";
     if (cmd.startsWith("git ") || cmd.startsWith("gh ")) return "git";
     if (cmd.includes("gitnexus")) return "gitnexus";
@@ -147,9 +156,10 @@ export async function parseAntigravityTranscript(sessionId) {
     // Detect Cwd from tool args if available
     if (Array.isArray(entry.tool_calls)) {
       for (const tc of entry.tool_calls) {
-        if (tc.args?.Cwd && !detectedCwd) detectedCwd = tc.args.Cwd;
+        const rawCwd = cleanArgString(tc.args?.Cwd);
+        if (rawCwd && !detectedCwd) detectedCwd = rawCwd;
         if (!detectedCwd && (tc.args?.TargetFile || tc.args?.AbsolutePath)) {
-          const p = tc.args.TargetFile || tc.args.AbsolutePath;
+          const p = cleanArgString(tc.args.TargetFile || tc.args.AbsolutePath);
           if (p.includes("/Projects/")) detectedCwd = p.split("/").slice(0, 5).join("/");
         }
       }
