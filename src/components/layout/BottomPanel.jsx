@@ -14,7 +14,9 @@ import {
   ArrowDownCircle,
   Play,
   Pause,
+  ExternalLink,
 } from "lucide-react";
+import XTermTerminal from "../terminal/XTermTerminal";
 
 export default function BottomPanel({
   traces = [],
@@ -23,6 +25,8 @@ export default function BottomPanel({
   onClose,
   isMaximized = false,
   onToggleMaximize,
+  onPopOutTerminal,
+  projectCwd = "",
 }) {
   const [currentTab, setCurrentTab] = useState(activeTab);
   const [filterText, setFilterText] = useState("");
@@ -191,7 +195,7 @@ export default function BottomPanel({
   }, [filteredLogs, autoScroll]);
 
   const tabs = [
-    { id: "logs", label: "Agent Output", icon: Terminal, count: logs.length },
+    { id: "logs", label: "Agent Output", icon: FileText, count: logs.length },
     {
       id: "tools",
       label: "Tool Executions",
@@ -203,6 +207,12 @@ export default function BottomPanel({
       label: "Problems",
       icon: AlertTriangle,
       count: logs.filter((l) => l.level === "ERROR").length,
+    },
+    {
+      id: "terminal",
+      label: "Terminal",
+      icon: Terminal,
+      count: 0,
     },
   ];
 
@@ -278,6 +288,17 @@ export default function BottomPanel({
             <Trash2 className="w-3 h-3" />
           </button>
 
+          {/* Pop out to Floating Drawer */}
+          {onPopOutTerminal && currentTab === "terminal" && (
+            <button
+              onClick={onPopOutTerminal}
+              title="Pop out into floating terminal drawer"
+              className="p-1 rounded text-cyan-400 hover:text-white hover:bg-[#333333] transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          )}
+
           {/* Maximize / Restore */}
           {onToggleMaximize && (
             <button
@@ -300,17 +321,22 @@ export default function BottomPanel({
         </div>
       </div>
 
-      {/* Terminal Monospace Body */}
-      <div
-        ref={logContainerRef}
-        className="flex-1 p-2 font-mono text-[11px] leading-relaxed overflow-y-auto bg-[#181818] select-text divide-y divide-[#222222]"
-      >
-        {filteredLogs.length === 0 ? (
-          <div className="text-slate-500 italic py-4 text-center">
-            No logs match the current filters
-          </div>
-        ) : (
-          filteredLogs.map((log) => {
+      {/* Panel Body: Terminal or Logs */}
+      {currentTab === "terminal" ? (
+        <div className="flex-1 w-full h-full min-h-0 bg-[#0a0d14] relative">
+          <XTermTerminal cwd={projectCwd} />
+        </div>
+      ) : (
+        <div
+          ref={logContainerRef}
+          className="flex-1 p-2 font-mono text-[11px] leading-relaxed overflow-y-auto bg-[#181818] select-text divide-y divide-[#222222]"
+        >
+          {filteredLogs.length === 0 ? (
+            <div className="text-slate-500 italic py-4 text-center">
+              No logs match the current filters
+            </div>
+          ) : (
+            filteredLogs.map((log) => {
             const isTool = log.level === "TOOL";
             const isError = log.level === "ERROR";
             const isApp = log.clientType === "app";
@@ -356,6 +382,7 @@ export default function BottomPanel({
           })
         )}
       </div>
+      )}
     </div>
   );
 }

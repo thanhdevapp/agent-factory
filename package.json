@@ -1,6 +1,6 @@
 {
   "name": "agmon",
-  "version": "0.2.3",
+  "version": "0.5.0",
   "description": "Realtime AI Agent Office & Activity Visualizer for Antigravity, Claude Code, OpenAI Codex & AI CLIs",
   "type": "module",
   "bin": {
@@ -12,6 +12,7 @@
     "public",
     "screens",
     ".next",
+    "server.js",
     "jsconfig.json",
     "next.config.mjs",
     "postcss.config.mjs",
@@ -20,7 +21,7 @@
   "scripts": {
     "dev": "next dev --port 3030",
     "build": "next build",
-    "start": "next start --port 3030",
+    "start": "node server.js",
     "prepack": "next build && rm -rf .next/cache .next/dev .next/turbopack .next/diagnostics",
     "lint": "eslint ."
   },
@@ -28,6 +29,12 @@
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-popover": "^1.2.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
+    "@xterm/addon-unicode11": "^0.9.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "diff": "^9.0.0",
@@ -43,7 +50,8 @@
     "react-resizable-panels": "^4.14.3",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.7.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "ws": "^8.22.0"
   },
   "keywords": [
     "agmon",
@@ -66,5 +74,8 @@
   },
   "devDependencies": {
     "playwright": "^1.64.0"
+  },
+  "optionalDependencies": {
+    "node-pty": "^1.1.0"
   }
 }

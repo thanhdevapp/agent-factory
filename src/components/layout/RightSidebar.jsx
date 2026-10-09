@@ -15,11 +15,14 @@ import {
   AppWindow,
   RotateCcw,
   Sparkles,
+  Code2,
 } from "lucide-react";
 import SessionChatView from "../chat/SessionChatView.js";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
+import { triggerHandoff } from "@/lib/handoffClient";
 import { getItemById } from "@/lib/catalog/index.js";
 import { getSupporterState } from "@/lib/supporterStore.js";
+import ProjectActionBar from "../project/ProjectActionBar";
 
 export default function RightSidebar({
   selectedAgent = null,
@@ -279,6 +282,46 @@ export default function RightSidebar({
                     </div>
                   </div>
                 </div>
+
+                {/* Developer Handoff Card */}
+                {selectedAgent.cwd && (
+                  <div className="bg-[#252526] border border-[#333333] rounded-lg p-2.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        DEVELOPER HANDOFF
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono truncate max-w-[140px]" title={selectedAgent.cwd}>
+                        {selectedAgent.cwd.split("/").pop()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => triggerHandoff({ path: selectedAgent.cwd, target: "terminal" })}
+                        className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded bg-[#1e1e1e] hover:bg-[#2d2d2e] border border-[#3e3e42] hover:border-emerald-500/50 text-emerald-400 text-xs font-medium transition-colors cursor-pointer"
+                        title={`Open ${selectedAgent.cwd} in Ghostty / Terminal`}
+                      >
+                        <Terminal className="w-3.5 h-3.5" />
+                        <span>Terminal</span>
+                      </button>
+                      <button
+                        onClick={() => triggerHandoff({ path: selectedAgent.cwd, target: "editor" })}
+                        className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded bg-[#1e1e1e] hover:bg-[#2d2d2e] border border-[#3e3e42] hover:border-cyan-500/50 text-cyan-400 text-xs font-medium transition-colors cursor-pointer"
+                        title={`Open ${selectedAgent.cwd} in VS Code / Cursor`}
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                        <span>VS Code</span>
+                      </button>
+                    </div>
+
+                    {/* Phase 3: Project Scripts Action Bar */}
+                    <div className="pt-2 border-t border-[#333333]">
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                        PROJECT SCRIPTS
+                      </div>
+                      <ProjectActionBar cwd={selectedAgent.cwd} />
+                    </div>
+                  </div>
+                )}
 
                 {/* State & Activity Card */}
                 <div className="bg-[#252526] border border-[#333333] rounded-lg p-3 space-y-2">

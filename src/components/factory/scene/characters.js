@@ -582,11 +582,12 @@ export function createDesk({
   cost = 0,
   cachedPct = 0,
   queued = 1,
-  depth = 1,
   isLooping = false,
   pet = "none",
   props = [],
   trophy = "none",
+  detectedPort = null,
+  webPort = null,
 }) {
   const root = new Container();
   const W = 150;
@@ -649,6 +650,25 @@ export function createDesk({
   monTagText.x = W / 2 - 33;
   monTagText.y = -7.5;
   root.addChild(monTagText);
+
+  // Advertised localhost web port badge (Orca Localhost Pattern)
+  const portNum = detectedPort?.port || webPort;
+  if (portNum) {
+    const portLabel = `:${portNum}`;
+    const portTag = new Graphics();
+    portTag.roundRect(W / 2 - 17, -13, 27, 11, 2.5).fill({ color: 0x083344, alpha: 0.95 });
+    portTag.roundRect(W / 2 - 17, -13, 27, 11, 2.5).stroke({ width: 0.8, color: 0x06b6d4, alpha: 0.95 });
+    root.addChild(portTag);
+
+    const portTagText = new Text({
+      text: portLabel,
+      style: { fontFamily: getMonoFont(), fontSize: 7, fill: 0x67e8f9, fontWeight: "900" },
+    });
+    portTagText.anchor.set(0.5, 0.5);
+    portTagText.x = W / 2 - 3.5;
+    portTagText.y = -7.5;
+    root.addChild(portTagText);
+  }
 
   const keys = new Graphics();
   keys.roundRect(W / 2 + 14, 29, 34, 8, 3).fill({ color: 0x0b0e13 });

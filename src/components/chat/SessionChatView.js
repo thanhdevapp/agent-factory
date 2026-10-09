@@ -25,9 +25,11 @@ import {
   RotateCcw,
   PanelRightClose,
   AppWindow,
+  Code2,
 } from "lucide-react";
 import { useSessionTranscript } from "../../lib/useSessionTranscript.js";
 import { openChatInNewWindow } from "../../lib/windowManager.js";
+import { triggerHandoff } from "../../lib/handoffClient.js";
 import ChatMessageItem from "./ChatMessageItem.js";
 import ImageLightboxModal from "./ImageLightboxModal.js";
 import SessionSearch from "./SessionSearch.js";
@@ -120,6 +122,28 @@ export default function SessionChatView({
     targetTraceId,
     isAgentActive
   );
+
+  const [handoffFeedback, setHandoffFeedback] = useState(null);
+
+  const workingDir =
+    session?.cwd ||
+    sessionTrace?.cwd ||
+    session?.projectRoot ||
+    sessionTrace?.projectRoot ||
+    "";
+
+  const handleHandoff = async (target, app) => {
+    if (!workingDir) return;
+    const res = await triggerHandoff({ path: workingDir, target, app });
+    if (res.success) {
+      setHandoffFeedback(target === "editor" ? "IDE Launched" : "Terminal Launched");
+    } else if (res.copiedToClipboard) {
+      setHandoffFeedback("Path copied to clipboard");
+    } else {
+      setHandoffFeedback("Launch failed");
+    }
+    setTimeout(() => setHandoffFeedback(null), 2500);
+  };
 
   // Shortcut Ctrl/Cmd + F to toggle transcript search bar
   useEffect(() => {
@@ -282,6 +306,26 @@ export default function SessionChatView({
               </button>
             )}
 
+            {/* Native Handoff Buttons */}
+            {workingDir && (
+              <>
+                <button
+                  onClick={() => handleHandoff("terminal")}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-emerald-400 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                  title={`Open ${workingDir} in Terminal (Ghostty / System default)`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleHandoff("editor")}
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-cyan-400 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                  title={`Open ${workingDir} in IDE (VS Code / Cursor)`}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+
             {/* Export */}
             <button
               onClick={() => setIsExportModalOpen(true)}
@@ -356,6 +400,13 @@ export default function SessionChatView({
                 >
                   {modeText}
                 </span>
+
+                {/* Handoff Feedback badge */}
+                {handoffFeedback && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-500/50 bg-emerald-950/80 text-emerald-300 animate-in fade-in">
+                    {handoffFeedback}
+                  </span>
+                )}
               </div>
 
               <div className="text-[11px] text-[var(--text-muted)] font-mono truncate mt-0.5 flex items-center gap-1.5">
@@ -440,6 +491,28 @@ export default function SessionChatView({
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Replay</span>
               </button>
+            )}
+
+            {/* Native Handoff Buttons */}
+            {workingDir && (
+              <div className="flex items-center gap-1 border-r border-[var(--border-subtle)] pr-1.5 mr-0.5">
+                <button
+                  onClick={() => handleHandoff("terminal")}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-emerald-400 text-xs font-medium border border-[var(--border-subtle)] transition-colors cursor-pointer"
+                  title={`Open ${workingDir} in Terminal (Ghostty / System default)`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Terminal</span>
+                </button>
+                <button
+                  onClick={() => handleHandoff("editor")}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-cyan-400 text-xs font-medium border border-[var(--border-subtle)] transition-colors cursor-pointer"
+                  title={`Open ${workingDir} in IDE (VS Code / Cursor)`}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">IDE</span>
+                </button>
+              </div>
             )}
 
             {/* Export */}

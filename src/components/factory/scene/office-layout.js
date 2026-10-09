@@ -116,6 +116,9 @@ export function buildOffice(traces = []) {
         trophy: trace.trophy || null,
         theme: trace.theme || null,
         sessionTitle: trace.sessionTitle || trace.account || "agent-factory",
+        cwd: trace.cwd || null,
+        detectedPort: trace.detectedPort || null,
+        webPort: trace.webPort || null,
         lastText: null,
         lastTextRole: null,
       };
@@ -129,6 +132,9 @@ export function buildOffice(traces = []) {
       }
     }
     entry.traces.push(trace);
+    if (trace.cwd && !entry.cwd) entry.cwd = trace.cwd;
+    if (trace.detectedPort && !entry.detectedPort) entry.detectedPort = trace.detectedPort;
+    if (trace.webPort && !entry.webPort) entry.webPort = trace.webPort;
     if (trace.skin && !entry.skin) entry.skin = trace.skin;
     if (trace.aura && !entry.aura) entry.aura = trace.aura;
     if (trace.pet && !entry.pet) entry.pet = trace.pet;

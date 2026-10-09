@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Smartphone, Terminal, AlertTriangle, MessageSquare } from "lucide-react";
+import { Smartphone, Terminal, AlertTriangle, MessageSquare, Code2 } from "lucide-react";
+import { triggerHandoff } from "@/lib/handoffClient";
+import ProjectActionBar from "../project/ProjectActionBar";
 
 const MODE_LABELS = {
   streaming: "Working",
@@ -252,11 +254,41 @@ export default function AgentPanel({ ws, onClose, onOpenChat }) {
         </div>
       )}
 
+      {/* 1-Click Native Handoff Actions */}
+      {ws.cwd && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => triggerHandoff({ path: ws.cwd, target: "terminal" })}
+            className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/50 text-emerald-400 text-xs font-medium transition-colors shadow-sm cursor-pointer"
+            title={`Open ${ws.cwd} in Ghostty / Terminal`}
+          >
+            <Terminal className="w-3.5 h-3.5" />
+            <span>Terminal</span>
+          </button>
+          <button
+            onClick={() => triggerHandoff({ path: ws.cwd, target: "editor" })}
+            className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/50 text-cyan-400 text-xs font-medium transition-colors shadow-sm cursor-pointer"
+            title={`Open ${ws.cwd} in VS Code / Cursor`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            <span>VS Code</span>
+          </button>
+        </div>
+
+        {/* Phase 3: Project Scripts Action Bar */}
+        <div className="mt-2.5 bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Project Scripts
+          </div>
+          <ProjectActionBar cwd={ws.cwd} />
+        </div>
+      )}
+
       {/* Open AI Chat View Button */}
       {onOpenChat && (
         <button
           onClick={() => onOpenChat(ws)}
-          className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-lg transition-all hover:border-cyan-400 group cursor-pointer"
+          className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-xs font-semibold shadow-lg transition-all hover:border-cyan-400 group cursor-pointer"
         >
           <MessageSquare className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
           <span>Open AI Conversation Window</span>

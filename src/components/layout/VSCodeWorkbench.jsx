@@ -12,6 +12,7 @@ import BottomPanel from "./BottomPanel";
 import RightSidebar from "./RightSidebar";
 import StatusBar from "./StatusBar";
 import CommandPalette from "./CommandPalette";
+import TerminalDrawer from "../terminal/TerminalDrawer";
 import OfficeCanvas from "../factory/office-canvas";
 import AgentGraphView from "../factory/AgentGraphView";
 import TokenReportView from "../reports/TokenReportView";
@@ -65,6 +66,7 @@ export default function VSCodeWorkbench({
   const [themeModalTab, setThemeModalTab] = useState("themes");
   const [isSupporter, setIsSupporter] = useState(false);
   const [isZenFullscreen, setIsZenFullscreen] = useState(false);
+  const [isTerminalPoppedOut, setIsTerminalPoppedOut] = useState(false);
 
   // Toggle Zen Fullscreen Chill Mode (with native browser fullscreen integration)
   const handleToggleZenFullscreen = useCallback((forcedState) => {
@@ -340,10 +342,21 @@ export default function VSCodeWorkbench({
         return;
       }
 
-      // Cmd+J -> Toggle Bottom Panel
+      // Cmd+J / Cmd+` -> Toggle Terminal (popped-out drawer or bottom panel terminal tab)
       if (modKey && (e.key === "j" || e.key === "J" || e.key === "`")) {
         e.preventDefault();
-        setLayout((prev) => ({ ...prev, isBottomPanelVisible: !prev.isBottomPanelVisible }));
+        if (isTerminalPoppedOut) {
+          setIsTerminalPoppedOut(false);
+        } else {
+          setLayout((prev) => {
+            const willBeVisible = !prev.isBottomPanelVisible;
+            return {
+              ...prev,
+              isBottomPanelVisible: willBeVisible,
+              activeBottomTab: willBeVisible ? "terminal" : prev.activeBottomTab,
+            };
+          });
+        }
         return;
       }
 
@@ -778,6 +791,17 @@ export default function VSCodeWorkbench({
                       onClose={() =>
                         setLayout((p) => ({ ...p, isBottomPanelVisible: false }))
                       }
+                      onPopOutTerminal={() => {
+                        setIsTerminalPoppedOut(true);
+                        setLayout((p) => ({ ...p, isBottomPanelVisible: false }));
+                      }}
+                      projectCwd={
+                        selectedAgent?.cwd ||
+                        selectedAgent?.projectDir ||
+                        selectedAgent?.workspaceDir ||
+                        selectedAgent?.workspace ||
+                        ""
+                      }
                     />
                   </Panel>
                 </>
@@ -878,6 +902,27 @@ export default function VSCodeWorkbench({
         isOpen={isThemeModalOpen}
         onClose={() => setIsThemeModalOpen(false)}
         initialTab={themeModalTab}
+      />
+
+      {/* Floating Pop-Out Terminal Drawer */}
+      <TerminalDrawer
+        isOpen={isTerminalPoppedOut}
+        onClose={() => setIsTerminalPoppedOut(false)}
+        onDockBack={() => {
+          setIsTerminalPoppedOut(false);
+          setLayout((p) => ({
+            ...p,
+            isBottomPanelVisible: true,
+            activeBottomTab: "terminal",
+          }));
+        }}
+        initialCwd={
+          selectedAgent?.cwd ||
+          selectedAgent?.projectDir ||
+          selectedAgent?.workspaceDir ||
+          selectedAgent?.workspace ||
+          ""
+        }
       />
     </div>
   );
