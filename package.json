@@ -23,6 +23,8 @@
     "build": "next build",
     "start": "node server.js",
     "prepack": "next build && rm -rf .next/cache .next/dev .next/turbopack .next/diagnostics",
+    "publish": "npm version patch && npm publish --access public && git push origin main --tags",
+    "release": "npm run publish",
     "lint": "eslint ."
   },
   "dependencies": {
