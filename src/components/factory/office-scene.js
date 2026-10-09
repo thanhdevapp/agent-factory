@@ -17,7 +17,7 @@ const FLOOR = { x: -60, y: 40, w: FLOOR_BASE_W, h: FLOOR_BASE_H };
 const DESK_W = 150;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-const MODE_INTENSITY = { streaming: 0.8, pending: 0.3, happy: 0.2, sleeping: 0, error: 1 };
+const MODE_INTENSITY = { streaming: 0.8, pending: 0.3, idle: 0.25, happy: 0.2, sleeping: 0, error: 1 };
 
 /**
  * Mount the office scene on `canvas`.
@@ -244,11 +244,15 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       const isLooping = Boolean(ws.isLooping);
       const isApp = ws.clientType === "app" || String(ws.provider || "").toLowerCase().includes("app");
       const clientType = ws.clientType || (isApp ? "app" : "cli");
+      const deskLabel = (ws.sessionTitle && ws.sessionTitle !== "agent-factory" && ws.sessionTitle !== ws.account)
+        ? ws.sessionTitle
+        : (ws.account || ws.connectionId);
+      const deskMeta = `${ws.account && ws.account !== deskLabel ? `${ws.account} · ` : ""}${ws.model || ""} · ${ws.totalLabel}`;
 
       const desk = createDesk({
         color: ws.color,
-        label: ws.account,
-        meta: `${ws.model || ""} · ${ws.totalLabel}`,
+        label: deskLabel,
+        meta: deskMeta,
         provider: ws.provider,
         clientType,
         elapsedMs: ws.elapsedMs,

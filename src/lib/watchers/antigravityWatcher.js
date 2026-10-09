@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { execSync } from "node:child_process";
 import { normalizeTrace } from "../traceContract.js";
 
 const TOOL_MAP = {
@@ -176,9 +177,39 @@ async function discoverAntigravityBrainDirs() {
   return validDirs;
 }
 
+let activeLocksCache = { time: 0, convIds: new Set() };
+
+function getActiveAntigravityConvIds() {
+  const now = Date.now();
+  if (now - activeLocksCache.time < 3000) {
+    return activeLocksCache.convIds;
+  }
+  const presenceDir = path.join(os.homedir(), ".gemini", "antigravity-cli", "presence");
+  const activeSet = new Set();
+  try {
+    const stdout = execSync(`lsof +D "${presenceDir}" 2>/dev/null`, { encoding: "utf8", timeout: 1500 });
+    const lines = stdout.split("\n");
+    for (const line of lines) {
+      const match = line.match(/([a-f0-9-]{36})\.lock/i);
+      if (match) activeSet.add(match[1]);
+    }
+  } catch (err) {
+    if (err?.stdout) {
+      const lines = String(err.stdout).split("\n");
+      for (const line of lines) {
+        const match = line.match(/([a-f0-9-]{36})\.lock/i);
+        if (match) activeSet.add(match[1]);
+      }
+    }
+  }
+  activeLocksCache = { time: now, convIds: activeSet };
+  return activeSet;
+}
+
 export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
   const homeDir = os.homedir();
   const searchDirs = await discoverAntigravityBrainDirs();
+  const activeConvIds = getActiveAntigravityConvIds();
 
   let defaultCliModel = null;
   try {
@@ -212,7 +243,8 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         try {
           const stat = await fs.stat(transcriptPath);
           const mtime = stat.mtimeMs;
-          if (now - mtime > maxAgeMs) continue;
+          const isAlive = activeConvIds.has(convId);
+          if (!isAlive && now - mtime > maxAgeMs) continue;
           candidates.push({ transcriptPath, mtime, convId, source, stat });
         } catch {}
       }
@@ -330,7 +362,8 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           }
         }
 
-        const isRecent = (now - mtime) < 90 * 1000;
+        const isProcessActive = activeConvIds.has(convId);
+        const isRecent = (now - mtime) < 120 * 1000;
         const isPending = (now - mtime) < 15 * 60 * 1000;
 
         let state = "done";
@@ -338,6 +371,9 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           state = "streaming";
         } else if (lastStep?.type === "USER_INPUT") {
           state = "pending";
+        } else if (isProcessActive) {
+          // Process is currently running in terminal!
+          state = isRecent ? "streaming" : "idle";
         } else if (isRecent) {
           state = "streaming";
         } else if (isPending) {

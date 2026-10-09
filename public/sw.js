@@ -35,8 +35,14 @@ self.addEventListener("fetch", (event) => {
 
   // Network-first for HTML pages so user always sees the latest UI
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      return new Response("Service Unavailable", {
+        status: 503,
+        statusText: "Service Unavailable",
+        headers: { "Content-Type": "text/plain" },
+      });
     })
   );
 });

@@ -20,41 +20,33 @@ export function useFactoryTraces({
   initialTop = 20,
   initialTimeframe = "24h",
 } = {}) {
-  const [top, setTop] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("agmon_filter_settings");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.top !== undefined) return parsed.top;
-        }
-      } catch {}
-    }
-    return initialTop;
-  });
-
-  const [timeframe, setTimeframe] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("agmon_filter_settings");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.timeframe) return parsed.timeframe;
-        }
-      } catch {}
-    }
-    return initialTimeframe;
-  });
-
-  const [totalCount, setTotalCount] = useState(0);
+  const [top, setTop] = useState(initialTop);
+  const [timeframe, setTimeframe] = useState(initialTimeframe);
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
+        const saved = localStorage.getItem("agmon_filter_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.top !== undefined) setTop(parsed.top);
+          if (parsed.timeframe) setTimeframe(parsed.timeframe);
+        }
+      } catch {}
+      setIsClientLoaded(true);
+    }
+  }, []);
+
+  const [totalCount, setTotalCount] = useState(0);
+
+  useEffect(() => {
+    if (isClientLoaded && typeof window !== "undefined") {
+      try {
         localStorage.setItem("agmon_filter_settings", JSON.stringify({ top, timeframe }));
       } catch {}
     }
-  }, [top, timeframe]);
+  }, [top, timeframe, isClientLoaded]);
 
   const [traces, setTraces] = useState([]);
   const [providers, setProviders] = useState([]);

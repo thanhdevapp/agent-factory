@@ -6,6 +6,7 @@
 export const STATE_COLORS = {
   pending: 0xf59e0b,
   streaming: 0x22d3ee,
+  idle: 0x38bdf8,
   done: 0x34d399,
   error: 0xef4444,
 };
@@ -16,6 +17,7 @@ export const SLEEP_AFTER_MS = 32000;
 export const STATE_LABELS = {
   pending: "Queued",
   streaming: "Working",
+  idle: "Ready",
   done: "Done",
   error: "Failed",
 };
@@ -135,6 +137,8 @@ export function buildOffice(traces = []) {
     } else if (trace.state === "streaming" || trace.state === "pending") {
       entry.activeCount += 1;
       if (trace.state === "pending") entry.pendingCount += 1;
+    } else if (trace.state === "idle") {
+      entry.idleCount = (entry.idleCount || 0) + 1;
     }
   }
 
@@ -153,7 +157,14 @@ export function buildOffice(traces = []) {
     // Every account has an agent at its desk; what they are doing is `mode`.
     const occupied = true;
     const isLooping = Boolean(entry.isLooping);
-    const state = entry.errorCount > 0 ? "error" : entry.activeCount > 0 ? "streaming" : "done";
+    const state =
+      entry.errorCount > 0
+        ? "error"
+        : entry.activeCount > 0
+          ? "streaming"
+          : entry.idleCount > 0
+            ? "idle"
+            : "done";
     const mode =
       isLooping
         ? "looping"
@@ -163,9 +174,11 @@ export function buildOffice(traces = []) {
             ? entry.pendingCount === entry.activeCount
               ? "pending"
               : "streaming"
-            : entry.elapsedMs >= SLEEP_AFTER_MS
-              ? "sleeping"
-              : "happy";
+            : state === "idle"
+              ? "idle"
+              : entry.elapsedMs >= SLEEP_AFTER_MS
+                ? "sleeping"
+                : "happy";
     const totalTokens = entry.totalTokens;
     const cachedPct = totalTokens && entry.tokens.cached > 0
       ? Math.round((entry.tokens.cached / totalTokens) * 100)
