@@ -17,8 +17,11 @@ import {
   Sparkles,
   ListFilter,
   Clock,
+  PanelBottomClose,
 } from "lucide-react";
 import LayoutToggles from "./LayoutToggles";
+import WorkerProgressWidget from "./WorkerProgressWidget";
+import { toggleDockedMode } from "@/lib/desktopBridge";
 
 const PRESETS = [
   { id: "showcase", label: "All Items Showcase (24)" },
@@ -104,6 +107,9 @@ export default function TitleBar({
 
       {/* Right: Stats, Mode, Controls & Layout Toggles */}
       <div className="flex items-center gap-2 min-w-[240px] justify-end">
+        {/* Worker Rank & XP Widget */}
+        <WorkerProgressWidget className="mr-1" />
+
         {/* Quick Counters */}
         <div
           onClick={onOpenReports}
@@ -309,6 +315,16 @@ export default function TitleBar({
           }`}
         >
           {notifEnabled ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3" />}
+        </button>
+
+        {/* Docked Bar Mode Toggle */}
+        <button
+          onClick={() => toggleDockedMode()}
+          title="Toggle Docked Screen-Bottom Mode (Rusty's Retirement style)"
+          className="flex h-6 px-1.5 items-center justify-center gap-1 rounded border border-[#333333] bg-[#252526] hover:bg-[#2e2e30] text-slate-400 hover:text-amber-300 transition-colors text-[10px] font-medium"
+        >
+          <PanelBottomClose className="w-3 h-3 text-amber-400" />
+          <span className="hidden xl:inline">Dock</span>
         </button>
 
         {/* Layout Toggles (Left, Bottom, Right, Chill Fullscreen) */}

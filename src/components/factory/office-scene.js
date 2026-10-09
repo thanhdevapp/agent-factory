@@ -5,6 +5,10 @@ import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/t
 import { createTokenStreams } from "./scene/token-streams";
 import { getSupporterState, COSMETIC_CATALOG, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
 import { getActiveFont, THEME_CHANGE_EVENT } from "@/lib/themeStore";
+import { createLevelUpVFX } from "./scene/level-up-vfx";
+import walletStore from "@/lib/progression/walletStore";
+import keyboardSynth from "@/lib/audio/keyboardSynth";
+import factoryWhistle from "@/lib/audio/factoryWhistle";
 
 const MAX_ZOOM = 1.0; // Strictly capped at 1.0: large screens display more area instead of enlarging elements!
 const MIN_ZOOM = 0.25;
@@ -34,6 +38,8 @@ const MODE_INTENSITY = { streaming: 0.8, pending: 0.3, idle: 0.25, happy: 0.2, s
 export async function mountOfficeScene(canvas, traces, options = {}) {
   let selectedId = options.selectedId ?? null;
   let onSelect = options.onSelect;
+  keyboardSynth.setMute(!options.soundEnabled);
+  factoryWhistle.setMute(!options.soundEnabled);
 
   let isPanning = false;
   let panStart = { x: 0, y: 0 };
@@ -76,7 +82,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   const toolLayer = new Container();
   const hudLayer = new Container();
   const streams = createTokenStreams();
-  world.addChild(floorLayer, laneLayer, streams.container, deskLayer, actorLayer, toolLayer, hudLayer);
+  const levelUpVFX = createLevelUpVFX();
+  world.addChild(floorLayer, laneLayer, streams.container, deskLayer, actorLayer, toolLayer, hudLayer, levelUpVFX.container);
   app.stage.addChild(world);
 
   // Declared before drawFloor(): the floor theme reads the first trace's theme.
@@ -211,6 +218,9 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     return sig;
   }
 
+  let lastRecordedTokens = 0;
+  let lastHadCommit = false;
+
   function rebuild(nextTraces, force = false) {
     currentTraces = nextTraces;
     const nextSig = getTracesSignature(nextTraces);
@@ -218,6 +228,32 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       return;
     }
     lastTracesSignature = nextSig;
+
+    // Real-work XP progression tracking from active telemetry
+    if (Array.isArray(nextTraces) && nextTraces.length > 0) {
+      let currentTotalTokens = 0;
+      let hasCompleted = false;
+      let hasCommit = false;
+      for (const t of nextTraces) {
+        currentTotalTokens += (t.tokens?.input || 0) + (t.tokens?.output || 0);
+        if (t.state === "completed" || t.mode === "happy") hasCompleted = true;
+        if (t.tools?.some((tool) => String(tool.name || "").includes("commit"))) hasCommit = true;
+      }
+      if (lastRecordedTokens > 0 && currentTotalTokens > lastRecordedTokens) {
+        const delta = currentTotalTokens - lastRecordedTokens;
+        walletStore.recordActivity({
+          tokenDelta: delta,
+          isCompleted: hasCompleted,
+          isCommit: hasCommit,
+        });
+        keyboardSynth.playBurst(delta, 180);
+      }
+      if (hasCommit && !lastHadCommit) {
+        factoryWhistle.playWhistle();
+      }
+      lastHadCommit = hasCommit;
+      lastRecordedTokens = currentTotalTokens;
+    }
 
     // Double-buffering pattern: build next display hierarchy first before destroying old ones
     // This completely eliminates single-frame flickers on telemetry refreshes
@@ -601,6 +637,35 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   window.addEventListener(SUPPORTER_CHANGE_EVENT, onThemeOrFontChange);
   window.addEventListener(THEME_CHANGE_EVENT, onThemeOrFontChange);
 
+  const onLevelUp = (e) => {
+    const { newLevel } = e.detail || {};
+    const stats = walletStore.getProgress();
+    let targetX = OFFICE.rackX;
+    let targetY = FLOOR.y + 240;
+    if (selectedId && deskEntries.length > 0) {
+      const entry = deskEntries.find(
+        (d) => d.ws.connectionId === selectedId || d.ws.id === selectedId
+      );
+      if (entry) {
+        targetX = entry.ws.x;
+        targetY = entry.ws.y;
+      }
+    } else if (deskEntries.length > 0) {
+      const busyEntry = deskEntries.find((d) => d.ws.busy > 0);
+      if (busyEntry) {
+        targetX = busyEntry.ws.x;
+        targetY = busyEntry.ws.y;
+      }
+    }
+    levelUpVFX.triggerLevelUp({
+      x: targetX,
+      y: targetY,
+      level: newLevel || stats.currentLevel,
+      title: stats.title,
+    });
+  };
+  window.addEventListener("agmon-level-up", onLevelUp);
+
   // ---- animation --------------------------------------------------------
   let t = 0;
   app.ticker.add((ticker) => {
@@ -608,6 +673,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     t += dt;
 
     streams.animate(dt);
+    levelUpVFX.animate(dt);
 
     for (const entry of deskEntries) {
       const { ws } = entry;
@@ -762,6 +828,13 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     setOnSelect(fn) {
       onSelect = fn;
     },
+    setSoundEnabled(enabled) {
+      keyboardSynth.setMute(!enabled);
+      factoryWhistle.setMute(!enabled);
+    },
+    setSwitchProfile(switchId) {
+      keyboardSynth.setSwitch(switchId);
+    },
     destroy: () => {
       if (restoreTimer) clearTimeout(restoreTimer);
       try {
@@ -774,6 +847,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         canvas.removeEventListener("webglcontextrestored", onContextRestored);
         window.removeEventListener(SUPPORTER_CHANGE_EVENT, onThemeOrFontChange);
         window.removeEventListener(THEME_CHANGE_EVENT, onThemeOrFontChange);
+        window.removeEventListener("agmon-level-up", onLevelUp);
         app.renderer?.off?.("resize", fit);
       } catch {}
 

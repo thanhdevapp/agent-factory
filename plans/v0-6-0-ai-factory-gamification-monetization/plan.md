@@ -4,7 +4,7 @@ description: >-
   Transforms AGMon into an engaging gamified AI factory and monetizable desktop companion:
   real-work XP and worker leveling system, token-synced mechanical keyboard synthesizer,
   cosmetics & theme storefront (VietQR/Stripe), and ultra-lightweight Tauri desktop app with docked screen-bottom mode.
-status: pending
+status: completed
 priority: P2
 branch: "main"
 tags:
@@ -86,10 +86,10 @@ flowchart TD
 
 | Phase | Name | Description | Status |
 |---|---|---|---|
-| 1 | [Worker Progression & Real-Work XP Engine](./phase-01-worker-progression-real-work-xp-engine.md) | Token-to-XP formulas, worker ranks, $COIN local wallet, level-up canvas celebration | Pending |
-| 2 | [Mechanical Keyboard Audio Synthesizer](./phase-02-mechanical-keyboard-audio-synthesizer.md) | Web Audio synthesizer for mechanical key clicks synced to streaming tokens, factory horn | Pending |
-| 3 | [Factory Storefront & Cosmetic Themes](./phase-03-factory-storefront-cosmetic-themes.md) | Theme switcher (Cyberpunk/Retro/Rainy Cafe), character skins, VietQR/Stripe Supporter Store | Pending |
-| 4 | [Tauri Desktop Companion Packaging](./phase-04-tauri-desktop-companion-packaging.md) | Tauri 2.0 bundle, Docked Bar mode at screen bottom, native notification triggers | Pending |
+| 1 | [Worker Progression & Real-Work XP Engine](./phase-01-worker-progression-real-work-xp-engine.md) | Token-to-XP formulas, worker ranks, $COIN local wallet, level-up canvas celebration | Completed |
+| 2 | [Mechanical Keyboard Audio Synthesizer](./phase-02-mechanical-keyboard-audio-synthesizer.md) | Web Audio synthesizer for mechanical key clicks synced to streaming tokens, factory horn | Completed |
+| 3 | [Factory Storefront & Cosmetic Themes](./phase-03-factory-storefront-cosmetic-themes.md) | Theme switcher (Cyberpunk/Retro/Rainy Cafe), character skins, VietQR/Stripe Supporter Store | Completed |
+| 4 | [Tauri Desktop Companion Packaging](./phase-04-tauri-desktop-companion-packaging.md) | Tauri 2.0 bundle, Docked Bar mode at screen bottom, native notification triggers | Completed |
 
 ---
 
