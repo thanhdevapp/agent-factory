@@ -1047,15 +1047,33 @@ export function createSubagentDrone({
 }) {
   const root = new Container();
 
+  const isIdle = status === "idle" || status === "stopped" || status === "ready";
+  const isDone = status === "done" || status === "completed";
+  const isWorking = status === "streaming" || status === "active";
+  const isPending = status === "pending" || status === "waiting";
+  const isError = status === "error" || status === "failed";
+
   const STATUS_PALETTE = {
-    streaming: { eye: 0x00f0ff, glow: 0x0284c7, flame: 0x38bdf8, trim: 0x38bdf8 },
-    pending: { eye: 0xfbbf24, glow: 0xb45309, flame: 0xf59e0b, trim: 0xf59e0b },
-    done: { eye: 0x34d399, glow: 0x059669, flame: 0x10b981, trim: 0x10b981 },
-    idle: { eye: 0x38bdf8, glow: 0x0369a1, flame: 0x0284c7, trim: 0x64748b },
-    error: { eye: 0xf43f5e, glow: 0x9f1239, flame: 0xef4444, trim: 0xef4444 },
+    streaming: { eye: 0x00f0ff, glow: 0x0284c7, flame: 0x38bdf8, trim: 0x38bdf8, text: 0x38bdf8, badgeBorder: 0x0284c7 },
+    pending: { eye: 0xfbbf24, glow: 0xb45309, flame: 0xf59e0b, trim: 0xf59e0b, text: 0xfbbf24, badgeBorder: 0xb45309 },
+    done: { eye: 0x34d399, glow: 0x059669, flame: 0x10b981, trim: 0x059669, text: 0x6ee7b7, badgeBorder: 0x047857 },
+    idle: { eye: 0x64748b, glow: 0x334155, flame: 0x475569, trim: 0x475569, text: 0x94a3b8, badgeBorder: 0x334155 },
+    error: { eye: 0xf43f5e, glow: 0x9f1239, flame: 0xef4444, trim: 0xef4444, text: 0xf87171, badgeBorder: 0xb91c1c },
   };
 
-  const pal = STATUS_PALETTE[status] || STATUS_PALETTE.streaming;
+  const pal = isIdle
+    ? STATUS_PALETTE.idle
+    : isDone
+      ? STATUS_PALETTE.done
+      : isPending
+        ? STATUS_PALETTE.pending
+        : isError
+          ? STATUS_PALETTE.error
+          : STATUS_PALETTE.streaming;
+
+  // Base opacity: 0.48 for idle (dormant mờ xám), 0.65 for done, 1.0 for active
+  const baseAlpha = isIdle ? 0.48 : isDone ? 0.65 : 1.0;
+  root.alpha = baseAlpha;
 
   // 1. Thruster plasma flames (drawn dynamically in animate)
   const flames = new Graphics();
@@ -1065,48 +1083,61 @@ export function createSubagentDrone({
   const body = new Graphics();
 
   // Outer engine struts
-  body.roundRect(-20, -3, 40, 6, 2).fill({ color: 0x1e293b }).stroke({ width: 1, color: 0x334155 });
+  body.roundRect(-20, -3, 40, 6, 2).fill({ color: isIdle ? 0x0f172a : 0x1e293b }).stroke({ width: 1, color: isIdle ? 0x1e293b : 0x334155 });
 
   // Left and Right thruster nacelles
-  body.roundRect(-22, -6, 8, 14, 2.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: pal.trim });
-  body.roundRect(14, -6, 8, 14, 2.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: pal.trim });
+  body.roundRect(-22, -6, 8, 14, 2.5).fill({ color: 0x090d16 }).stroke({ width: 1.2, color: pal.trim });
+  body.roundRect(14, -6, 8, 14, 2.5).fill({ color: 0x090d16 }).stroke({ width: 1.2, color: pal.trim });
 
   // Energy rings on top of nacelles
-  body.ellipse(-18, -6, 5, 1.8).fill({ color: pal.eye, alpha: 0.8 });
-  body.ellipse(18, -6, 5, 1.8).fill({ color: pal.eye, alpha: 0.8 });
+  body.ellipse(-18, -6, 5, 1.8).fill({ color: pal.eye, alpha: isIdle ? 0.2 : 0.8 });
+  body.ellipse(18, -6, 5, 1.8).fill({ color: pal.eye, alpha: isIdle ? 0.2 : 0.8 });
 
   // Central chassis pod (sleek hexagonal capsule)
-  body.poly([-12, -7, 12, -7, 15, 0, 12, 7, -12, 7, -15, 0]).fill({ color: 0x090d16 }).stroke({ width: 1.4, color: pal.trim });
+  body.poly([-12, -7, 12, -7, 15, 0, 12, 7, -12, 7, -15, 0]).fill({ color: isIdle ? 0x0b0f17 : 0x090d16 }).stroke({ width: 1.4, color: pal.trim, alpha: isIdle ? 0.6 : 1 });
 
   // Specular top highlight
-  body.poly([-9, -6, 9, -6, 12, -1, -12, -1]).fill({ color: 0xffffff, alpha: 0.15 });
+  body.poly([-9, -6, 9, -6, 12, -1, -12, -1]).fill({ color: 0xffffff, alpha: isIdle ? 0.08 : 0.15 });
 
   // Optical sensor (cyclops eye)
-  body.circle(0, 0, 4.5).fill({ color: 0x030712 }).stroke({ width: 1.2, color: pal.eye });
-  body.circle(0, 0, 2.8).fill({ color: pal.eye });
-  body.circle(-1, -1, 1).fill({ color: 0xffffff });
+  if (isIdle) {
+    // Standby sleep slit
+    body.circle(0, 0, 4.5).fill({ color: 0x020617 }).stroke({ width: 1, color: 0x334155 });
+    body.roundRect(-2.5, -0.7, 5, 1.4, 0.7).fill({ color: 0x64748b });
+  } else {
+    body.circle(0, 0, 4.5).fill({ color: 0x030712 }).stroke({ width: 1.2, color: pal.eye });
+    body.circle(0, 0, 2.8).fill({ color: pal.eye });
+    body.circle(-1, -1, 1).fill({ color: 0xffffff });
+  }
 
   // Mini antenna
-  body.moveTo(0, -7).lineTo(0, -14).stroke({ width: 1.2, color: 0x64748b });
+  body.moveTo(0, -7).lineTo(0, -14).stroke({ width: 1.2, color: isIdle ? 0x334155 : 0x64748b });
   root.addChild(body);
 
   // 3. Beacon LED at tip of antenna
   const beacon = new Graphics();
-  beacon.circle(0, -14, 1.8).fill({ color: pal.eye });
-  beacon.circle(0, -14, 3.5).stroke({ width: 0.8, color: pal.eye, alpha: 0.4 });
+  if (isIdle) {
+    beacon.circle(0, -14, 1.5).fill({ color: 0x475569, alpha: 0.5 });
+  } else {
+    beacon.circle(0, -14, 1.8).fill({ color: pal.eye });
+    beacon.circle(0, -14, 3.5).stroke({ width: 0.8, color: pal.eye, alpha: 0.4 });
+  }
   root.addChild(beacon);
 
   // 4. Role tag pill
   const cleanRole = clip(role || typeName || "Subagent", 14);
+  const statusLabel = isIdle ? "IDLE" : isDone ? "DONE" : isPending ? "WAIT" : isError ? "ERR" : "";
+  const displayText = statusLabel ? `${cleanRole} · ${statusLabel}` : cleanRole.toUpperCase();
+
   const tagContainer = new Container();
   const tagBg = new Graphics();
   const tagText = new Text({
-    text: cleanRole.toUpperCase(),
+    text: displayText,
     style: {
       fontFamily: getMonoFont(),
-      fontSize: 8,
-      fill: pal.eye,
-      fontWeight: "700",
+      fontSize: 7.5,
+      fill: pal.text,
+      fontWeight: isWorking ? "800" : "600",
       letterSpacing: 0.5,
     },
   });
@@ -1114,8 +1145,8 @@ export function createSubagentDrone({
   const tagW = Math.max(34, tagText.width + 10);
   const tagH = 13;
   tagBg.roundRect(-tagW / 2, -tagH / 2, tagW, tagH, 3.5)
-    .fill({ color: 0x090d16, alpha: 0.88 })
-    .stroke({ width: 1, color: pal.trim, alpha: 0.8 });
+    .fill({ color: 0x090d16, alpha: isIdle ? 0.75 : 0.9 })
+    .stroke({ width: 1, color: pal.badgeBorder, alpha: isIdle ? 0.45 : 0.85 });
   tagContainer.addChild(tagBg, tagText);
   tagContainer.y = -24;
   root.addChild(tagContainer);
@@ -1125,6 +1156,14 @@ export function createSubagentDrone({
   root.cursor = "pointer";
   root.hitArea = new Rectangle(-24, -32, 48, 46);
   root.scale.set(0.9 * depth);
+
+  // Smooth hover brightness: user can hover to see details clearly
+  root.on("pointerover", () => {
+    root.alpha = 1.0;
+  });
+  root.on("pointerout", () => {
+    root.alpha = baseAlpha;
+  });
 
   return {
     root,
@@ -1154,29 +1193,53 @@ export function createSubagentDrone({
         targetY += Math.sin(angle) * 45 - 15;
       }
 
-      // Smooth floating oscillation
-      const bobY = Math.sin(t * 0.004 + index * 1.6) * 5;
-      const driftX = Math.cos(t * 0.003 + index * 1.3) * 4;
-      root.x = targetX + driftX;
-      root.y = targetY + bobY;
-      root.rotation = Math.sin(t * 0.0035 + index) * 0.06;
+      // If idle/parked, settle slightly closer to desk and move calmly
+      if (isIdle) {
+        targetY += 10;
+        const bobY = Math.sin(t * 0.0015 + index * 1.2) * 1.8;
+        const driftX = Math.cos(t * 0.0012 + index) * 1.5;
+        root.x = targetX + driftX;
+        root.y = targetY + bobY;
+        root.rotation = 0;
+        flames.clear(); // thrusters off when docked/idle!
+        beacon.alpha = 0.35;
+      } else if (isDone) {
+        targetY += 6;
+        const bobY = Math.sin(t * 0.002 + index * 1.2) * 2.5;
+        const driftX = Math.cos(t * 0.0018 + index) * 2;
+        root.x = targetX + driftX;
+        root.y = targetY + bobY;
+        root.rotation = Math.sin(t * 0.002 + index) * 0.02;
+        flames.clear(); // thrusters off when done!
+        beacon.alpha = 0.5 + Math.sin(t * 0.004 + index) * 0.3;
+      } else {
+        // Active flight: smooth floating oscillation & thrusters
+        const bobY = Math.sin(t * 0.004 + index * 1.6) * 5;
+        const driftX = Math.cos(t * 0.003 + index * 1.3) * 4;
+        root.x = targetX + driftX;
+        root.y = targetY + bobY;
+        root.rotation = Math.sin(t * 0.0035 + index) * 0.06;
 
-      // Thruster flame animation
-      flames.clear();
-      const isWorking = status === "streaming";
-      const flameH = (isWorking ? 8 : 4.5) + Math.sin(t * 0.03 + index * 2) * (isWorking ? 3.5 : 1.5);
-      const flameAlpha = isWorking ? 0.85 : 0.55;
+        flames.clear();
+        if (isWorking) {
+          const flameH = 8 + Math.sin(t * 0.03 + index * 2) * 3.5;
+          const flameAlpha = 0.85;
 
-      // Left flame
-      flames.poly([-20, 8, -16, 8, -18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
-      flames.poly([-19, 8, -17, 8, -18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
+          // Left flame
+          flames.poly([-20, 8, -16, 8, -18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
+          flames.poly([-19, 8, -17, 8, -18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
 
-      // Right flame
-      flames.poly([16, 8, 20, 8, 18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
-      flames.poly([17, 8, 19, 8, 18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
+          // Right flame
+          flames.poly([16, 8, 20, 8, 18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
+          flames.poly([17, 8, 19, 8, 18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
+        } else if (isPending) {
+          const flameH = 4 + Math.sin(t * 0.02 + index) * 1.5;
+          flames.poly([-20, 8, -16, 8, -18, 8 + flameH]).fill({ color: pal.flame, alpha: 0.5 });
+          flames.poly([16, 8, 20, 8, 18, 8 + flameH]).fill({ color: pal.flame, alpha: 0.5 });
+        }
 
-      // Beacon LED blink
-      beacon.alpha = 0.5 + Math.sin(t * (isWorking ? 0.015 : 0.005) + index) * 0.5;
+        beacon.alpha = 0.5 + Math.sin(t * (isWorking ? 0.015 : 0.005) + index) * 0.5;
+      }
     },
   };
 }

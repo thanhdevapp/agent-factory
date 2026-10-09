@@ -135,7 +135,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     floor.roundRect(FLOOR.x, FLOOR.y, FLOOR.w, FLOOR.h, 28).stroke({ width: 2, color: borderCol, alpha: 0.9 });
     // Zone panels: agents | router | providers
     floor.roundRect(OFFICE.rackX - 130, FLOOR.y + 120, 260, FLOOR.h - 240, 22).fill({ color: rackCol, alpha: 0.045 });
-    floor.roundRect(OFFICE.podX - 110, FLOOR.y + 40, 220, FLOOR.h - 150, 22).fill({ color: podCol, alpha: 0.045 });
+    floor.roundRect(OFFICE.podX - 110, FLOOR.y + 20, 220, FLOOR.h - 110, 22).fill({ color: podCol, alpha: 0.045 });
   }
   drawFloor(FLOOR_BASE_W, FLOOR_BASE_H);
   floor.eventMode = "static";
@@ -438,14 +438,14 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       const operator = createCharacter({
         color: pod.brandColor || pod.color,
         trimColor: pod.brandColor || pod.color,
-        scale: 0.55,
+        scale: 0.58,
         seed: pod.provider.length,
-        mode: pod.overloaded ? "pending" : pod.busy > 0 ? "streaming" : "sleeping",
+        mode: pod.hasError ? "error" : pod.overloaded ? "pending" : pod.busy > 0 ? "streaming" : "sleeping",
       });
       operator.root.x = pod.x + 2;
       operator.root.baseX = pod.x + 2;
-      operator.root.baseY = pod.y + 10;
-      operator.root.y = pod.y + 10;
+      operator.root.baseY = pod.y - 24;
+      operator.root.y = pod.y - 24;
       track(deskLayer, operator.root);
 
       const g = new Graphics();
@@ -742,12 +742,13 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     for (const { pod, operator, siren } of podEntries) {
       operator.animate(t, pod.overloaded ? 1 : Math.min(1, pod.load));
       siren.clear();
+      siren.rect(-1.5, 0, 3, 5).fill({ color: 0x334155 });
       if (pod.overloaded) {
         const on = Math.sin(t * 0.014) > 0;
-        siren.circle(0, 0, 5).fill({ color: 0xef4444, alpha: on ? 1 : 0.35 });
-        siren.circle(0, 0, 13).fill({ color: 0xef4444, alpha: on ? 0.28 : 0.05 });
+        siren.circle(0, -1, 5).fill({ color: 0xef4444, alpha: on ? 1 : 0.35 });
+        siren.circle(0, -1, 13).fill({ color: 0xef4444, alpha: on ? 0.28 : 0.05 });
       } else {
-        siren.circle(0, 0, 3).fill({ color: pod.busy > 0 ? 0x34d399 : 0x475569, alpha: 0.9 });
+        siren.circle(0, -1, 3.5).fill({ color: pod.busy > 0 ? 0x34d399 : 0x475569, alpha: 0.9 });
       }
     }
 

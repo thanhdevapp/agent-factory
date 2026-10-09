@@ -55,7 +55,7 @@ export const OFFICE = {
   rackX: 1500,
   rackY: 480,
   podX: 1860,
-  podGap: 104,
+  podGap: 158,
   podCapacity: 4,
 };
 
@@ -339,6 +339,8 @@ export function buildOffice(traces = []) {
   });
 
   const providers = [...new Set(workstations.map((w) => w.provider).filter(Boolean))];
+  const podCount = providers.length;
+  const podGap = podCount > 5 ? 136 : podCount === 5 ? 148 : 158;
 
   const pods = providers.map((provider, i) => {
     const clients = workstations.filter((w) => w.provider === provider);
@@ -349,8 +351,9 @@ export function buildOffice(traces = []) {
     return {
       provider,
       brandColor,
+      hasError: anyError,
       x: podX,
-      y: OFFICE.rackY - ((providers.length - 1) * OFFICE.podGap) / 2 + i * OFFICE.podGap,
+      y: OFFICE.rackY - ((providers.length - 1) * podGap) / 2 + i * podGap,
       busy,
       load: Math.min(1, busy / OFFICE.podCapacity),
       overloaded: busy >= OFFICE.podCapacity,
