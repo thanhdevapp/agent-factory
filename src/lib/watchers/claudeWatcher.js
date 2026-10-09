@@ -131,6 +131,7 @@ async function parseClaudeTranscript(transcriptPath) {
     slug: null,
     sessionId: null,
     isLooping: false,
+    subagents: [],
   };
 
   let mainModel = null;
@@ -204,6 +205,17 @@ async function parseClaudeTranscript(transcriptPath) {
                 result.toolSet.add(type);
                 result.activeTool = type;
                 if (detail) result.activeCommand = detail;
+
+                if (block.name === "Task" || block.name === "Agent" || block.name === "subagent") {
+                  const role = block.input?.description || block.input?.prompt || block.input?.role || "Subagent Task";
+                  result.subagents.push({
+                    id: `claude-sub-${result.subagents.length}`,
+                    role: compactText(role, 60),
+                    typeName: "task",
+                    model: block.input?.model || result.model,
+                    status: "streaming",
+                  });
+                }
 
                 result.toolInvocations.push({
                   name: block.name,
@@ -372,6 +384,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           lastTextRole: parsed.lastTextRole || null,
           isLooping: parsed.isLooping || false,
           logs: (parsed.recentLogs || []).slice(-25),
+          subagents: parsed.subagents || [],
         });
 
         if (sessionId) {
@@ -490,6 +503,7 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           lastTextRole: parsed.lastTextRole || null,
           isLooping: parsed.isLooping || false,
           logs: (parsed.recentLogs || []).slice(-25),
+          subagents: parsed.subagents || [],
         }));
       } catch {
         // ignore unreadable project file

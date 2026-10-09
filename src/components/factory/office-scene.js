@@ -1,6 +1,6 @@
 import { Application, Container, FillGradient, Graphics, Text } from "pixi.js";
 import { buildOffice, OFFICE, STATE_COLORS, PROVIDER_BRAND_COLORS, PROVIDER_LABELS } from "./scene/office-layout";
-import { createCharacter, createDesk, createBadge } from "./scene/characters";
+import { createCharacter, createDesk, createBadge, createSubagentDrone } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
 import { getSupporterState, COSMETIC_CATALOG, SUPPORTER_CHANGE_EVENT } from "@/lib/supporterStore";
@@ -187,6 +187,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
   let deskEntries = [];
   let podEntries = [];
   let couriers = [];
+  let droneEntries = [];
   let rackActive = false;
   let lastTracesSignature = "";
 
@@ -213,7 +214,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     for (let i = 0; i < list.length; i++) {
       const t = list[i];
       if (!t) continue;
-      sig += `${t.connectionId || t.id || i}_${t.state || ""}_${t.mode || ""}_${t.isLooping ? 1 : 0}_${t.skin || ""}_${t.aura || ""}_${t.pet || ""}_${t.trophy || ""}_${Array.isArray(t.props) ? t.props.join(",") : (t.props || "")}_${t.cost || 0}_${t.elapsedMs || 0}_${t.tokens?.input || 0}_${t.tokens?.output || 0}_${t.tools?.length || 0}_${t.error || ""}|`;
+      sig += `${t.connectionId || t.id || i}_${t.state || ""}_${t.mode || ""}_${t.isLooping ? 1 : 0}_${t.skin || ""}_${t.aura || ""}_${t.pet || ""}_${t.trophy || ""}_${Array.isArray(t.props) ? t.props.join(",") : (t.props || "")}_${t.subagents?.length || 0}_${t.cost || 0}_${t.elapsedMs || 0}_${t.tokens?.input || 0}_${t.tokens?.output || 0}_${t.tools?.length || 0}_${t.error || ""}|`;
     }
     return sig;
   }
@@ -261,6 +262,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     const nextDeskEntries = [];
     const nextPodEntries = [];
     const nextCouriers = [];
+    const nextDroneEntries = [];
 
     const track = (layer, obj) => {
       layer.addChild(obj);
@@ -327,6 +329,29 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       character.root.y = character.root.baseY;
       track(deskLayer, character.root);
       track(deskLayer, desk.root);
+
+      // Companion Subagent Drones hovering around the desk
+      if (Array.isArray(ws.subagents) && ws.subagents.length > 0) {
+        for (const [sIdx, sub] of ws.subagents.entries()) {
+          const drone = createSubagentDrone({
+            role: sub.role || sub.typeName || "Subagent",
+            typeName: sub.typeName || "worker",
+            status: sub.state || "streaming",
+            model: sub.model,
+            color: sub.color || ws.color,
+            index: sIdx,
+            total: ws.subagents.length,
+            depth: ws.depth,
+          });
+          drone.root.on("pointertap", (e) => {
+            if (hasMoved) return;
+            e.stopPropagation();
+            select(sub.connectionId || ws.connectionId);
+          });
+          track(actorLayer, drone.root);
+          nextDroneEntries.push({ drone, ws, index: sIdx, total: ws.subagents.length });
+        }
+      }
 
       // Tool-call badges cycle by the monitor, one glyph per tool type.
       const toolBadges = [];

@@ -19,7 +19,7 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "next dev --port 3030",
+    "dev": "NODE_ENV=development node server.js",
     "build": "next build",
     "start": "node server.js",
     "prepack": "next build && rm -rf .next/cache .next/dev .next/turbopack .next/diagnostics",

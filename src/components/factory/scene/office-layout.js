@@ -75,9 +75,16 @@ function humanSize(n) {
  */
 export function buildOffice(traces = []) {
   const byAccount = new Map();
+  const subagentTraces = [];
 
+  // Pass 1: Separate main root sessions from subagent traces
   for (const trace of traces) {
     if (!trace?.connectionId) continue;
+    if (trace.isSubagent || trace.parentTraceId || trace.parentConnectionId) {
+      subagentTraces.push(trace);
+      continue;
+    }
+
     const normalizedProvider = normalizeProvider(trace.provider, trace.cli, trace.model);
     let entry = byAccount.get(trace.connectionId);
     if (!entry) {
@@ -109,6 +116,7 @@ export function buildOffice(traces = []) {
         pendingCount: 0,
         isLooping: false,
         logs: [],
+        subagents: [],
         skin: trace.skin || null,
         aura: trace.aura || null,
         pet: trace.pet || null,
@@ -149,6 +157,13 @@ export function buildOffice(traces = []) {
       entry.lastText = trace.lastText;
       entry.lastTextRole = trace.lastTextRole;
     }
+    if (Array.isArray(trace.subagents) && trace.subagents.length > 0) {
+      for (const sa of trace.subagents) {
+        if (!entry.subagents.some((s) => s.id === sa.id || (s.role && s.role === sa.role))) {
+          entry.subagents.push(sa);
+        }
+      }
+    }
     for (const call of trace.toolCalls || []) {
       const toolName = call.tool || call.type;
       if (toolName && !entry.tools.includes(toolName)) entry.tools.push(toolName);
@@ -173,6 +188,83 @@ export function buildOffice(traces = []) {
       if (trace.state === "pending") entry.pendingCount += 1;
     } else if (trace.state === "idle") {
       entry.idleCount = (entry.idleCount || 0) + 1;
+    }
+  }
+
+  // Pass 2: Attach subagent traces as companion drones to their parent workstations
+  for (const sub of subagentTraces) {
+    let parent = null;
+    if (sub.parentConnectionId) {
+      parent = byAccount.get(sub.parentConnectionId);
+    }
+    if (!parent && sub.parentTraceId) {
+      parent = [...byAccount.values()].find((p) =>
+        p.traces.some((t) => t.traceId === sub.parentTraceId)
+      );
+    }
+    if (!parent && sub.account) {
+      parent = [...byAccount.values()].find((p) => p.account === sub.account);
+    }
+
+    if (parent) {
+      if (!parent.subagents) parent.subagents = [];
+      const subId = sub.traceId || sub.connectionId;
+      const existing = parent.subagents.find((s) => s.id === subId);
+      if (existing) {
+        existing.state = sub.state || existing.state;
+        existing.activeTool = sub.activeTool || existing.activeTool;
+        existing.tokens = sub.tokens || existing.tokens;
+      } else {
+        parent.subagents.push({
+          id: subId,
+          connectionId: sub.connectionId,
+          role: sub.role || sub.sessionTitle || "Subagent",
+          typeName: sub.typeName || "worker",
+          state: sub.state || "idle",
+          model: sub.model || parent.model,
+          tokens: sub.tokens,
+          activeTool: sub.activeTool,
+          currentCommand: sub.currentCommand,
+          color: sub.color || 0x38bdf8,
+        });
+      }
+      if (sub.state === "streaming" || sub.state === "pending") {
+        parent.activeCount += 1;
+      }
+    } else {
+      // If no parent found in current view, fallback to standalone desk so it remains visible
+      const normalizedProvider = normalizeProvider(sub.provider, sub.cli, sub.model);
+      let entry = byAccount.get(sub.connectionId);
+      if (!entry) {
+        entry = {
+          connectionId: sub.connectionId,
+          account: sub.account || sub.connectionId,
+          model: sub.model,
+          provider: normalizedProvider,
+          cli: sub.cli || "agent",
+          clientType: sub.clientType || "cli",
+          source: sub.source || "cli",
+          clientIcon: sub.clientIcon,
+          traces: [sub],
+          tokens: { input: sub.tokens?.input ?? 0, output: sub.tokens?.output ?? 0, cached: sub.tokens?.cached ?? 0 },
+          totalTokens: sub.totalTokens || null,
+          activeCount: (sub.state === "streaming" || sub.state === "pending") ? 1 : 0,
+          errorCount: sub.state === "error" ? 1 : 0,
+          tools: sub.tools || [],
+          errorReason: sub.error || null,
+          fallbackFrom: null,
+          queued: 1,
+          elapsedMs: sub.elapsedMs || 0,
+          cost: sub.cost || null,
+          pendingCount: sub.state === "pending" ? 1 : 0,
+          isLooping: sub.isLooping || false,
+          logs: sub.logs || [],
+          subagents: [],
+          sessionTitle: sub.sessionTitle || "agent-factory",
+          cwd: sub.cwd || null,
+        };
+        byAccount.set(sub.connectionId, entry);
+      }
     }
   }
 

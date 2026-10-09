@@ -80,6 +80,11 @@ export function normalizeTrace(raw) {
     error: raw.error ? String(raw.error) : null,
     isLooping: Boolean(raw.isLooping || false),
     logs: Array.isArray(raw.logs) ? raw.logs : [],
+    parentTraceId: raw.parentTraceId || null,
+    parentConnectionId: raw.parentConnectionId || null,
+    isSubagent: Boolean(raw.isSubagent || false),
+    role: raw.role ? String(raw.role) : null,
+    subagents: Array.isArray(raw.subagents) ? raw.subagents : [],
   };
 }
 

@@ -261,6 +261,9 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
     // Limit parsing to the most recent 100 sessions to avoid unbounded disk I/O
     const toProcess = candidates.slice(0, 100);
 
+    const rawParsedList = [];
+    const subagentParentMap = new Map();
+
     for (const { transcriptPath, mtime, convId, source, stat } of toProcess) {
       try {
         const content = await fs.readFile(transcriptPath, "utf-8");
@@ -283,6 +286,7 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         let lastTextRole = null;
         const toolInvocations = [];
         const recentLogs = [];
+        const sessionSubagents = [];
 
         for (const line of lines) {
           if (!line) continue;
@@ -324,6 +328,7 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
               }
             }
 
+            // Track subagents created via invoke_subagent / define_subagent
             if (Array.isArray(entry.tool_calls) && entry.tool_calls.length > 0) {
               lastToolEntry = entry;
               for (const tc of entry.tool_calls) {
@@ -337,6 +342,23 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
                 if (type) toolSet.add(type);
                 if (detail) activeCommandDetail = detail;
 
+                if (tc.name === "invoke_subagent" || tc.name === "define_subagent") {
+                  const rawSub = tc.args?.Subagents || tc.args?.subagents || tc.args;
+                  const items = Array.isArray(rawSub) ? rawSub : [rawSub];
+                  for (const it of items) {
+                    if (it && (it.Role || it.role || it.TypeName || it.name)) {
+                      sessionSubagents.push({
+                        id: `sub-${convId.slice(0, 6)}-${sessionSubagents.length}`,
+                        role: it.Role || it.role || "Subagent",
+                        typeName: it.TypeName || it.name || "specialist",
+                        model: it.Model || it.model || "flash",
+                        prompt: compactText(it.Prompt || it.prompt, 100),
+                        status: tc.status === "RUNNING" ? "streaming" : "idle",
+                      });
+                    }
+                  }
+                }
+
                 toolInvocations.push({
                   name: tc.name,
                   time: entryTime,
@@ -349,6 +371,17 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
                   summary: tc.name,
                   detail: detail || tc.name,
                 });
+              }
+            }
+
+            // Track subagent conversation IDs from response messages
+            if (entry.content && typeof entry.content === "string" && entry.content.includes("conversationId")) {
+              const matches = [...entry.content.matchAll(/"conversationId":\s*"([a-f0-9-]{36})"/g)];
+              for (const m of matches) {
+                const childId = m[1];
+                if (childId !== convId) {
+                  subagentParentMap.set(childId, { parentConvId: convId, source });
+                }
               }
             }
 
@@ -367,6 +400,63 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           }
         }
 
+        rawParsedList.push({
+          convId,
+          content,
+          lines,
+          source,
+          stat,
+          mtime,
+          totalIn,
+          totalOut,
+          totalCached,
+          hasUsage,
+          lastToolEntry,
+          lastStep,
+          toolSet,
+          firstTime,
+          lastTime,
+          activeCommandDetail,
+          detectedCwd,
+          sessionTitle,
+          lastText,
+          lastTextRole,
+          toolInvocations,
+          recentLogs,
+          sessionSubagents,
+        });
+      } catch {
+        // file missing or unreadable
+      }
+    }
+
+    // Pass 2: Normalize and connect subagent hierarchy
+    for (const raw of rawParsedList) {
+      try {
+        const {
+          convId,
+          content,
+          source,
+          mtime,
+          totalIn,
+          totalOut,
+          totalCached,
+          hasUsage,
+          lastToolEntry,
+          lastStep,
+          toolSet,
+          firstTime,
+          lastTime,
+          activeCommandDetail,
+          detectedCwd,
+          sessionTitle,
+          lastText,
+          lastTextRole,
+          toolInvocations,
+          recentLogs,
+          sessionSubagents,
+        } = raw;
+
         const isProcessActive = activeConvIds.has(convId);
         const isRecent = (now - mtime) < 120 * 1000;
         const isPending = (now - mtime) < 15 * 60 * 1000;
@@ -377,7 +467,6 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         } else if (lastStep?.type === "USER_INPUT") {
           state = "pending";
         } else if (isProcessActive) {
-          // Process is currently running in terminal!
           state = isRecent ? "streaming" : "idle";
         } else if (isRecent) {
           state = "streaming";
@@ -385,7 +474,7 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           state = "idle";
         }
 
-        // Loop detection: 5 consecutive identical tool calls (same tool and target) within 60s
+        // Loop detection: 5 consecutive identical tool calls within 60s
         let isLooping = false;
         if (toolInvocations.length >= 5) {
           const lastN = toolInvocations.slice(-10);
@@ -427,6 +516,12 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           finalSessionTitle = `[wt: ${wtInfo.worktreeName}] ${finalSessionTitle}`;
         }
 
+        // Subagent connection resolution
+        const isSubagent = subagentParentMap.has(convId);
+        const parentInfo = isSubagent ? subagentParentMap.get(convId) : null;
+        const parentTraceId = parentInfo ? `agy-${parentInfo.parentConvId.slice(0, 8)}` : null;
+        const parentConnectionId = parentInfo ? `${appLabel} (${parentInfo.parentConvId.slice(0, 6)})` : null;
+
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
           cli: "antigravity",
@@ -456,9 +551,14 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           lastTextRole,
           isLooping,
           logs: recentLogs.slice(-25),
+          isSubagent,
+          parentTraceId,
+          parentConnectionId,
+          role: isSubagent ? finalSessionTitle : null,
+          subagents: sessionSubagents,
         }));
       } catch {
-        // file missing or unreadable
+        // ignore
       }
     }
 

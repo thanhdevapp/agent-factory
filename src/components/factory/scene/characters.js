@@ -1021,6 +1021,165 @@ export function createDesk({
   };
 }
 
+/**
+ * Create a futuristic mini companion drone that hovers and patrols around a workstation desk.
+ * Represents an active or completed subagent delegated by the lead agent.
+ *
+ * Visual parts:
+ * - Sleek aerodynamic cyber-chassis with status-colored trim
+ * - Optical sensor / cyclops eye that pulses when working, emerald when done, amber when waiting
+ * - Dual anti-gravity thruster nacelles with flickering plasma flames
+ * - Twin energy rings on engine nacelles
+ * - Antenna with blinking beacon LED
+ * - Floating mini role badge pill above the drone
+ * - Interactive hover & click feedback
+ */
+export function createSubagentDrone({
+  role = "Subagent",
+  typeName = "specialist",
+  status = "streaming",
+  model = "flash",
+  color = 0x38bdf8,
+  index = 0,
+  total = 1,
+  depth = 1,
+}) {
+  const root = new Container();
+
+  const STATUS_PALETTE = {
+    streaming: { eye: 0x00f0ff, glow: 0x0284c7, flame: 0x38bdf8, trim: 0x38bdf8 },
+    pending: { eye: 0xfbbf24, glow: 0xb45309, flame: 0xf59e0b, trim: 0xf59e0b },
+    done: { eye: 0x34d399, glow: 0x059669, flame: 0x10b981, trim: 0x10b981 },
+    idle: { eye: 0x38bdf8, glow: 0x0369a1, flame: 0x0284c7, trim: 0x64748b },
+    error: { eye: 0xf43f5e, glow: 0x9f1239, flame: 0xef4444, trim: 0xef4444 },
+  };
+
+  const pal = STATUS_PALETTE[status] || STATUS_PALETTE.streaming;
+
+  // 1. Thruster plasma flames (drawn dynamically in animate)
+  const flames = new Graphics();
+  root.addChild(flames);
+
+  // 2. Main chassis body
+  const body = new Graphics();
+
+  // Outer engine struts
+  body.roundRect(-20, -3, 40, 6, 2).fill({ color: 0x1e293b }).stroke({ width: 1, color: 0x334155 });
+
+  // Left and Right thruster nacelles
+  body.roundRect(-22, -6, 8, 14, 2.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: pal.trim });
+  body.roundRect(14, -6, 8, 14, 2.5).fill({ color: 0x0f172a }).stroke({ width: 1.2, color: pal.trim });
+
+  // Energy rings on top of nacelles
+  body.ellipse(-18, -6, 5, 1.8).fill({ color: pal.eye, alpha: 0.8 });
+  body.ellipse(18, -6, 5, 1.8).fill({ color: pal.eye, alpha: 0.8 });
+
+  // Central chassis pod (sleek hexagonal capsule)
+  body.poly([-12, -7, 12, -7, 15, 0, 12, 7, -12, 7, -15, 0]).fill({ color: 0x090d16 }).stroke({ width: 1.4, color: pal.trim });
+
+  // Specular top highlight
+  body.poly([-9, -6, 9, -6, 12, -1, -12, -1]).fill({ color: 0xffffff, alpha: 0.15 });
+
+  // Optical sensor (cyclops eye)
+  body.circle(0, 0, 4.5).fill({ color: 0x030712 }).stroke({ width: 1.2, color: pal.eye });
+  body.circle(0, 0, 2.8).fill({ color: pal.eye });
+  body.circle(-1, -1, 1).fill({ color: 0xffffff });
+
+  // Mini antenna
+  body.moveTo(0, -7).lineTo(0, -14).stroke({ width: 1.2, color: 0x64748b });
+  root.addChild(body);
+
+  // 3. Beacon LED at tip of antenna
+  const beacon = new Graphics();
+  beacon.circle(0, -14, 1.8).fill({ color: pal.eye });
+  beacon.circle(0, -14, 3.5).stroke({ width: 0.8, color: pal.eye, alpha: 0.4 });
+  root.addChild(beacon);
+
+  // 4. Role tag pill
+  const cleanRole = clip(role || typeName || "Subagent", 14);
+  const tagContainer = new Container();
+  const tagBg = new Graphics();
+  const tagText = new Text({
+    text: cleanRole.toUpperCase(),
+    style: {
+      fontFamily: getMonoFont(),
+      fontSize: 8,
+      fill: pal.eye,
+      fontWeight: "700",
+      letterSpacing: 0.5,
+    },
+  });
+  tagText.anchor.set(0.5, 0.5);
+  const tagW = Math.max(34, tagText.width + 10);
+  const tagH = 13;
+  tagBg.roundRect(-tagW / 2, -tagH / 2, tagW, tagH, 3.5)
+    .fill({ color: 0x090d16, alpha: 0.88 })
+    .stroke({ width: 1, color: pal.trim, alpha: 0.8 });
+  tagContainer.addChild(tagBg, tagText);
+  tagContainer.y = -24;
+  root.addChild(tagContainer);
+
+  // 5. Interaction
+  root.eventMode = "static";
+  root.cursor = "pointer";
+  root.hitArea = new Rectangle(-24, -32, 48, 46);
+  root.scale.set(0.9 * depth);
+
+  return {
+    root,
+    status,
+    role,
+    animate(t, deskX, deskY) {
+      // Calculate smooth hover position around desk
+      let targetX = deskX + 75;
+      let targetY = deskY - 50;
+
+      if (total === 1) {
+        targetX += -60;
+        targetY += -30;
+      } else if (total === 2) {
+        targetX += index === 0 ? -65 : 65;
+        targetY += -30;
+      } else if (total === 3) {
+        if (index === 0) { targetX += -75; targetY += -15; }
+        else if (index === 1) { targetX += 0; targetY += -45; }
+        else { targetX += 75; targetY += -15; }
+      } else {
+        // Multi-drone orbital arch
+        const spread = Math.PI * 0.9;
+        const startAngle = -Math.PI * 0.95;
+        const angle = startAngle + (index / (total - 1)) * spread;
+        targetX += Math.cos(angle) * 78;
+        targetY += Math.sin(angle) * 45 - 15;
+      }
+
+      // Smooth floating oscillation
+      const bobY = Math.sin(t * 0.004 + index * 1.6) * 5;
+      const driftX = Math.cos(t * 0.003 + index * 1.3) * 4;
+      root.x = targetX + driftX;
+      root.y = targetY + bobY;
+      root.rotation = Math.sin(t * 0.0035 + index) * 0.06;
+
+      // Thruster flame animation
+      flames.clear();
+      const isWorking = status === "streaming";
+      const flameH = (isWorking ? 8 : 4.5) + Math.sin(t * 0.03 + index * 2) * (isWorking ? 3.5 : 1.5);
+      const flameAlpha = isWorking ? 0.85 : 0.55;
+
+      // Left flame
+      flames.poly([-20, 8, -16, 8, -18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
+      flames.poly([-19, 8, -17, 8, -18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
+
+      // Right flame
+      flames.poly([16, 8, 20, 8, 18, 8 + flameH]).fill({ color: pal.flame, alpha: flameAlpha });
+      flames.poly([17, 8, 19, 8, 18, 8 + flameH * 0.6]).fill({ color: 0xffffff, alpha: 0.9 });
+
+      // Beacon LED blink
+      beacon.alpha = 0.5 + Math.sin(t * (isWorking ? 0.015 : 0.005) + index) * 0.5;
+    },
+  };
+}
+
 export function createBadge(text, { color = 0x22d3ee, size = 10 } = {}) {
   const label = new Text({
     text,
