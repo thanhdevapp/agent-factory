@@ -300,6 +300,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         pet: ws.pet || supporter.equippedPet || "none",
         props: (ws.props && ws.props.length > 0) ? ws.props : (supporter.equippedProps || []),
         trophy: ws.trophy || supporter.equippedTrophy || "none",
+        detectedPort: ws.detectedPort,
+        webPort: ws.webPort,
       });
       desk.root.x = ws.x;
       desk.root.y = ws.y;

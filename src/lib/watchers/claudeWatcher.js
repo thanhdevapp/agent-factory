@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { normalizeTrace } from "../traceContract.js";
+import { resolveParentRepoRoot } from "./worktreeResolver.js";
 
 function isProcessAlive(pid) {
   if (!pid || typeof pid !== "number") return false;
@@ -321,18 +322,22 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           }
         }
 
-        const workspaceName = cwd
-          ? path.basename(cwd)
-          : (parsed.cwd ? path.basename(parsed.cwd) : (name || fallbackWorkspace));
+        const effectiveCwd = cwd || parsed.cwd;
+        const wtInfo = resolveParentRepoRoot(effectiveCwd);
+        const workspaceName = wtInfo.repoName || (effectiveCwd ? path.basename(effectiveCwd) : (name || fallbackWorkspace));
 
         const lastTimestamp = parsed.lastTimestamp || lastActive;
         const elapsedMs = Math.max(0, (lastTimestamp || now) - (startedAt || now));
 
-        const sessionTitle =
+        let sessionTitle =
           parsed.sessionTitle ||
           (parsed.slug ? parsed.slug.replace(/-/g, " ") : null) ||
           name ||
           workspaceName;
+
+        if (wtInfo.isWorktree && wtInfo.worktreeName) {
+          sessionTitle = `[wt: ${wtInfo.worktreeName}] ${sessionTitle}`;
+        }
 
         const model = parsed.model || null;
         const sessionLabel = name || pid || (sessionId ? sessionId.slice(0, 6) : "session");
@@ -345,6 +350,8 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           source: clientType,
           connectionId,
           account: workspaceName,
+          cwd: effectiveCwd || null,
+          worktree: wtInfo.worktreeName || null,
           model,
           provider: detectProvider(model, clientType),
           state,
@@ -436,16 +443,20 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         const state = isRecent ? "streaming" : isPending ? "idle" : "done";
 
         const { clientType, label } = classifyClaudeEntrypoint(...(parsed.entrypoints || []));
-        const workspaceName = parsed.cwd
-          ? path.basename(parsed.cwd)
-          : (extractWorkspaceFromFolder(pf) || fallbackWorkspace);
+        const effectiveCwd = parsed.cwd;
+        const wtInfo = resolveParentRepoRoot(effectiveCwd);
+        const workspaceName = wtInfo.repoName || (effectiveCwd ? path.basename(effectiveCwd) : (extractWorkspaceFromFolder(pf) || fallbackWorkspace));
 
         const elapsedMs = Math.max(0, (parsed.lastTimestamp || mtime) - stat.birthtimeMs);
 
-        const sessionTitle =
+        let sessionTitle =
           parsed.sessionTitle ||
           (parsed.slug ? parsed.slug.replace(/-/g, " ") : null) ||
           workspaceName;
+
+        if (wtInfo.isWorktree && wtInfo.worktreeName) {
+          sessionTitle = `[wt: ${wtInfo.worktreeName}] ${sessionTitle}`;
+        }
 
         const model = parsed.model || null;
         const connectionId = `${label} (${parsed.slug || fileSessionId.slice(0, 6)})`;
@@ -457,6 +468,8 @@ export async function getClaudeTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           source: clientType,
           connectionId,
           account: workspaceName,
+          cwd: effectiveCwd || null,
+          worktree: wtInfo.worktreeName || null,
           model,
           provider: detectProvider(model, clientType),
           state,

@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { execSync } from "node:child_process";
 import { normalizeTrace } from "../traceContract.js";
+import { resolveParentRepoRoot } from "./worktreeResolver.js";
 
 const TOOL_MAP = {
   view_file: "read",
@@ -418,8 +419,13 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         const providerName = getProviderFromModel(modelName);
 
         const fallbackWorkspace = path.basename(process.cwd()) || "agent-factory";
-        const finalAccount = folderName || fallbackWorkspace;
-        const finalSessionTitle = sessionTitle || finalAccount;
+        const wtInfo = resolveParentRepoRoot(detectedCwd);
+        const finalAccount = wtInfo.repoName || folderName || fallbackWorkspace;
+        let finalSessionTitle = sessionTitle || finalAccount;
+
+        if (wtInfo.isWorktree && wtInfo.worktreeName) {
+          finalSessionTitle = `[wt: ${wtInfo.worktreeName}] ${finalSessionTitle}`;
+        }
 
         traces.push(normalizeTrace({
           traceId: `agy-${convId.slice(0, 8)}`,
@@ -428,6 +434,8 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
           source,
           connectionId: `${appLabel} (${convId.slice(0, 6)})`,
           account: finalAccount,
+          cwd: detectedCwd || null,
+          worktree: wtInfo.worktreeName || null,
           model: modelName,
           provider: providerName,
           state,

@@ -64,8 +64,16 @@ function getDaemonPid() {
 }
 
 // -------------------------------------------------------------
-// Commands
+// Server Entry & Execution
 // -------------------------------------------------------------
+
+function getServerEntry() {
+  const serverPath = path.join(PKG_ROOT, "server.js");
+  if (fs.existsSync(serverPath)) {
+    return serverPath;
+  }
+  return null;
+}
 
 function getNextBin() {
   try {
@@ -84,24 +92,34 @@ function runForeground(port, open = true, isService = false) {
   if (!isService) {
     const existingPid = getDaemonPid();
     if (existingPid) {
-      console.log(`\x1b[33m⚠️ AGMon is already running in background (PID: ${existingPid})\x1b[0m`);
-      console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
+      console.log(`\x1b[33mAGMon is already running in background (PID: ${existingPid})\x1b[0m`);
+      console.log(`Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
       if (open) openBrowser(`http://localhost:${port}`);
       return;
     }
   }
 
-  const cmd = getNextCommand();
-  console.log(`\n\x1b[32m🤖 Starting AGMon (Agent Monitor) on port ${port} [mode: ${cmd}]...\x1b[0m`);
-  console.log(`📁 Project Root: ${PKG_ROOT}`);
-  console.log(`🌐 Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
+  const serverEntry = getServerEntry();
+  console.log(`\n\x1b[32mStarting AGMon (Agent Monitor) on port ${port}...\x1b[0m`);
+  console.log(`Project Root: ${PKG_ROOT}`);
+  console.log(`Dashboard: \x1b[36mhttp://localhost:${port}\x1b[0m\n`);
 
-  const nextBin = getNextBin();
-  const child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
-    cwd: PKG_ROOT,
-    stdio: "inherit",
-    env: { ...process.env, PORT: String(port) },
-  });
+  let child;
+  if (serverEntry) {
+    child = spawn(process.execPath, [serverEntry], {
+      cwd: PKG_ROOT,
+      stdio: "inherit",
+      env: { ...process.env, PORT: String(port) },
+    });
+  } else {
+    const cmd = getNextCommand();
+    const nextBin = getNextBin();
+    child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
+      cwd: PKG_ROOT,
+      stdio: "inherit",
+      env: { ...process.env, PORT: String(port) },
+    });
+  }
 
   if (open) {
     setTimeout(() => {
@@ -117,23 +135,34 @@ function runForeground(port, open = true, isService = false) {
 function startDaemon(port) {
   const existingPid = getDaemonPid();
   if (existingPid) {
-    console.log(`\x1b[33m⚠️ AGMon daemon is ALREADY running (PID: ${existingPid})\x1b[0m`);
-    console.log(`🌐 URL: \x1b[36mhttp://localhost:${port}\x1b[0m`);
+    console.log(`\x1b[33mAGMon daemon is ALREADY running (PID: ${existingPid})\x1b[0m`);
+    console.log(`URL: \x1b[36mhttp://localhost:${port}\x1b[0m`);
     return;
   }
 
-  const cmd = getNextCommand();
-  console.log(`\x1b[32m🚀 Starting AGMon in Background Daemon Mode on port ${port} [mode: ${cmd}]...\x1b[0m`);
+  const serverEntry = getServerEntry();
+  console.log(`\x1b[32mStarting AGMon in Background Daemon Mode on port ${port}...\x1b[0m`);
 
   const out = fs.openSync(LOG_FILE, "a");
-  const nextBin = getNextBin();
+  let child;
 
-  const child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
-    cwd: PKG_ROOT,
-    detached: true,
-    stdio: ["ignore", out, out],
-    env: { ...process.env, PORT: String(port) },
-  });
+  if (serverEntry) {
+    child = spawn(process.execPath, [serverEntry], {
+      cwd: PKG_ROOT,
+      detached: true,
+      stdio: ["ignore", out, out],
+      env: { ...process.env, PORT: String(port) },
+    });
+  } else {
+    const cmd = getNextCommand();
+    const nextBin = getNextBin();
+    child = spawn(process.execPath, [nextBin, cmd, "--port", String(port)], {
+      cwd: PKG_ROOT,
+      detached: true,
+      stdio: ["ignore", out, out],
+      env: { ...process.env, PORT: String(port) },
+    });
+  }
 
   child.unref();
 
@@ -149,12 +178,12 @@ function startDaemon(port) {
 function stopDaemon() {
   const pid = getDaemonPid();
   if (!pid) {
-    console.log(`\x1b[33mℹ️ No active AGMon daemon found.\x1b[0m`);
+    console.log(`\x1b[33mNo active AGMon daemon found.\x1b[0m`);
     if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE);
     return;
   }
 
-  console.log(`\x1b[33m🛑 Stopping AGMon daemon (PID: ${pid})...\x1b[0m`);
+  console.log(`\x1b[33mStopping AGMon daemon (PID: ${pid})...\x1b[0m`);
   try {
     process.kill(pid, "SIGTERM");
     setTimeout(() => {
@@ -172,7 +201,7 @@ function stopDaemon() {
 
 function showStatus(port) {
   const pid = getDaemonPid();
-  console.log(`\n\x1b[1m🤖 AGMon (Agent Monitor) Status:\x1b[0m`);
+  console.log(`\n\x1b[1mAGMon (Agent Monitor) Status:\x1b[0m`);
   if (pid) {
     console.log(`  • Status:  \x1b[32m● RUNNING (Daemon)\x1b[0m`);
     console.log(`  • PID:     \x1b[33m${pid}\x1b[0m`);
@@ -185,6 +214,155 @@ function showStatus(port) {
   const autostart = isAutostartEnabled();
   console.log(`  • Auto-start on boot: ${autostart ? "\x1b[32mENABLED\x1b[0m" : "\x1b[33mDISABLED\x1b[0m"}\n`);
 }
+
+// -------------------------------------------------------------
+// Phase 4: CLI Commands (list, launch, kill, watch)
+// -------------------------------------------------------------
+
+async function listSessions(port) {
+  console.log(`\n\x1b[1mActive AI Agent Sessions in AGMon (port ${port}):\x1b[0m\n`);
+  try {
+    const res = await fetch(`http://localhost:${port}/api/reports/tokens?timeframe=24h`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const sessions = data.sessions || [];
+
+    if (sessions.length === 0) {
+      console.log(`\x1b[33mNo active agent sessions recorded in the last 24h.\x1b[0m`);
+      console.log(`Run \x1b[36magmon launch <claude|antigravity|codex>\x1b[0m to start an agent.\n`);
+      return;
+    }
+
+    const header = [
+      "SESSION / ID".padEnd(24),
+      "CLIENT / PROVIDER".padEnd(20),
+      "MODEL".padEnd(24),
+      "TOKENS".padStart(10),
+      "STATUS".padEnd(12),
+      "WORKSPACE",
+    ].join("  ");
+
+    console.log(`\x1b[1m${header}\x1b[0m`);
+    console.log("─".repeat(header.length + 8));
+
+    for (const s of sessions.slice(0, 30)) {
+      const idStr = (s.sessionId || s.id || s.connectionId || "unknown").slice(0, 22).padEnd(24);
+      const provStr = (s.provider || s.clientType || "agent").slice(0, 18).padEnd(20);
+      const modelStr = (s.model || "—").slice(0, 22).padEnd(24);
+      const tokenStr = (s.totalTokens ? Number(s.totalTokens).toLocaleString() : "—").padStart(10);
+      const statusStr = (s.status || s.state || "idle").slice(0, 10).padEnd(12);
+      const wsStr = s.workspace || s.account || s.cwd ? path.basename(s.cwd || s.workspace || s.account) : "—";
+
+      console.log(`${idStr}  ${provStr}  \x1b[36m${modelStr}\x1b[0m  \x1b[32m${tokenStr}\x1b[0m  ${statusStr}  \x1b[33m${wsStr}\x1b[0m`);
+    }
+
+    console.log(`\n\x1b[32mTotal recorded sessions: ${sessions.length}\x1b[0m\n`);
+  } catch (err) {
+    console.log(`\x1b[33mNotice: Could not query running AGMon daemon at http://localhost:${port} (${err.message}).\x1b[0m`);
+    console.log(`Start the visualizer using \x1b[36magmon start\x1b[0m or \x1b[36magmon\x1b[0m.\n`);
+  }
+}
+
+function launchAgent(agentName, extraArgs = []) {
+  if (!agentName) {
+    console.log(`\x1b[31mError: Agent name required.\x1b[0m`);
+    console.log(`Usage: agmon launch <claude|antigravity|codex> [prompt or args...]`);
+    return;
+  }
+
+  const target = agentName.toLowerCase();
+  let bin = "";
+  let args = [];
+
+  if (target === "claude") {
+    bin = "npx";
+    args = ["@anthropic-ai/claude-code", ...extraArgs];
+  } else if (target === "antigravity" || target === "agy" || target === "gemini") {
+    bin = "agy";
+    args = [...extraArgs];
+  } else if (target === "codex") {
+    bin = "codex";
+    args = [...extraArgs];
+  } else {
+    bin = agentName;
+    args = [...extraArgs];
+  }
+
+  console.log(`\n\x1b[32mLaunching ${agentName} in ${process.cwd()}...\x1b[0m`);
+  console.log(`Command: \x1b[36m${bin} ${args.join(" ")}\x1b[0m\n`);
+
+  const child = spawn(bin, args, {
+    cwd: process.cwd(),
+    stdio: "inherit",
+    shell: true,
+  });
+
+  child.on("exit", (code) => {
+    process.exit(code || 0);
+  });
+}
+
+function killProcess(target) {
+  if (!target) {
+    console.log(`\x1b[31mError: Target PID required.\x1b[0m`);
+    console.log(`Usage: agmon kill <PID>`);
+    return;
+  }
+
+  const pid = parseInt(target, 10);
+  if (isNaN(pid) || pid <= 0) {
+    console.log(`\x1b[31mError: Invalid PID "${target}". Please supply a valid process ID.\x1b[0m`);
+    return;
+  }
+
+  if (!isPidAlive(pid)) {
+    console.log(`\x1b[33mProcess ${pid} is not currently running.\x1b[0m`);
+    return;
+  }
+
+  console.log(`\x1b[33mSending SIGTERM to process ${pid}...\x1b[0m`);
+  try {
+    process.kill(pid, "SIGTERM");
+    setTimeout(() => {
+      if (isPidAlive(pid)) {
+        console.log(`\x1b[31mProcess ${pid} did not exit within 1s, sending SIGKILL...\x1b[0m`);
+        try { process.kill(pid, "SIGKILL"); } catch {}
+      }
+      console.log(`\x1b[32m✓ Process ${pid} terminated.\x1b[0m`);
+    }, 800);
+  } catch (err) {
+    console.log(`\x1b[31mFailed to kill process ${pid}: ${err.message}\x1b[0m`);
+  }
+}
+
+function watchPath(targetPath) {
+  const resolved = targetPath ? path.resolve(targetPath) : process.cwd();
+  if (!fs.existsSync(resolved)) {
+    console.log(`\x1b[31mError: Path does not exist: ${resolved}\x1b[0m`);
+    return;
+  }
+
+  const WATCHED_FILE = path.join(CONFIG_DIR, "watched_paths.json");
+  let list = [];
+  try {
+    if (fs.existsSync(WATCHED_FILE)) {
+      list = JSON.parse(fs.readFileSync(WATCHED_FILE, "utf-8"));
+    }
+  } catch {}
+
+  if (!list.includes(resolved)) {
+    list.push(resolved);
+    fs.writeFileSync(WATCHED_FILE, JSON.stringify(list, null, 2), "utf-8");
+  }
+
+  console.log(`\x1b[32m✓ Successfully added to watch pool:\x1b[0m`);
+  console.log(`  \x1b[36m${resolved}\x1b[0m`);
+  console.log(`Total watched directories: ${list.length}`);
+}
+
+// -------------------------------------------------------------
+// Auto-start configuration (macOS Launchd & Linux systemd)
+// -------------------------------------------------------------
 
 function isAutostartEnabled() {
   if (process.platform === "darwin") {
@@ -253,7 +431,7 @@ function enableAutostart(port) {
     }
 
     const service = `[Unit]
-Description=AGMon (Agent Monitor) Daemon
+Description=AGMon AI Agent Monitor Daemon
 After=network.target
 
 [Service]
@@ -267,6 +445,7 @@ StandardError=append:${LOG_FILE}
 [Install]
 WantedBy=default.target
 `;
+
     fs.writeFileSync(SYSTEMD_PATH, service, "utf-8");
     try {
       execSync("systemctl --user daemon-reload");
@@ -279,7 +458,7 @@ WantedBy=default.target
     return;
   }
 
-  console.log(`\x1b[33m⚠️ Auto-start is currently supported on macOS (Launchd) and Linux (systemd).\x1b[0m`);
+  console.log(`\x1b[33mAuto-start is currently supported on macOS (Launchd) and Linux (systemd).\x1b[0m`);
 }
 
 function disableAutostart() {
@@ -291,7 +470,7 @@ function disableAutostart() {
       fs.unlinkSync(PLIST_PATH);
       console.log(`\x1b[32m✓ macOS auto-start disabled (LaunchAgent removed).\x1b[0m`);
     } else {
-      console.log(`\x1b[33mℹ️ Auto-start was not enabled.\x1b[0m`);
+      console.log(`\x1b[33mAuto-start was not enabled.\x1b[0m`);
     }
     return;
   }
@@ -305,7 +484,7 @@ function disableAutostart() {
       fs.unlinkSync(SYSTEMD_PATH);
       console.log(`\x1b[32m✓ Linux systemd auto-start disabled.\x1b[0m`);
     } else {
-      console.log(`\x1b[33mℹ️ Auto-start was not enabled.\x1b[0m`);
+      console.log(`\x1b[33mAuto-start was not enabled.\x1b[0m`);
     }
     return;
   }
@@ -313,26 +492,31 @@ function disableAutostart() {
 
 function showHelp() {
   console.log(`
-\x1b[1m🤖 AGMon (Agent Monitor) CLI\x1b[0m
-Universal Live AI Agent Office & Activity Visualizer
+\x1b[1mAGMon (Agent Monitor) CLI\x1b[0m
+Interactive Mission Control & 2D Office Visualizer for Coding Agents
 
 \x1b[1mUSAGE:\x1b[0m
-  npx agmon [command] [options]
-  # or when installed globally:
   agmon [command] [options]
+  # or via npx:
+  npx agmon [command] [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
-  (default)           Start visualizer and open dashboard in browser
-  start               Start in background (daemon mode)
-  stop                Stop background daemon
-  status              Check daemon status & auto-start configuration
-  autostart enable    Configure to automatically start on computer boot
-  autostart disable   Disable automatic boot launch
-  help                Show this help message
+  (default)                     Start visualizer and open dashboard in browser
+  start                         Start in background (daemon mode)
+  stop                          Stop background daemon
+  status                        Check daemon status & auto-start configuration
+  list                          List active AI agent sessions in an ASCII table
+  launch <agent> [args...]      Spawn a coding agent (claude, antigravity, codex)
+  kill <PID>                    Terminate a running agent process
+  watch [path]                  Add directory to active project watch pool
+  autostart enable              Configure to automatically start on computer boot
+  autostart disable             Disable automatic boot launch
+  version                       Show installed AGMon version
+  help                          Show this help message
 
 \x1b[1mOPTIONS:\x1b[0m
-  --port <number>     Set HTTP port (default: 3030)
-  --no-open           Do not automatically open browser on start
+  --port <number>               Set HTTP port (default: 3030)
+  --no-open                     Do not automatically open browser on start
 `);
 }
 
@@ -356,6 +540,22 @@ switch (command) {
 
   case "status":
     showStatus(port);
+    break;
+
+  case "list":
+    listSessions(port);
+    break;
+
+  case "launch":
+    launchAgent(args[1], args.slice(2));
+    break;
+
+  case "kill":
+    killProcess(args[1]);
+    break;
+
+  case "watch":
+    watchPath(args[1]);
     break;
 
   case "run":

@@ -2,7 +2,7 @@
 
 AGMon is a standalone, real-time AI Agent Office & Activity Visualizer. It watches local CLI and desktop coding agent logs (Antigravity CLI & App, Claude Code & Desktop, OpenAI Codex CLI & Desktop) and visualizes active agent workstations, tool badges, and token packet streams flowing to provider server pods in an isometric 2.5D canvas.
 
-![Virtual Office Canvas](screens/virtual-office-canvas.png)
+![Virtual Office Canvas](https://raw.githubusercontent.com/thanhdevapp/agent-factory/main/screens/virtual-office-canvas.png)
 
 ---
 
@@ -10,11 +10,11 @@ AGMon is a standalone, real-time AI Agent Office & Activity Visualizer. It watch
 
 | Session Chat & Inspector | Zen Fullscreen Chill Mode |
 | :---: | :---: |
-| ![Session Chat & Inspector](screens/session-chat-inspector.png) | ![Zen Fullscreen Chill Mode](screens/zen-chill-mode.png) |
+| ![Session Chat & Inspector](https://raw.githubusercontent.com/thanhdevapp/agent-factory/main/screens/session-chat-inspector.png) | ![Zen Fullscreen Chill Mode](https://raw.githubusercontent.com/thanhdevapp/agent-factory/main/screens/zen-chill-mode.png) |
 
 | Customization Store | Live Workstations & Telemetry |
 | :---: | :---: |
-| ![Customization Store](screens/customization-store.png) | ![Virtual Office Canvas](screens/virtual-office-canvas.png) |
+| ![Customization Store](https://raw.githubusercontent.com/thanhdevapp/agent-factory/main/screens/customization-store.png) | ![Virtual Office Canvas](https://raw.githubusercontent.com/thanhdevapp/agent-factory/main/screens/virtual-office-canvas.png) |
 
 ---
 
@@ -44,6 +44,20 @@ agmon start
 # Check status (PID, URL, autostart):
 agmon status
 
+# List active AI agent sessions in an ASCII table:
+agmon list
+
+# Spawn a coding agent in current project:
+agmon launch claude "Build login page"
+agmon launch antigravity
+agmon launch codex
+
+# Terminate a running agent process:
+agmon kill <PID>
+
+# Add a project directory to the active watch pool:
+agmon watch /path/to/project
+
 # Stop background daemon:
 agmon stop
 
@@ -53,6 +67,23 @@ agmon autostart enable
 # Disable auto-start on boot:
 agmon autostart disable
 ```
+
+---
+
+## Interactive Mission Control & Project Hub (v0.5.0)
+
+- **1-Click Native Terminal & Editor Handoff**: Jump directly from any active agent workstation or chat turn into **Ghostty**, **iTerm2**, **Terminal.app**, **VS Code**, or **Cursor** with path synchronization.
+- **Orca-Grade WebGL Web Terminal**:
+  - Global hotkey `Cmd+J` or `` ` `` opens the terminal from anywhere in the app.
+  - Dual placement: docked inside the bottom workbench panel or popped out into a floating, multi-tab drawer.
+  - Hardware GPU acceleration via `@xterm/addon-webgl` (60-120 FPS high-throughput log streams).
+  - Session buffer persistence across browser page reloads.
+  - In-terminal search (`Ctrl+F`), clickable web links (`http://localhost:PORT`), and Windows ConPTY support.
+- **Project Scripts Action Bar**:
+  - Automatically discovers `package.json` scripts (`dev`, `test`, `build`, `lint`).
+  - 1-Click execution with live SSE streaming output and 200-line bounded memory buffer.
+  - **Localhost Port Autodetection**: Automatically detects ports (e.g. `http://localhost:3000`) and displays clickable `:PORT` / "Open Web App" badges directly on the 2D office desk and sidebar.
+- **Git Worktree-Aware Grouping**: Automatically identifies parallel Git worktrees (`.git` worktrees pointer) and groups sibling worktree agents under the same Department in the 2D office.
 
 ---
 

@@ -4,6 +4,7 @@ import os from "node:os";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { normalizeTrace } from "../traceContract.js";
+import { resolveParentRepoRoot } from "./worktreeResolver.js";
 
 const execAsync = promisify(exec);
 
@@ -418,7 +419,13 @@ export async function getCodexTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
       const cleanBase = rawBase.replace(/^rollout-[\d-T]+-/, "");
       const sessionId = parsed.meta?.session_id || parsed.meta?.id || cleanBase;
       const { clientType, label } = classifyCodexSession(parsed.meta?.originator, parsed.meta?.source);
-      const workspace = extractWorkspace(parsed.cwd) || label;
+      const wtInfo = resolveParentRepoRoot(parsed.cwd);
+      const workspace = wtInfo.repoName || extractWorkspace(parsed.cwd) || label;
+      let sessionTitle = parsed.sessionTitle || workspace;
+
+      if (wtInfo.isWorktree && wtInfo.worktreeName) {
+        sessionTitle = `[wt: ${wtInfo.worktreeName}] ${sessionTitle}`;
+      }
 
       let state = "done";
       if (parsed.isLooping) {
@@ -448,6 +455,8 @@ export async function getCodexTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         source: clientType,
         connectionId: `${label} (${sessionId.slice(0, 6)})`,
         account: workspace,
+        cwd: parsed.cwd || null,
+        worktree: wtInfo.worktreeName || null,
         model: parsed.model || null,
         provider: "openai",
         state,
@@ -465,7 +474,7 @@ export async function getCodexTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         tools: Array.from(parsed.toolSet),
         activeTool: parsed.activeTool || (parsed.toolSet.size > 0 ? Array.from(parsed.toolSet)[0] : null),
         currentCommand: parsed.currentCommand || null,
-        sessionTitle: parsed.sessionTitle || workspace,
+        sessionTitle,
         lastText: parsed.lastText,
         lastTextRole: parsed.lastTextRole,
         error: parsed.error,
