@@ -582,6 +582,7 @@ export function createDesk({
   cost = 0,
   cachedPct = 0,
   queued = 1,
+  depth = 1,
   isLooping = false,
   pet = "none",
   props = [],
