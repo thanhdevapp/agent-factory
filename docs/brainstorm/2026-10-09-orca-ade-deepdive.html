@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orca ADE vs AGMon — Báo Cáo Phân Tích Kiến Trúc Kỹ Thuật, Tech Stack & Tinh Hoa Mã Nguồn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0a0a0a;
+      --ink-soft: #1a1a1a;
+      --paper: #faf7f2;
+      --paper-warm: #f0ebe1;
+      --accent: #b8232c;
+      --accent-soft: #e8d4d6;
+      --gold: #8a6f2c;
+      --muted: #6b6258;
+      --hairline: rgba(10, 10, 10, 0.12);
+      --serif: 'Fraunces', Georgia, serif;
+      --sans: 'Inter Tight', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: var(--serif);
+      font-weight: 300;
+      color: var(--ink);
+    }
+
+    h1 {
+      font-size: clamp(52px, 9vw, 135px);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+    }
+
+    h2 {
+      font-size: clamp(32px, 4.5vw, 64px);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-size: clamp(19px, 2.1vw, 26px);
+      line-height: 1.25;
+      font-weight: 400;
+    }
+
+    h4 {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    p {
+      color: var(--ink-soft);
+      margin-bottom: 16px;
+    }
+
+    p.lead {
+      font-family: var(--serif);
+      font-size: clamp(18px, 1.6vw, 22px);
+      line-height: 1.5;
+      color: var(--ink);
+      font-weight: 300;
+    }
+
+    .mono-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Layout & Slides */
+    .slide {
+      min-height: 100vh;
+      padding: 80px 8vw;
+      border-bottom: 1px solid var(--hairline);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .slide.cover {
+      align-items: flex-end;
+      padding-bottom: 100px;
+    }
+
+    .container {
+      max-width: 1240px;
+      width: 100%;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .slide-tag {
+      position: absolute;
+      top: 36px;
+      left: 8vw;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 36px;
+      right: 8vw;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    /* Grids */
+    .two-col-asym {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 64px;
+      align-items: start;
+      margin-top: 48px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-top: 40px;
+    }
+
+    .four-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+    }
+
+    .two-col-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 48px;
+    }
+
+    /* Components */
+    .card {
+      background: var(--paper-warm);
+      padding: 32px 28px;
+      border: 1px solid var(--hairline);
+      position: relative;
+    }
+
+    .card.dark {
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
+
+    .card.dark h3, .card.dark h4, .card.dark p {
+      color: var(--paper);
+    }
+
+    .card.dark h4 {
+      color: var(--accent-soft);
+    }
+
+    .card.dark p {
+      color: rgba(250, 247, 242, 0.78);
+    }
+
+    .card-mark {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .card.dark .card-mark {
+      color: rgba(250, 247, 242, 0.4);
+    }
+
+    .track-box {
+      border-left: 3px solid var(--accent);
+      background: var(--paper-warm);
+      padding: 36px 40px;
+      margin-top: 36px;
+    }
+
+    .track-box.dark {
+      background: var(--ink);
+      color: var(--paper);
+      border-left: 3px solid var(--accent);
+    }
+
+    .track-box.dark h3, .track-box.dark p {
+      color: var(--paper);
+    }
+
+    .pull-quote {
+      border-left: 2px solid var(--accent);
+      padding: 12px 0 12px 36px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(24px, 3.2vw, 42px);
+      line-height: 1.25;
+      color: var(--ink);
+      margin: 40px 0;
+    }
+
+    /* Tables */
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 36px;
+      font-size: 13.5px;
+    }
+
+    .comp-table th {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1.5px solid var(--ink);
+    }
+
+    .comp-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+      color: var(--ink-soft);
+    }
+
+    .comp-table tr:last-child td {
+      border-bottom: 1.5px solid var(--ink);
+    }
+
+    .comp-table td.col-dim {
+      font-family: var(--serif);
+      font-weight: 500;
+      color: var(--ink);
+      font-size: 14px;
+      width: 18%;
+    }
+
+    .comp-table td.col-orca {
+      width: 31%;
+      background: rgba(10, 10, 10, 0.02);
+    }
+
+    .comp-table td.col-agmon {
+      width: 31%;
+      background: rgba(184, 35, 44, 0.03);
+    }
+
+    .comp-table td.col-eval {
+      width: 20%;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    /* Motion */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .8s cubic-bezier(.22, 1, .36, 1), transform .8s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce), print {
+      .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .slide {
+        padding: 80px 6vw;
+        height: auto;
+        min-height: auto;
+      }
+      .slide-tag { left: 6vw; }
+      .slide-num { right: 6vw; }
+      .two-col-asym, .three-col, .four-col, .two-col-equal {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .comp-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 1: Cover -->
+  <section class="slide cover" id="cover">
+    <div class="container reveal">
+      <h4>Báo Cáo Bóc Tách Kiến Trúc &amp; Mã Nguồn · Số 01</h4>
+      <h1>Orca ADE.<br><em>Đội Ngũ Tác Nhân Tự Trị.</em></h1>
+      <div style="margin-top: 48px; border-top: 1.5px solid var(--ink); padding-top: 24px;" class="two-col-asym">
+        <div>
+          <p class="lead">Cách Môi Trường Ưu Tiên Git Worktree Của Stably Định Hình Lại AI Coding Agent, Và Lý Do AGMon Phải Giữ Vững Bản Sắc Giám Sát Toàn Cảnh.</p>
+        </div>
+        <div style="display: flex; gap: 48px; justify-content: flex-end; flex-wrap: wrap;">
+          <div>
+            <div class="mono-meta">Đối Tượng</div>
+            <div style="font-weight: 500; margin-top: 4px;">Orca ADE &amp; AGMon</div>
+          </div>
+          <div>
+            <div class="mono-meta">Ngày Lập</div>
+            <div style="font-weight: 500; margin-top: 4px;">09 Tháng 10, 2026</div>
+          </div>
+          <div>
+            <div class="mono-meta">Kết Luận</div>
+            <div style="font-weight: 500; margin-top: 4px; color: var(--accent);">Cộng Sinh Thụ Động</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 2: Paradigm Shift -->
+  <section class="slide" id="paradigm">
+    <span class="slide-tag">■ 01 · Dịch Chuyển Mô Thức</span>
+    <span class="slide-num">02 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Tiến Trình Phát Triển AI Lập Trình</h4>
+        <h2>Từ Gợi Ý Dòng Lệnh Đến Điều Phối Bầy Đàn.<br><em>Sự xuất hiện tất yếu của ADE.</em></h2>
+      </div>
+      <div class="three-col reveal">
+        <div class="card">
+          <div class="card-mark">GEN 1</div>
+          <h4>Trợ Lý Dòng Lệnh</h4>
+          <h3>Gợi Ý Từng Token</h3>
+          <p style="margin-top: 14px;">GitHub Copilot và Supermaven. Dự đoán ký tự kế tiếp ngay trong file đang mở. Lập trình viên vẫn là người gõ phím và ra lệnh thủ công từng bước.</p>
+        </div>
+        <div class="card">
+          <div class="card-mark">GEN 2</div>
+          <h4>Trình Soạn Thảo Tác Nhân</h4>
+          <h3>Đơn Luồng Agent</h3>
+          <p style="margin-top: 14px;">Cursor, Windsurf, Trae. Tích hợp sửa đổi đa tệp và chạy terminal, nhưng bị khóa chặt vào một nhánh git duy nhất và dễ xung đột file locks.</p>
+        </div>
+        <div class="card dark">
+          <div class="card-mark">GEN 3</div>
+          <h4>Môi Trường ADE</h4>
+          <h3>Đội Ngũ Tác Nhân Tự Trị</h3>
+          <p style="margin-top: 14px;">Orca ADE. Ưu tiên terminal, kích hoạt cùng lúc 5+ agent trên các Git worktree tách biệt. Lập trình viên đóng vai trò tổng chỉ huy và quản lý kết quả.</p>
+        </div>
+      </div>
+      <div class="track-box reveal">
+        <h4>Lớp Bổ Trợ Tự Nhiên</h4>
+        <p class="lead" style="margin-bottom: 0;">Vị trí chiến lược của <strong>AGMon</strong> ở đâu? AGMon không phải là một IDE. Nó là <strong>Màn hình Giám sát Toàn cảnh (Ambient Observability HUD)</strong> biến sự hỗn loạn ngầm của các bầy agent thành một văn phòng pixel 2D thư giãn và trực quan.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 3: Orca Mechanics -->
+  <section class="slide" id="mechanics">
+    <span class="slide-tag">■ 02 · Bóc Tách Hệ Thống</span>
+    <span class="slide-num">03 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Bóc Tách Kỹ Thuật: Stably AI</h4>
+        <h2>Bên Trong Cỗ Máy Orca.<br><em>Điều phối bầy agent mà không lo xung đột file.</em></h2>
+      </div>
+      <div class="two-col-asym reveal">
+        <div>
+          <div class="pull-quote">
+            "Orca không bọc agent vào các lớp logic độc quyền; nó điều phối môi trường hệ điều hành xung quanh agent."
+          </div>
+          <p>Bằng cách giao phó logic thực thi cho các công cụ CLI gốc (Claude Code, OpenAI Codex, Gemini CLI) và chỉ kiểm soát ranh giới tệp cùng tiến trình terminal, Orca hoàn toàn giải phóng người dùng khỏi sự phụ thuộc nền tảng.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="card">
+            <div class="card-mark">01</div>
+            <h4>Động Cơ Cô Lập Git Worktree</h4>
+            <h3>Triệt Tiêu Xung Đột Mã Nguồn</h3>
+            <p>Mỗi agent nhận một nhánh thư mục làm việc độc lập dưới <code>.worktrees/</code>. Hai agent có thể cùng tái cấu trúc một package mà không lo tranh chấp file hay lỗi staging git.</p>
+          </div>
+          <div class="card">
+            <div class="card-mark">02</div>
+            <h4>Phân Hệ Terminal Tốc Độ Cao</h4>
+            <h3>Chia Khung Lưới Vô Hạn</h3>
+            <p>Xây dựng trên <code>node-pty</code> và <code>xterm.js</code>. Chia màn hình linh hoạt theo chiều ngang/dọc với khả năng truyền phát I/O tốc độ cao tương đương terminal GPU hiện đại.</p>
+          </div>
+          <div class="card">
+            <div class="card-mark">03</div>
+            <h4>Vòng Lặp Thẩm Định Kép</h4>
+            <h3>Monaco Diff &amp; Chromium Vision</h3>
+            <p>Tích hợp Monaco Editor xem diff 2 chiều/3 chiều cùng trình duyệt Chromium nhúng chạy vòng lặp chụp ảnh màn hình và tương tác DOM để agent tự kiểm thử giao diện.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 4: Tech Stack Confrontation -->
+  <section class="slide" id="techstack">
+    <span class="slide-tag">■ 03 · Đối Đầu Tech Stack</span>
+    <span class="slide-num">04 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Nền Tảng Công Nghệ &amp; Thư Viện</h4>
+        <h2>Hai Trường Phái Kỹ Thuật.<br><em>Electron nguyên khối đối đầu Web siêu nhẹ.</em></h2>
+      </div>
+      <table class="comp-table reveal">
+        <thead>
+          <tr>
+            <th>Tầng Công Nghệ</th>
+            <th>Orca ADE (stablyai/orca)</th>
+            <th>AGMon (agent-factory)</th>
+            <th>Đánh Giá Đánh Đổi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-dim">Host Runtime</td>
+            <td class="col-orca"><strong>Electron</strong><br>Node runtime + Chromium shell</td>
+            <td class="col-agmon"><strong>Next.js 16</strong><br>App Router + Node.js CLI (bin/cli.js)</td>
+            <td class="col-eval">Orca cần quyền PTY sâu; AGMon đạt tính portable tuyệt đối qua <code>npx agmon</code>.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Render Engine</td>
+            <td class="col-orca"><strong>DOM / CSS Grid</strong><br>Flexbox, Split viewports</td>
+            <td class="col-agmon"><strong>Pixi.js v8</strong><br>WebGL / WebGPU 2D Canvas</td>
+            <td class="col-eval">Pixi.js giúp AGMon render hàng trăm sprite 60 FPS mà không làm nghẽn DOM.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Terminal &amp; I/O</td>
+            <td class="col-orca"><strong>node-pty + xterm.js</strong><br>Ghi/đọc PTY 2 chiều chủ động</td>
+            <td class="col-agmon"><strong>Passive File Watchers</strong><br>Đọc thụ động qua <code>fs.watch</code> stream</td>
+            <td class="col-eval">Orca điều khiển tiến trình; AGMon đọc log không xâm lấn, zero side-effect.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Code &amp; Diff</td>
+            <td class="col-orca"><strong>Monaco Editor</strong><br>@monaco-editor/react</td>
+            <td class="col-agmon"><strong>Monaco Editor</strong><br>@monaco-editor/react 4.7.0 + diff</td>
+            <td class="col-eval"><strong>Điểm chung</strong>: Cả 2 cùng tin dùng Monaco để có chất lượng xem code chuẩn VS Code.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Thị Giác &amp; DAG</td>
+            <td class="col-orca"><strong>Chromium Webview</strong><br>Chụp DOM snapshot cho AI test</td>
+            <td class="col-agmon"><strong>Mermaid.js + Markdown</strong><br>Vẽ đồ thị DAG điều phối tác vụ</td>
+            <td class="col-eval">Orca hướng tới AI vision; AGMon hướng tới người dùng hiểu rõ kiến trúc.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Sensory / Audio</td>
+            <td class="col-orca"><strong>sherpa-onnx</strong><br>Local voice-to-text offline</td>
+            <td class="col-agmon"><strong>Web Audio API</strong><br>Pink noise &amp; âm thanh môi trường</td>
+            <td class="col-eval">Orca tối ưu hóa nhập liệu giọng nói; AGMon tối ưu hóa an toàn giác quan và giảm stress.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Slide 5: Deep Performance Evaluation -->
+  <section class="slide" id="performance">
+    <span class="slide-tag">■ 04 · Thước Đo Hiệu Năng</span>
+    <span class="slide-num">05 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Đo Lường Định Lượng &amp; Áp Lực Tài Nguyên</h4>
+        <h2>Áp Lực Khi Chạy Đa Agent.<br><em>Electron tải nặng đối đầu WebGL tối ưu.</em></h2>
+      </div>
+      <table class="comp-table reveal">
+        <thead>
+          <tr>
+            <th>Chỉ Số Hiệu Năng</th>
+            <th>Orca ADE (stablyai/orca)</th>
+            <th>AGMon (agent-factory)</th>
+            <th>Ý Nghĩa Thực Tế Vận Hành</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-dim">RAM Chế Độ Chờ</td>
+            <td class="col-orca"><strong>~250MB - 400MB</strong><br>(Nạp Electron shell &amp; V8 context)</td>
+            <td class="col-agmon"><strong>~45MB - 65MB</strong><br>(Next.js runtime + Pixi atlas)</td>
+            <td class="col-eval">AGMon nhẹ hơn xấp xỉ 5-6 lần ngay từ khi khởi động.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">RAM Chạy 5 Agent</td>
+            <td class="col-orca"><strong>1.2GB - 2.8GB+</strong><br>(5 scrollback buffers + DOM trees)</td>
+            <td class="col-agmon"><strong>70MB - 110MB</strong><br>(Bounded buffer cap 250 dòng)</td>
+            <td class="col-eval">Orca dễ ngốn RAM; AGMon kiểm soát ngưỡng bộ nhớ nghiêm ngặt.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">CPU Tải Cao (Streaming)</td>
+            <td class="col-orca"><strong>25% - 60%</strong><br>(Nghẽn IPC serialize ký tự PTY)</td>
+            <td class="col-agmon"><strong>3% - 7%</strong><br>(Batching update + GPU draw calls)</td>
+            <td class="col-eval">Orca khiến quạt MacBook quay; AGMon chạy cực kỳ êm ái.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Áp Lực Đĩa Cứng (Disk I/O)</td>
+            <td class="col-orca"><strong>Rất Cao</strong><br>(Nhân bản node_modules 5 worktrees)</td>
+            <td class="col-agmon"><strong>Gần như bằng 0</strong><br>(Chỉ đọc stream vài KB log)</td>
+            <td class="col-eval">Worktrees của Orca chiếm hàng chục GB SSD và gây thắt cổ chai I/O.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Đồ Họa &amp; FPS</td>
+            <td class="col-orca">Dễ tụt khung hình khi DOM phình to</td>
+            <td class="col-agmon">Khóa cứng 60 FPS trên WebGL Canvas</td>
+            <td class="col-eval">Pixi.js v8 xử lý toàn bộ avatar trong 1 Draw Call duy nhất.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Slide 6: Source Code Gems (NEW) -->
+  <section class="slide" id="source-gems">
+    <span class="slide-tag">■ 05 · Tinh Hoa Mã Nguồn</span>
+    <span class="slide-num">06 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Kiểm Chứng Trực Tiếp Từ Repo StablyAI/Orca (88k Stars)</h4>
+        <h2>Những Tiện Ích Đắt Giá Để Góp Nhặt.<br><em>Các kỹ thuật thực chiến không phỏng đoán.</em></h2>
+      </div>
+      <div class="four-col reveal">
+        <div class="card">
+          <div class="card-mark">STATUSLINE</div>
+          <h4>statusline-script.ts</h4>
+          <h3>Bắt Quota Claude Realtime</h3>
+          <p>Claude Code tự đổ JSON <code>rate_limits</code> vào stdin của lệnh statusLine mỗi lượt. Orca bắt luồng này và gửi POST nội bộ mà không in ra stdout, né triệt để lỗi 429.</p>
+        </div>
+        <div class="card">
+          <div class="card-mark">SYMLINK</div>
+          <h4>worktree-shared-directories.ts</h4>
+          <h3>Tạo Worktree Trong 200ms</h3>
+          <p>Khai báo <code>worktree.sharedDirectories</code> trong <code>orca.yaml</code> để tự động tạo symlink <code>node_modules</code> và <code>.cache</code> từ repo chính, tiết kiệm hàng chục GB SSD.</p>
+        </div>
+        <div class="card">
+          <div class="card-mark">URL PARSE</div>
+          <h4>advertised-url-parsing.ts</h4>
+          <h3>Tự Bắt Port Web Localhost</h3>
+          <p>Quét terminal log tìm regex <code>localhost:PORT</code>, tự động hiển thị nút mở web app ngay trên bàn làm việc của nhân vật pixel trong văn phòng AGMon.</p>
+        </div>
+        <div class="card dark">
+          <div class="card-mark">ATTENTION</div>
+          <h4>desktop-away-state.ts</h4>
+          <h3>Chỉ Báo Động Khi Dev Vắng Mặt</h3>
+          <p>Đo thời gian rảnh rỗi máy tính (3 phút). Khi dev đang ngồi code, không gửi thông báo phiền; chỉ khi khóa màn hình hoặc vắng mặt mới kích hoạt chuông và push notification.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 7: Direct Confrontation -->
+  <section class="slide" id="comparison">
+    <span class="slide-tag">■ 06 · Đối Đầu Trực Diện</span>
+    <span class="slide-num">07 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Phân Loại Kiến Trúc</h4>
+        <h2>Động Cơ Thực Thi vs. Màn Hình Giám Sát.<br><em>Hai trường phái triết lý kỹ thuật khác biệt.</em></h2>
+      </div>
+      <table class="comp-table reveal">
+        <thead>
+          <tr>
+            <th>Tiêu Chí So Sánh</th>
+            <th>Orca ADE (onorca.dev)</th>
+            <th>AGMon (agent-factory)</th>
+            <th>Định Hướng Chiến Lược</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-dim">Bản Chất Cốt Lõi</td>
+            <td class="col-orca"><strong>Môi Trường Thực Thi Chủ Động</strong><br>Khởi tạo, điều phối và kiểm soát trực tiếp các agent.</td>
+            <td class="col-agmon"><strong>Màn Hình Giám Sát Thụ Động</strong><br>Theo dõi ngầm, tổng hợp dữ liệu và nhân bản hóa agent.</td>
+            <td class="col-eval">Hai bài toán bổ trợ cho nhau.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Mức Độ Xâm Lấn</td>
+            <td class="col-orca"><strong>Cao</strong>: Bắt buộc lập trình viên phải làm việc bên trong ứng dụng Electron của Orca.</td>
+            <td class="col-agmon"><strong>Không Xâm Lấn (Zero)</strong>: Lập trình viên tự do dùng IDE ưa thích; AGMon theo dõi logs ở hậu cảnh.</td>
+            <td class="col-eval">AGMon không thay đổi thói quen dev.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Cơ Chế Cô Lập</td>
+            <td class="col-orca"><strong>Vật Lý</strong>: Tự động khởi tạo các thư mục Git worktree riêng biệt trên ổ đĩa.</td>
+            <td class="col-agmon"><strong>Logic</strong>: Đọc file phiên làm việc (session JSON) và gom nhóm theo đường dẫn repository.</td>
+            <td class="col-eval">AGMon cần học hỏi cách nhận diện worktree.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Mô Hình Giao Diện</td>
+            <td class="col-orca">Giao diện IDE hiện đại: Khung chia terminal, tab xem diff Monaco, trình xem trước web.</td>
+            <td class="col-agmon">Văn Phòng Pixel 2D: Bàn làm việc, nhân vật tí hon sống động, âm thanh môi trường thư giãn.</td>
+            <td class="col-eval">Khác biệt hóa tuyệt đối về trải nghiệm.</td>
+          </tr>
+          <tr>
+            <td class="col-dim">Giá Trị Tâm Lý</td>
+            <td class="col-orca">Tối đa hóa tốc độ xuất code và khả năng thực thi dòng lệnh thô.</td>
+            <td class="col-agmon">Mang lại sự an tâm, giảm bớt căng thẳng nhận thức và tạo niềm vui khi lập trình.</td>
+            <td class="col-eval">Xoa dịu hội chứng lo âu khi chạy agent ngầm.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Slide 8: Brutal Honesty -->
+  <section class="slide" id="honesty">
+    <span class="slide-tag">■ 07 · Nhìn Nhận Thẳng Thắn</span>
+    <span class="slide-num">08 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Kỷ Luật Kiến Trúc</h4>
+        <h2>AGMon có nên biến thành một ADE không?<br><em>Câu trả lời dứt khoát là Không.</em></h2>
+      </div>
+      <div class="two-col-equal reveal">
+        <div class="card">
+          <div class="card-mark">CẠM BẪY</div>
+          <h4>Ảo Vọng Nguy Hiểm</h4>
+          <h3>Ý Muốn Biến AGMon Thành Một IDE</h3>
+          <p>Nhìn vào thành công của Orca, rất dễ nảy sinh ý tưởng: <em>"Hãy thêm tính năng chia terminal và tự spawn agent vào AGMon!"</em></p>
+          <p>Đây sẽ là một sai lầm chết người vi phạm <strong>YAGNI</strong> và <strong>KISS</strong>. Nó ép AGMon lao vào đại dương đỏ đầy tốn kém về việc giả lập terminal, sửa lỗi giao diện cửa sổ và các lỗi hệ điều hành của Electron.</p>
+        </div>
+        <div class="card dark">
+          <div class="card-mark">CHÂN LÝ</div>
+          <h4>Vị Thế Vàng</h4>
+          <h3>Bạn Đồng Hành Giám Sát Độc Lập</h3>
+          <p>AGMon chiến thắng nhờ sự <strong>nhanh chóng</strong>, <strong>thú vị</strong> và khả năng <strong>chạy tức thì</strong> chỉ qua lệnh <code>npx agmon</code>.</p>
+          <p>Thay vì đối đầu với Orca, AGMon nên là màn hình HUD tĩnh lặng trên màn hình phụ của lập trình viên, quan sát đồng thời cả Orca, Claude Code và Antigravity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 9: Three Actionable Takeaways -->
+  <section class="slide" id="takeaways">
+    <span class="slide-tag">■ 08 · Bài Học Thực Chiến</span>
+    <span class="slide-num">09 / 10</span>
+    <div class="container">
+      <div class="reveal">
+        <h4>Kỹ Thuật Sản Phẩm</h4>
+        <h2>Ba Mô Hình Cần Tiếp Thu.<br><em>Chuyển hóa bài học từ ADE thành tính năng cho AGMon.</em></h2>
+      </div>
+      <div class="three-col reveal">
+        <div class="card">
+          <div class="card-mark">01</div>
+          <h4>Nhận Diện Git Worktree</h4>
+          <h3>Gom Chung Phòng Ban</h3>
+          <p style="margin-top: 14px;"><strong>Vấn đề:</strong> Các worktree nhánh bị hiển thị như những dự án độc lập rải rác.<br><strong>Giải pháp:</strong> AGMon đọc con trỏ <code>.git</code> để tự gom các agent trên các worktree về chung một phòng ban trong văn phòng pixel.</p>
+        </div>
+        <div class="card">
+          <div class="card-mark">02</div>
+          <h4>Chi Tiết Hóa Animation</h4>
+          <h3>Sprite Theo Trạng Thái PTY</h3>
+          <p style="margin-top: 14px;"><strong>Vấn đề:</strong> Hiện chỉ có chuyển động rảnh rỗi hoặc làm việc đơn giản.<br><strong>Giải pháp:</strong> Ánh xạ trực tiếp sự kiện (chạy test, chờ duyệt, báo lỗi) thành phụ kiện và bong bóng suy nghĩ sống động cho nhân vật.</p>
+        </div>
+        <div class="card dark">
+          <div class="card-mark">03</div>
+          <h4>Chế Độ Mini-HUD Nổi</h4>
+          <h3>Picture-in-Picture Thu Nhỏ</h3>
+          <p style="margin-top: 14px;"><strong>Vấn đề:</strong> Màn hình AGMon toàn cảnh dễ bị che khuất khi dev chỉ có 1 màn hình.<br><strong>Giải pháp:</strong> Dải hiển thị thu nhỏ 320x180px ghim gọn gàng ở góc màn hình cạnh Orca hoặc Cursor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 10: Conclusion & Decision -->
+  <section class="slide" id="conclusion">
+    <span class="slide-tag">■ 09 · Kết Luận Chiến Lược</span>
+    <span class="slide-num">10 / 10</span>
+    <div class="container reveal">
+      <h4>Định Hướng Điều Hành</h4>
+      <h2>Quan sát tất cả.<br><em>Không kiểm soát gì cả.</em></h2>
+      <div class="track-box dark" style="margin-top: 48px;">
+        <h4 style="color: var(--accent-soft);">Chỉ Thị Chiến Lược Cuối Cùng</h4>
+        <p class="lead" style="color: var(--paper); margin-bottom: 20px;">
+          Orca ADE xây dựng cỗ máy hạng nặng để vận hành đạo quân agent. AGMon kiến tạo giao diện nhân bản để thấu hiểu và tận hưởng chúng.
+        </p>
+        <p style="color: rgba(250, 247, 242, 0.75); margin-bottom: 0;">
+          Bằng cách duy trì sự phân tách trách nhiệm rõ ràng, AGMon luôn giữ được sự gọn nhẹ, nhận được sự yêu mến từ cộng đồng và thích ứng bền vững trước mọi biến đổi của các công cụ AI runtime.
+        </p>
+      </div>
+      <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--hairline); padding-top: 24px;">
+        <span class="mono-meta">Tài liệu tham chiếu: docs/brainstorm/2026-10-09-orca-source-gems-for-agmon.md</span>
+        <span class="mono-meta">Trạng thái: Đã bóc tách mã nguồn thực tế &amp; Lưu trữ</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Reveal animation primitive
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, {
+      threshold: 0.15
+    });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
