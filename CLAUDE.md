@@ -20,18 +20,37 @@ Tài liệu này cung cấp hướng dẫn kiến trúc, danh mục lệnh, và 
 
 * `npm run dev`: Chạy máy chủ phát triển Next.js với Turbopack trên cổng `3030`.
 * `npm run build`: Kiểm tra và build bản production (Bắt buộc chạy để xác minh không có lỗi cú pháp, lint hoặc kiểu dữ liệu trước khi commit).
-* `npm run start`: Khởi chạy bản build production trên cổng `3030`.
+* `npm run start`: Khởi chạy bản build production trên cổng `3030` thông qua `server.js`.
+* `npm run publish`: Tự động tăng patch version (`npm version patch`), build production (`next build`), publish gói công khai lên npmjs (`npm publish --access public`) và đẩy commit cùng git tag lên GitHub (`git push origin main --tags`).
+
+### Lệnh CLI `agmon` (sau khi cài đặt hoặc qua `bin/cli.js`)
+* `agmon list`: Hiển thị bảng ASCII danh sách các phiên agent đang hoạt động kèm PID, thư mục làm việc, công cụ đang gọi.
+* `agmon launch <agent> [prompt]`: Khởi chạy nhanh tác nhân (`antigravity`, `claude`, `codex`) ngay tại thư mục hiện tại.
+* `agmon kill <pid>`: Kết thúc an toàn tiến trình agent đang chạy hoặc bị treo.
+* `agmon watch <dir>`: Thêm thư mục dự án vào danh sách theo dõi hoạt động.
+* `agmon start` / `agmon stop` / `agmon status`: Quản lý tiến trình daemon chạy ngầm.
+* `agmon autostart enable` / `disable`: Cấu hình tự động khởi động cùng hệ điều hành (macOS LaunchAgent / Linux systemd).
 
 ---
 
 ## 3. Kiến trúc Thư mục
 
+* `bin/cli.js`: Điểm vào (Entry point) của công cụ dòng lệnh CLI `agmon`.
+* `server.js`: Custom server hỗ trợ chạy cả Next.js và API độc lập.
 * `src/app/`: Các tuyến đường App Router Next.js và API endpoints:
   * `/api/traces/stream`: Tuyến SSE truyền tải telemetry agents theo thời gian thực.
   * `/api/sessions/[id]/transcript`: Bóc tách toàn bộ hội thoại và tool calls của phiên.
   * `/api/reports/tokens`: Tổng hợp thống kê chi phí, model và tokens.
+  * `/api/project/scripts`: Quét và trả về danh sách npm scripts từ `package.json` dự án.
+  * `/api/project/run-script`: Thực thi script dự án và stream output trực tiếp qua SSE.
+  * `/api/workspace/files`: Duyệt cây thư mục mã nguồn của workspace đang được quan sát.
+  * `/api/workspace/file-content`: Đọc nội dung tệp tin mã nguồn có kiểm tra an toàn đường dẫn.
+  * `/api/handoff`: Chuyển giao mở nhanh dự án trong terminal/editor bản địa (Ghostty, iTerm2, VS Code, Cursor...).
+  * `/api/version`: Kiểm tra phiên bản ứng dụng hiện tại.
   * `/reports`: Trang báo cáo phân tích độc lập.
+  * `/store`: Cửa hàng Cosmetics Store và trang bị vật phẩm.
 * `src/components/layout/`: Bộ khung giao diện VS Code Workbench (`TitleBar`, `ActivityBar`, `LeftSidebar`, `RightSidebar`, `BottomPanel`, `EditorTabs`, `StatusBar`, `VSCodeWorkbench`).
+* `src/components/terminal/`: Terminal WebGL tích hợp drawer (`WebTerminalDrawer.jsx`, `@xterm/addon-webgl`, hardware acceleration).
 * `src/components/factory/`: Văn phòng ảo 2D (`office-canvas.js`, `office-scene.js`, các sprite nhân vật, bàn làm việc, đường truyền tokens) và đồ thị phân rã nhiệm vụ đa tác nhân (`AgentGraphView.jsx`).
 * `src/components/chat/`: Hộp thoại tương tác phiên (`SessionChatModal.js`, `ChatMessageItem.js`, `ToolCallCard.js`, `ContextGauge.js`, `DiffViewer.js`).
 * `src/components/replay/`: Cỗ máy tua lại hành trình phiên làm việc (`TimeMachineToolbar.jsx`, `ReplayEventInspector.jsx`, `ReplayModeOverlay.jsx`).

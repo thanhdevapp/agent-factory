@@ -1,5 +1,52 @@
 # AGMon Release Notes
 
+## v0.2.4 - Interactive Project Hub, Terminal Drawer, CLI Management & AI Factory Gamification
+
+### Overview
+A landmark release transforming AGMon from a pure monitoring viewer into a full-fledged, interactive Mission Control center and developer CLI for AI coding agents.
+
+---
+
+### Highlights & Key Features
+
+1. **Interactive Mission Control & Orca-Grade WebGL Web Terminal**:
+   - **Global Hotkey**: Press `Cmd+J` or `` ` `` to open the terminal drawer from anywhere in the application.
+   - **Dual Placement**: Docked directly inside the bottom workbench panel or popped out into a floating, multi-tab drawer.
+   - **Hardware GPU Acceleration**: High-throughput log streaming (60-120 FPS) powered by `@xterm/addon-webgl`.
+   - **Session Buffer Persistence**: Terminal buffer and scrollback history persist across browser reloads.
+   - **In-Terminal Search & Links**: Real-time buffer search (`Ctrl+F`), clickable web links (`http://localhost:PORT`), and Windows ConPTY support.
+
+2. **Dual-Mode Developer CLI & Process Management**:
+   - `agmon list`: ASCII status table displaying all active agent sessions across Antigravity, Claude Code, and Codex CLI with PIDs, working directories, and active tool calls.
+   - `agmon launch <agent> [prompt]`: Launch any coding agent (`antigravity`, `claude`, `codex`) directly from your terminal.
+   - `agmon kill <pid>`: Terminate runaway or stuck agent processes safely.
+   - `agmon watch <dir>`: Add custom project directories to the active watch pool.
+   - **Background Daemon**: Manage background services via `agmon start`, `agmon stop`, `agmon status`, and system boot autostart (`agmon autostart enable`).
+
+3. **Project Scripts Action Bar & Localhost Port Autodetection**:
+   - Auto-discovers `package.json` scripts (`dev`, `test`, `build`, `lint`) with 1-click execution.
+   - Live Server-Sent Events (SSE) streaming output with bounded 200-line memory buffer.
+   - **Port Sniffing**: Automatically detects server ports (e.g. `http://localhost:3000`) and displays clickable `:PORT` / "Open Web App" badges directly on the 2D office desk and sidebar.
+
+4. **1-Click Native Terminal & Editor Handoff**:
+   - Jump directly from any active agent workstation or chat turn into **Ghostty**, **iTerm2**, **Terminal.app**, **VS Code**, or **Cursor** with path synchronization.
+
+5. **Git Worktree-Aware Multi-Agent Grouping**:
+   - Automatically identifies parallel Git worktrees (`.git` worktrees pointer) and groups sibling worktree agents under the same Department in the 2D office.
+
+6. **AI Factory Gamification, Soundboard & Cosmetics Store**:
+   - **Worker Progression**: Experience points (XP) and progression levels for active AI coding agents based on completed tasks and tool usage.
+   - **Procedural Mechanical Keyboard Audio**: Zero-asset soundboard built with the Web Audio API providing realistic keyclick profiles (Blue, Brown, Red switches) during token streaming.
+   - **Cosmetics Store**: 1,000+ cosmetic items (Agent 3D Skins, Tech Desk Props, Animated Pets, Particle Auras, Obsidian Pedestal Trophies).
+
+7. **Automated Release Pipeline**:
+   - Added `npm run publish` command combining patch increment, optimized Turbopack build, npmjs public publishing, and Git tag synchronization.
+
+8. **Open Source & License**:
+   - Public GitHub repository release licensed under the MIT License.
+
+---
+
 ## Version: Mock Showcase & 1,000 3D Cosmetic Items System
 
 ### Overview

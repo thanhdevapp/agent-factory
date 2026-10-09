@@ -70,7 +70,7 @@ agmon autostart disable
 
 ---
 
-## Interactive Mission Control & Project Hub (v0.5.0)
+## Interactive Mission Control & Project Hub
 
 - **1-Click Native Terminal & Editor Handoff**: Jump directly from any active agent workstation or chat turn into **Ghostty**, **iTerm2**, **Terminal.app**, **VS Code**, or **Cursor** with path synchronization.
 - **Orca-Grade WebGL Web Terminal**:
@@ -109,6 +109,10 @@ AGMon is fully PWA-compliant with offline shell caching, standalone window frame
 - **Runaway Loop Detection**:
   - Automatically flags repetitive loops (5 or more consecutive identical tool calls within 60 seconds).
   - Visualized on canvas with warning state and status indicators.
+- **AI Factory Gamification & Progression**:
+  - Worker experience points (XP) and progression levels for active AI coding agents.
+  - Procedural mechanical keyboard soundboard generated via Web Audio API with tactile keyclick profiles (Blue, Brown, Red switches) during token streaming.
+  - Integrated Cosmetics Store with customizable 3D desk skins, companions, particle auras, and trophies.
 - **8-Bit Web Audio Synthesizer**:
   - Procedural sound generation directly via Web Audio API with zero audio file assets.
   - Subtle typing ticks during streaming, task complete chimes, loop alerts, and input pings.
@@ -117,6 +121,22 @@ AGMon is fully PWA-compliant with offline shell caching, standalone window frame
 - **Telemetry Filtering**: Filter by quantity (Top 10, 20, 30, 50, or All Desks) and timeframe (1h, 6h, 24h, 3d, 7d, All time).
 - **Desktop Push Notifications**: Optional OS notifications when tasks complete or warnings trigger.
 - **Rich Showcase and Mock Presets**: Pre-configured testing scenarios (`showcase`, `cases`, and item-specific showcases) to evaluate office dynamics and items.
+
+---
+
+## Release & Publishing
+
+To publish a new release to npmjs with automatic patch version bump and Git tag synchronization:
+
+```bash
+npm run publish
+```
+
+This automated script will:
+1. Increment the patch version (`npm version patch`).
+2. Run pre-pack verification and optimized production build (`next build`).
+3. Publish the package publicly to npm (`npm publish --access public`).
+4. Push all commits and version tags to GitHub (`git push origin main --tags`).
 
 ---
 
