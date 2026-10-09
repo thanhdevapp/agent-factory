@@ -449,7 +449,7 @@ export async function getCodexTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         connectionId: `${label} (${sessionId.slice(0, 6)})`,
         account: workspace,
         model: parsed.model || null,
-        provider: "openai (codex)",
+        provider: "openai",
         state,
         startedAt: parsed.startedAt,
         elapsedMs,

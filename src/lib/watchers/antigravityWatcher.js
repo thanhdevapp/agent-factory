@@ -77,10 +77,16 @@ function normalizeToolCall(tc) {
 
 export function extractModelFromTranscript(content) {
   if (!content) return null;
-  const match = content.match(/Model Selection` from [^ ]+ to (.*?)(?:\.\s+No need|\.\s*\n|<\/USER_SETTINGS_CHANGE>)/i);
-  if (match && match[1]) return match[1].trim();
-  const matchFallback = content.match(/Model Selection`? from .*? to ([^\n<.]+)/i);
-  if (matchFallback && matchFallback[1]) return matchFallback[1].trim();
+  const matches = [...content.matchAll(/Model Selection`? from [^ ]+ to (.*?)(?:\.\s+No need|\.\s*\n|<\/USER_SETTINGS_CHANGE>)/gi)];
+  if (matches.length > 0) {
+    const last = matches[matches.length - 1][1];
+    if (last) return last.trim();
+  }
+  const fallbackMatches = [...content.matchAll(/Model Selection`? from .*? to ([^\n<.]+)/gi)];
+  if (fallbackMatches.length > 0) {
+    const last = fallbackMatches[fallbackMatches.length - 1][1];
+    if (last) return last.trim();
+  }
   return null;
 }
 
@@ -104,15 +110,13 @@ function compactText(value, maxLength = 160) {
   return text ? text.slice(0, maxLength) : null;
 }
 
-function getProviderFromModel(modelName, clientType) {
+function getProviderFromModel(modelName) {
   const model = String(modelName || "").toLowerCase();
-  let provider = null;
-  if (model.includes("gemini")) provider = "gemini";
-  else if (model.includes("claude")) provider = "anthropic";
-  else if (model.includes("gpt") || model.includes("o1") || model.includes("o3")) provider = "openai";
-  else if (model.includes("minimax")) provider = "minimax";
-  else if (model.includes("deepseek")) provider = "deepseek";
-  return provider ? `${provider} (${clientType})` : null;
+  if (model.includes("claude")) return "anthropic";
+  if (model.includes("gpt") || model.includes("o1") || model.includes("o3") || model.includes("o4") || model.includes("codex")) return "openai";
+  if (model.includes("minimax")) return "minimax";
+  if (model.includes("deepseek")) return "deepseek";
+  return "gemini";
 }
 
 function cleanUserPrompt(content) {
@@ -410,8 +414,8 @@ export async function getAntigravityTraces(maxAgeMs = 24 * 60 * 60 * 1000) {
         const clientType = source === "app" ? "app" : source === "ide" ? "ide" : "cli";
         const appLabel = source === "app" ? "Antigravity App" : source === "ide" ? "Antigravity IDE" : "Antigravity";
         const rawModel = extractModelFromTranscript(content) || (source === "cli" ? defaultCliModel : null);
-        const modelName = normalizeModel(rawModel);
-        const providerName = getProviderFromModel(modelName, clientType);
+        const modelName = normalizeModel(rawModel) || "gemini-3.8-flash";
+        const providerName = getProviderFromModel(modelName);
 
         const fallbackWorkspace = path.basename(process.cwd()) || "agent-factory";
         const finalAccount = folderName || fallbackWorkspace;

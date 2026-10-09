@@ -81,15 +81,13 @@ function classifyClaudeEntrypoint(...entrypoints) {
   return { clientType: "cli", label: "Claude" };
 }
 
-function detectProvider(modelName, clientType = "cli") {
+function detectProvider(modelName) {
   const m = String(modelName || "").toLowerCase();
-  let base = null;
-  if (m.includes("claude")) base = "anthropic";
-  else if (m.includes("gemini")) base = "gemini";
-  else if (m.includes("gpt") || m.includes("o1") || m.includes("o3")) base = "openai";
-  else if (m.includes("minimax")) base = "minimax";
-  else if (m.includes("deepseek")) base = "deepseek";
-  return base ? `${base} (${clientType})` : null;
+  if (m.includes("gemini")) return "gemini";
+  if (m.includes("gpt") || m.includes("o1") || m.includes("o3") || m.includes("o4") || m.includes("codex")) return "openai";
+  if (m.includes("minimax")) return "minimax";
+  if (m.includes("deepseek")) return "deepseek";
+  return "anthropic";
 }
 
 function compactText(value, maxLength = 160) {
@@ -134,6 +132,9 @@ async function parseClaudeTranscript(transcriptPath) {
     isLooping: false,
   };
 
+  let mainModel = null;
+  let lastRealModel = null;
+
   try {
     const content = await fs.readFile(transcriptPath, "utf-8");
     const lines = content.trim().split("\n");
@@ -161,7 +162,12 @@ async function parseClaudeTranscript(transcriptPath) {
 
         const msg = entry.message;
         if (msg) {
-          if (msg.model) result.model = msg.model;
+          if (msg.model && msg.model !== "<synthetic>") {
+            lastRealModel = msg.model;
+            if (!entry.isSidechain) {
+              mainModel = msg.model;
+            }
+          }
           const u = msg.usage;
           if (u) {
             result.hasUsage = true;
@@ -225,6 +231,8 @@ async function parseClaudeTranscript(transcriptPath) {
         // ignore malformed line
       }
     }
+
+    result.model = mainModel || lastRealModel || result.model || "claude-sonnet-5-5";
 
     // Loop detection: 5 consecutive identical tool calls (same tool and target) within 60s
     if (result.toolInvocations.length >= 5) {

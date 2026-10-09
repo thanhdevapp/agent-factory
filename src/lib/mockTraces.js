@@ -24,9 +24,9 @@ const CLIENTS = [
 ];
 
 const PROVIDER_MODELS = [
-  { provider: "claude", model: "claude-3-7-sonnet" },
+  { provider: "anthropic", model: "claude-3-7-sonnet" },
   { provider: "gemini", model: "gemini-2.5-pro" },
-  { provider: "openai (codex)", model: "gpt-5.6-terra" },
+  { provider: "openai", model: "gpt-5.6-terra" },
   { provider: "openai", model: "gpt-4o" },
   { provider: "minimax", model: "minimax-m2" },
   { provider: "deepseek", model: "deepseek-v3" },

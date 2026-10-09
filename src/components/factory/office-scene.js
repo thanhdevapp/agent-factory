@@ -1,5 +1,5 @@
 import { Application, Container, FillGradient, Graphics, Text } from "pixi.js";
-import { buildOffice, OFFICE, STATE_COLORS } from "./scene/office-layout";
+import { buildOffice, OFFICE, STATE_COLORS, PROVIDER_BRAND_COLORS, PROVIDER_LABELS } from "./scene/office-layout";
 import { createCharacter, createDesk, createBadge } from "./scene/characters";
 import { createToolBadge, STATUS_KEYS, STATUS_TYPES, TOOL_KEYS } from "./scene/tool-icons";
 import { createTokenStreams } from "./scene/token-streams";
@@ -347,7 +347,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
 
       nextDeskEntries.push({ desk, character, ws, toolBadges, statusBadge, coin });
 
-      const pod = podByProvider.get(ws.provider);
+      const pod = podByProvider.get(ws.provider) || (office.pods.length > 0 ? office.pods[0] : null);
       if (ws.busy > 0) {
         const cap = (v) => Math.max(0.15, clamp01(v));
         const wIn = cap(ws.tokens.input / 16000);
@@ -358,7 +358,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
         // input: desk -> rack -> provider
         routes.push({ from: deskPt, to: rackIn, color: ws.color, weight: wIn });
         if (pod) {
-          routes.push({ from: { x: OFFICE.rackX, y: OFFICE.rackY - 40 }, to: { x: pod.x - 46, y: pod.y }, color: pod.color, weight: wIn });
+          routes.push({ from: { x: OFFICE.rackX, y: OFFICE.rackY - 40 }, to: { x: pod.x - 46, y: pod.y }, color: pod.brandColor || pod.color, weight: wIn });
           // output: provider -> rack -> desk, arcing underneath
           routes.push({ from: { x: pod.x - 46, y: pod.y + 14 }, to: { x: OFFICE.rackX + 20, y: OFFICE.rackY - 10 }, color: 0x86efac, weight: wOut, shape: "diamond", arc: -22 });
         }
@@ -373,8 +373,8 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
     // Provider pods: load meter, siren when saturated, operator robot behind.
     for (const pod of office.pods) {
       const operator = createCharacter({
-        color: pod.color,
-        trimColor: pod.color,
+        color: pod.brandColor || pod.color,
+        trimColor: pod.brandColor || pod.color,
         scale: 0.55,
         seed: pod.provider.length,
         mode: pod.overloaded ? "pending" : pod.busy > 0 ? "streaming" : "sleeping",
@@ -388,9 +388,10 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       const g = new Graphics();
       g.ellipse(0, 34, 52, 10).fill({ color: 0x000000, alpha: 0.35 });
       g.roundRect(-46, -30, 92, 62, 12).fill({ color: 0x1c2531 });
-      g.roundRect(-46, -30, 92, 6, 5).fill({ color: 0xffffff, alpha: 0.06 });
+      g.roundRect(-46, -30, 92, 62, 12).stroke({ width: 1.5, color: pod.brandColor || 0x22d3ee, alpha: 0.5 });
+      g.roundRect(-46, -30, 92, 6, 5).fill({ color: pod.brandColor || 0xffffff, alpha: 0.15 });
       // Load meter: three rows fill in turn as the provider saturates.
-      const meterColor = pod.overloaded ? STATE_COLORS.error : pod.load > 0.5 ? 0xfbbf24 : 0x34d399;
+      const meterColor = pod.overloaded ? STATE_COLORS.error : pod.load > 0.5 ? 0xfbbf24 : (pod.brandColor || 0x34d399);
       for (let r = 0; r < 3; r += 1) {
         const fill = clamp01(pod.load * 3 - r);
         g.roundRect(-38, -18 + r * 14, 76, 9, 3).fill({ color: 0x0f141c });
@@ -406,7 +407,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       track(deskLayer, siren);
 
       const label = new Text({
-        text: pod.provider.toUpperCase(),
+        text: PROVIDER_LABELS[pod.provider] || pod.provider.toUpperCase(),
         style: { fontFamily: getActiveFont("ui"), fontSize: 12, fill: 0xdce6f2, fontWeight: "800", letterSpacing: 1 },
       });
       label.anchor.set(0.5, 0);
@@ -415,7 +416,7 @@ export async function mountOfficeScene(canvas, traces, options = {}) {
       track(deskLayer, label);
 
       const sub = createBadge(`${pod.busy} in flight${pod.overloaded ? " · FULL" : ""}`, {
-        color: pod.overloaded ? STATE_COLORS.error : pod.color,
+        color: pod.overloaded ? STATE_COLORS.error : (pod.brandColor || pod.color),
         size: 10,
       });
       sub.anchor.set(0.5, 0);

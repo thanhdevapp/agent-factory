@@ -1,4 +1,4 @@
-import { getLiveTraceSnapshot, getProvidersFromTraces } from "@/lib/watchers/watcherManager.js";
+import { getLiveTraceSnapshot, getCachedTraceSnapshot, getProvidersFromTraces } from "@/lib/watchers/watcherManager.js";
 import { generateMockTraces, mockProviderDescriptors, MOCK_PRESETS } from "@/lib/mockTraces.js";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +40,13 @@ export async function GET(request) {
     async start(controller) {
       let isAlive = true;
 
+      // Immediate handshake comment to unblock browser EventSource onopen
+      try {
+        controller.enqueue(encoder.encode(": connected\n\n"));
+      } catch {
+        isAlive = false;
+      }
+
       const send = (data) => {
         if (!isAlive) return;
         try {
@@ -48,6 +55,23 @@ export async function GET(request) {
           isAlive = false;
         }
       };
+
+      // Send immediate cached snapshot if available so the UI renders in 0ms!
+      if (source === "live" && !mockPreset) {
+        const cached = getCachedTraceSnapshot(limit);
+        if (cached && cached.traces.length > 0) {
+          const providers = getProvidersFromTraces(cached.traces);
+          send({
+            traces: cached.traces,
+            totalCount: cached.totalCount,
+            providers,
+            errors: cached.errors,
+            timestamp: Date.now(),
+            mode: "live",
+            activeAgents: cached.traces.filter((t) => t.state === "streaming" || t.state === "pending").length,
+          });
+        }
+      }
 
       const pushUpdate = async () => {
         if (!isAlive) return;
@@ -132,6 +156,8 @@ export async function GET(request) {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Content-Encoding": "none",
     },
   });
 }

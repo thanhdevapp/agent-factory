@@ -3,12 +3,32 @@
 // Everything here derives from build-factory-graph's grouping so the scene and
 // the topology view agree on what an "account" is. No new data model.
 
+import { normalizeProvider } from "@/lib/traceContract";
+
 export const STATE_COLORS = {
   pending: 0xf59e0b,
   streaming: 0x22d3ee,
   idle: 0x38bdf8,
   done: 0x34d399,
   error: 0xef4444,
+};
+
+export const PROVIDER_BRAND_COLORS = {
+  gemini: 0x38bdf8,     // Google Sky Cyan
+  anthropic: 0xd97706,  // Anthropic Warm Amber / Coral
+  openai: 0x10b981,     // OpenAI Emerald Green
+  minimax: 0xa855f7,    // MiniMax Purple
+  deepseek: 0x3b82f6,   // DeepSeek Blue
+  other: 0x64748b,      // Slate
+};
+
+export const PROVIDER_LABELS = {
+  gemini: "GEMINI",
+  anthropic: "ANTHROPIC",
+  openai: "OPENAI",
+  minimax: "MINIMAX",
+  deepseek: "DEEPSEEK",
+  other: "OTHER",
 };
 
 // A finished account that has been quiet this long is shown asleep.
@@ -58,6 +78,7 @@ export function buildOffice(traces = []) {
 
   for (const trace of traces) {
     if (!trace?.connectionId) continue;
+    const normalizedProvider = normalizeProvider(trace.provider, trace.cli, trace.model);
     let entry = byAccount.get(trace.connectionId);
     if (!entry) {
       const lowerConn = String(trace.connectionId || "").toLowerCase();
@@ -69,7 +90,7 @@ export function buildOffice(traces = []) {
         connectionId: trace.connectionId,
         account: trace.account || trace.connectionId,
         model: trace.model,
-        provider: trace.provider,
+        provider: normalizedProvider,
         cli: trace.cli || "agent",
         clientType,
         source: trace.source || clientType,
@@ -99,6 +120,13 @@ export function buildOffice(traces = []) {
         lastTextRole: null,
       };
       byAccount.set(trace.connectionId, entry);
+    } else {
+      if (trace.model && (!entry.model || entry.model === "<synthetic>")) {
+        entry.model = trace.model;
+      }
+      if (normalizedProvider && (!entry.provider || entry.provider === "other")) {
+        entry.provider = normalizedProvider;
+      }
     }
     entry.traces.push(trace);
     if (trace.skin && !entry.skin) entry.skin = trace.skin;
@@ -216,8 +244,10 @@ export function buildOffice(traces = []) {
     const busy = clients.reduce((s, w) => s + w.busy, 0);
     const tokens = clients.reduce((s, w) => s + (w.totalTokens ?? 0), 0);
     const anyError = clients.some((w) => w.state === "error");
+    const brandColor = PROVIDER_BRAND_COLORS[provider] || 0x22d3ee;
     return {
       provider,
+      brandColor,
       x: podX,
       y: OFFICE.rackY - ((providers.length - 1) * OFFICE.podGap) / 2 + i * OFFICE.podGap,
       busy,
@@ -225,7 +255,7 @@ export function buildOffice(traces = []) {
       overloaded: busy >= OFFICE.podCapacity,
       totalTokens: tokens,
       totalLabel: humanSize(tokens),
-      color: anyError ? STATE_COLORS.error : busy > 0 ? STATE_COLORS.streaming : STATE_COLORS.done,
+      color: anyError ? STATE_COLORS.error : busy > 0 ? brandColor : STATE_COLORS.done,
     };
   });
 

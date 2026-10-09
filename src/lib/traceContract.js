@@ -3,6 +3,34 @@
  * All watchers normalize their session logs into this uniform schema.
  */
 
+export function normalizeProvider(rawProvider, cli = "agent", model = "") {
+  let p = String(rawProvider || "").toLowerCase().trim();
+  // Strip out any trailing client type annotations like "(cli)", "(app)", "(codex)", "(extension)", "(ide)"
+  p = p.replace(/\s*\([^)]*\)/g, "").trim();
+
+  if (p === "claude" || p.includes("anthropic")) return "anthropic";
+  if (p.includes("gemini") || p.includes("google")) return "gemini";
+  if (p.includes("openai") || p.includes("codex") || p.includes("gpt")) return "openai";
+  if (p.includes("minimax")) return "minimax";
+  if (p.includes("deepseek")) return "deepseek";
+
+  // Infer from model if provider wasn't recognized
+  const m = String(model || "").toLowerCase();
+  if (m.includes("claude") || m.includes("sonnet") || m.includes("opus") || m.includes("haiku")) return "anthropic";
+  if (m.includes("gemini")) return "gemini";
+  if (m.includes("gpt") || m.includes("o1") || m.includes("o3") || m.includes("o4") || m.includes("codex")) return "openai";
+  if (m.includes("minimax")) return "minimax";
+  if (m.includes("deepseek")) return "deepseek";
+
+  // Infer from cli if still unknown
+  const c = String(cli || "").toLowerCase();
+  if (c.includes("claude")) return "anthropic";
+  if (c.includes("antigravity")) return "gemini";
+  if (c.includes("codex")) return "openai";
+
+  return p || "other";
+}
+
 export function normalizeTrace(raw) {
   const tokens = raw.tokens || {};
   const asNumberOrNull = (value) => (Number.isFinite(value) ? Number(value) : null);
@@ -20,6 +48,9 @@ export function normalizeTrace(raw) {
     raw.source === "app" || lowerConn.includes("app") ? "app" :
     raw.source === "extension" || lowerConn.includes("extension") || raw.source === "ide" || lowerConn.includes("ide") ? "extension" : "cli"
   );
+  const model = (raw.model && raw.model !== "<synthetic>") ? String(raw.model) : null;
+  const provider = normalizeProvider(raw.provider, raw.cli, model);
+
   return {
     traceId: String(raw.traceId || `trace-${Math.random().toString(36).slice(2, 9)}`),
     cli: raw.cli || "agent", // "antigravity" | "claude" | "cursor" | etc.
@@ -27,8 +58,8 @@ export function normalizeTrace(raw) {
     source: raw.source || clientType,
     connectionId: String(raw.connectionId || "Agent Desk"),
     account: String(raw.account || "Default Workspace"),
-    model: raw.model ? String(raw.model) : null,
-    provider: raw.provider ? String(raw.provider).toLowerCase() : null,
+    model,
+    provider,
     state: ["streaming", "pending", "idle", "done", "error"].includes(raw.state) ? raw.state : "idle",
     startedAt: typeof raw.startedAt === "number" ? raw.startedAt : null,
     elapsedMs: typeof raw.elapsedMs === "number" ? raw.elapsedMs : null,
@@ -52,16 +83,25 @@ export function normalizeTrace(raw) {
   };
 }
 
+const PROVIDER_NAMES = {
+  gemini: "Google Gemini",
+  anthropic: "Anthropic Claude",
+  openai: "OpenAI",
+  minimax: "MiniMax",
+  deepseek: "DeepSeek",
+  other: "Other",
+};
+
 export function extractProviders(traces) {
   const seen = new Set();
   const list = [];
   for (const t of traces) {
-    const p = (t.provider || "other").toLowerCase();
+    const p = normalizeProvider(t.provider, t.cli, t.model);
     if (!seen.has(p)) {
       seen.add(p);
       list.push({
         provider: p,
-        name: p.charAt(0).toUpperCase() + p.slice(1),
+        name: PROVIDER_NAMES[p] || (p.charAt(0).toUpperCase() + p.slice(1)),
       });
     }
   }
