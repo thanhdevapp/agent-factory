@@ -54,6 +54,7 @@ export default function OfficeCanvas({
           selectedId: latest.current.selectedId,
           onSelect: (id) => latest.current.onSelect?.(id),
           onZoomChange: (pct) => setZoomPct(pct),
+          soundEnabled,
         });
 
         if (disposed) {
@@ -117,6 +118,10 @@ export default function OfficeCanvas({
       sceneRef.current.setSelected?.(selectedId);
     }
   }, [selectedId]);
+
+  useEffect(() => {
+    sceneRef.current?.setSoundEnabled?.(soundEnabled);
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (!onStats) return undefined;

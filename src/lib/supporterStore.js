@@ -7,6 +7,8 @@
  */
 
 import { COSMETIC_CATALOG } from "./catalog/index.js";
+import { verifyLicenseKey } from "./cosmetics/licenseKey.js";
+import walletStore from "./progression/walletStore.js";
 
 export { COSMETIC_CATALOG };
 export const SUPPORTER_STORAGE_KEY = "agmon_supporter_data";
@@ -237,6 +239,59 @@ export function equipOfficeTheme(themeId) {
   const next = { ...current, equippedOfficeTheme: themeId };
   saveAndNotify(next);
   return true;
+}
+
+// Unlock an item using $COIN mined from real work
+export function unlockWithCoins(itemId, coinCost = 500) {
+  const current = getSupporterState();
+  if (current.unlockedItems.includes(itemId)) {
+    return { success: true, message: "Item is already unlocked!" };
+  }
+  const didSpend = walletStore.spendCoins(coinCost);
+  if (!didSpend) {
+    return {
+      success: false,
+      message: `Insufficient $COIN balance! You need ${coinCost.toLocaleString()} $COIN.`
+    };
+  }
+  const next = {
+    ...current,
+    unlockedItems: Array.from(new Set([...current.unlockedItems, itemId]))
+  };
+  saveAndNotify(next);
+  return { success: true, message: "Item successfully unlocked with $COIN!" };
+}
+
+// Activate Supporter Status via Offline License Key (e.g. from Gumroad / Steam / Stripe)
+export function activateSupporterLicense(licenseKey) {
+  const check = verifyLicenseKey(licenseKey);
+  if (!check.valid) {
+    return { success: false, message: "Invalid license key format or signature." };
+  }
+
+  const current = getSupporterState();
+  const allItemIds = [
+    ...COSMETIC_CATALOG.skins.map((s) => s.id),
+    ...COSMETIC_CATALOG.pets.map((p) => p.id),
+    ...COSMETIC_CATALOG.props.map((pr) => pr.id),
+    ...(COSMETIC_CATALOG.auras || []).map((a) => a.id),
+    ...(COSMETIC_CATALOG.trophies || []).map((t) => t.id),
+    ...(COSMETIC_CATALOG.officeThemes || []).map((th) => th.id),
+  ];
+
+  const nextState = {
+    ...current,
+    isSupporter: true,
+    supporterTier: check.tier || "vip",
+    unlockedItems: Array.from(new Set([...current.unlockedItems, ...allItemIds])),
+  };
+
+  saveAndNotify(nextState);
+  return {
+    success: true,
+    message: `Activated ${check.label || "Supporter Edition"}! All items and themes unlocked.`,
+    state: nextState
+  };
 }
 
 // Update Ambient Soundscape

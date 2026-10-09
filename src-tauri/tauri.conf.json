@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "productName": "AGMon AI Factory",
+  "version": "0.2.3",
+  "identifier": "com.antigravity.agmon",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:3030",
+    "beforeBuildCommand": "npx next build --webpack",
+    "frontendDist": "../out"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AGMon AI Factory - Desktop Companion",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 640,
+        "minHeight": 140,
+        "resizable": true,
+        "fullscreen": false,
+        "transparent": true,
+        "decorations": true,
+        "alwaysOnTop": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

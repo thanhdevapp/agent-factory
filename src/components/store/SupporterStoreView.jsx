@@ -29,11 +29,14 @@ import {
   Zap,
   Trophy,
   Palette,
+  Coins,
 } from "lucide-react";
 import {
   COSMETIC_CATALOG,
   getSupporterState,
   unlockWithCode,
+  unlockWithCoins,
+  activateSupporterLicense,
   equipSkin,
   equipPet,
   toggleProp,
@@ -119,10 +122,19 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
     setCurrentPage(1);
   }, [activeTab, searchQuery, tierFilter]);
 
-  // Unlock via activation code
+  // Unlock via activation code or offline license key
   const handleUnlockCode = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const code = unlockCodeInput.trim() || "AGMON-COFFEE-VIP";
+
+    const licenseRes = activateSupporterLicense(code);
+    if (licenseRes.success) {
+      setUnlockFeedback(licenseRes);
+      setUnlockCodeInput("");
+      setStoreState(licenseRes.state);
+      setTimeout(() => setUnlockFeedback(null), 5000);
+      return;
+    }
 
     const res = unlockWithCode(code);
     setUnlockFeedback(res);
@@ -1070,14 +1082,32 @@ export default function SupporterStoreView({ hideHeader = false, onClose = null 
                                 : "Equip"}
                             </button>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleUnlockTier(item.tier)}
-                              className="px-2.5 py-1 bg-[#252530] hover:bg-amber-500/20 hover:border-amber-500/40 border border-[#373748] text-amber-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                              <Lock className="w-3 h-3 text-amber-400" />
-                              <span>Unlock</span>
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                title="Unlock item with 500 $COIN mined from real work"
+                                onClick={() => {
+                                  const res = unlockWithCoins(item.id, 500);
+                                  if (res.success) {
+                                    setStoreState(getSupporterState());
+                                  } else {
+                                    alert(res.message);
+                                  }
+                                }}
+                                className="px-2 py-1 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/40 text-amber-300 rounded-lg text-[10px] font-mono font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <Coins className="w-3 h-3 text-amber-400" />
+                                <span>500</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUnlockTier(item.tier)}
+                                className="px-2.5 py-1 bg-[#252530] hover:bg-amber-500/20 hover:border-amber-500/40 border border-[#373748] text-amber-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <Lock className="w-3 h-3 text-amber-400" />
+                                <span>Unlock</span>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
